@@ -13,12 +13,11 @@
 
 -->
 
-# Nexus Repository 3 High Availability (HA) Preview Program Helm and Sample YAML Repository
-This repository contains resources for those in our **Nexus Repository 3 High Availability Preview Program**. 
+# Nexus Repository 3 High Availability (HA) Helm and Sample YAML Repository
+This repository contains resources for those in our **Nexus Repository 3 High Availability**. 
 Please refer to the documentation provided by your Customer Success Engineer for instructions on how to use these files.
 
-## HA Preview Prerequisites and System Requirements
-> **Warning** Do not deploy this preview version of HA in a production environment.
+## HA Prerequisites and System Requirements
 
 Along with the HA-specific requirements listed below, you should also ensure that you meet our [normal Nexus Repository system requirements](https://help.sonatype.com/repomanager3/product-information/system-requirements).
 
@@ -48,4 +47,4 @@ Ensure you have filled out the YAML files with appropriate information for your 
 > **Note** The YAML files in this section are just examples and cannot be copy-pasted and used as-is. You must fill them out with the appropriate information for your deployment to be able to use them.
 
 ## Format Limitations
-For this preview program, HA supports Maven, Docker, and npm formats; once HA is available generally, it will support all formats that PostgreSQL supports.
+HA supports all formats that PostgreSQL supports.
