@@ -1,0 +1,23 @@
+# Copyright Sonatype, Inc., 2022, All Rights Reserved.
+#
+# The services.yaml shown below sets up the Ingress Load Balancer.
+# Note that <scheme> should typically be set to internal.
+#
+# Note: This YAML file is just an example and cannot be used as-is.
+# You must fill it out with the appropriate information for your deployment to be able to use it.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nxrm-nexus-service
+  namespace: nxrm
+  labels:
+    app: nxrm
+spec:
+  type: NodePort
+  selector:
+    app: nxrm
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8081

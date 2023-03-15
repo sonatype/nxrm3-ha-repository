@@ -1,0 +1,98 @@
+# Declare variables to be passed into your templates.
+namespaces:
+  nexusNs: nexusrepo
+  cloudwatchNs: amazon-cloudwatch
+  externaldnsNs: nexus-externaldns
+externaldns:
+  enabled: false
+  domainFilter: example.com #your root domain e.g example.com
+  awsZoneType: private # hosted zone to look at (valid values are public, private or no value for both)
+fluentbit:
+  enabled: false #set this to true to enable sending of logs to CloudWatch
+statefulset:
+  clusterRegion: us-east-1
+  name: nxrm-statefulset
+  clusterName: nxrm-nexus
+  logsRegion: us-east-1
+  fluentBitVersion: 2.28.0
+  replicaCount: 3
+  initContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+  container:
+    image:
+      repository: sonatype/nexus3
+      tag: 3.45.1
+    containerPort: 8081
+    pullPolicy: IfNotPresent
+    env:
+      nexusDBName: nexus
+      nexusDBPort: 3306
+      install4jAddVmParams: "-Xms2703m -Xmx2703m"
+  requestLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+  auditLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+  taskLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+serviceAccount:
+  name: nexus-repository-deployment-sa #This service account in managed by Helm
+  role: arn:aws:iam::000000000000:role/nxrm-nexus-role #Role created in the "AWS Secrets Manager" section of the HA documentation
+  externaldns:
+    name: external-dns
+    role: arn:aws:iam::000000000000:role/nexusrepo-external-dns-irsa-role #Role with route53 permissions needed by external-dns
+ingress:
+  #host: "example.com" #host to apply this ingress rule to. Uncomment this in your values.yaml and set it as you wish
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internal # scheme
+    alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
+  dockerIngress:  #Ingress for Docker Connector - comment out if you don't use docker repositories
+    enabled: false
+    annotations:
+      kubernetes.io/ingress.class: alb # comment out if you don't use docker repositories
+      alb.ingress.kubernetes.io/scheme: internal # scheme comment out if you don't use docker repositories
+      alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids, comment out if you don't use docker repositories
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]' #comment out if you don't use docker repositories
+      alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
+      external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com # Add more docker subdomains using dockerrepoName.example.com otherwise comment out if you don't use docker repositories
+storageClass:
+  provisioner: ebs.csi.aws.com # in case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
+  zones:
+    zone1: zone1
+    zone2: zone2
+    zone3: zone3
+  iopsPerGB: "10"
+pvc:
+  accessModes: ReadWriteOnce
+  storage: 100Gi
+
+service:  #Nexus Repo NodePort Service
+  nexus:
+    type: NodePort
+    protocol: TCP
+    port: 80
+    targetPort: 8081
+  docker:  #Nodeport Service for Docker Service
+    enabled: false
+    type: NodePort
+    protocol: TCP
+    port: 9090
+    targetPort: 8081
+secret:
+  license:
+    arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
+    alias: nxrm-license.lic
+  rds:
+    arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrmrds-cred-nexus
+  adminpassword:
+    arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:admin-nxrm-password

@@ -1,0 +1,16 @@
+# Copyright Sonatype, Inc., 2022, All Rights Reserved.
+#
+# Note: This YAML file is just an example and cannot be used as-is. 
+# You must fill it out with the appropriate information for your deployment to be able to use it.
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: "nxrm-nexus-ebs-storage"
+  namespace: nxrm
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: io1
+  fsType: "ext4"
+  iopsPerGB: "10"
+volumeBindingMode: WaitForFirstConsumer

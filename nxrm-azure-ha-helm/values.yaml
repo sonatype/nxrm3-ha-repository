@@ -1,0 +1,71 @@
+# Declare variables to be passed into your templates.
+namespaces:
+  nexusNs: nexusrepo
+statefulset:
+  clusterRegion: us-east-1
+  name: nxrm-statefulset
+  clusterName: nxrm-nexus
+  initContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+  container:
+    image:
+      repository: sonatype/nexus3
+      tag: 3.45.1
+    containerPort: 8081
+    pullPolicy: IfNotPresent
+    env:
+      nexusDBName: nexus
+      nexusDBPort: 3306
+      install4jAddVmParams: "-Xms2703m -Xmx2703m"
+  requestLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+  auditLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+  taskLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+ingress:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+storageClass:
+  name: managed-csi
+  zones:
+    zone1: zone1
+    zone2: zone2
+    zone3: zone3
+  iopsPerGB: "10"
+pvc:
+  accessModes: ReadWriteOnce
+  storage: 100Gi
+
+service:  #Nexus Repo NodePort Service
+  nexus:
+    type: NodePort
+    protocol: TCP
+    port: 80
+    targetPort: 8081
+  docker:  #Nodeport Service for Docker Service
+    type: NodePort
+    protocol: TCP
+    port: 9090
+    targetPort: 8081
+secret:
+  tenandId: "tenantId"
+  keyvaultName: keyvaultname
+  provider: azure
+  license:
+    name: nxrm-license.lic
+  db:
+    user: nxrm-db-user
+    password: nxrm-db-password
+    host: nxrm-db-host
+  adminPassword: nxrm-admin-password
+

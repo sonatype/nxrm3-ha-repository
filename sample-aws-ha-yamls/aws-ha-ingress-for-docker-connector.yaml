@@ -1,0 +1,28 @@
+# Copyright Sonatype, Inc., 2022, All Rights Reserved.
+#
+# Note: This YAML file is just an example and cannot be used as-is.
+# You must fill it out with the appropriate information for your deployment to be able to use it.
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: nxrm
+  name: ingress-nxrm-docker
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: <scheme>
+    alb.ingress.kubernetes.io/subnets: subnet-abc, subnet-xyz
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  #  The AWS Certificate Manager ARN for your HTTPS certificate
+    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com # Add more docker subdomains using dockerrepoName.example.com
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nxrm-nexus-docker-service
+                port:
+                  number: 9090

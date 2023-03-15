@@ -1,0 +1,20 @@
+# Copyright Sonatype, Inc., 2022, All Rights Reserved.
+#
+# Note: This YAML file is just an example and cannot be used as-is.
+# You must fill it out with the appropriate information for your deployment to be able to use it.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nxrm
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: amazon-cloudwatch
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus-externaldns
+---

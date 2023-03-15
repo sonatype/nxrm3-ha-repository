@@ -1,0 +1,33 @@
+# Copyright Sonatype, Inc., 2022, All Rights Reserved.
+#
+#If you require your clients to access more than one Docker Repository, you must use an external load balancer (e.g., NGINX) as a reverse proxy instead of this ingress for Docker YAML.
+# See our documentation at https://help.sonatype.com/repomanager3/nexus-repository-administration/formats/docker-registry/docker-repository-reverse-proxy-strategies
+# Note that <scheme> should typically be set to internal.
+#
+# Note: This YAML file is just an example and cannot be used as-is.
+# You must fill it out with the appropriate information for your deployment to be able to use it.
+# Ignore this file if you don't use docker repositories
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: nxrm
+  name: ingress-nxrm-nexus
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: <scheme>
+    alb.ingress.kubernetes.io/subnets: <subnet id 1>, <subnet id 2>
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:000000000000:certificate/11111111-2abc-7777-0abc-0000ab431111 # The AWS Certificate Manager ARN for your HTTPS certificate
+spec:
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nxrm-nexus-service
+                port:
+                  number: 80
