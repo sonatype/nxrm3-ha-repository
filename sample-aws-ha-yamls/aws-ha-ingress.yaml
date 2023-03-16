@@ -19,6 +19,7 @@ metadata:
     alb.ingress.kubernetes.io/subnets: <subnet id 1>, <subnet id 2>
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:000000000000:certificate/11111111-2abc-7777-0abc-0000ab431111 # The AWS Certificate Manager ARN for your HTTPS certificate
+    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com # Add more docker subdomains using dockerrepoName.example.com
 spec:
   rules:
     - host: example.com

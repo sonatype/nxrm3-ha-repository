@@ -12,7 +12,7 @@ metadata:
     app: nxrm
 spec:
   replicas: 3
-  serviceName: "nxrm-3-44-0-nxrm-statefulset"
+  serviceName: "nxrm-3-50-0-nxrm-statefulset"
   selector:
     matchLabels:
       app: nxrm
@@ -45,7 +45,7 @@ spec:
       terminationGracePeriodSeconds: 20
       containers:
         - name: nxrm-app
-          image: sonatype/nexus3:3.45.1
+          image: sonatype/nexus3:3.50.0
           securityContext:
             runAsUser: 200
           imagePullPolicy: IfNotPresent

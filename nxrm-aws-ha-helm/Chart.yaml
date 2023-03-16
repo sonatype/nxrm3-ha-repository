@@ -1,6 +1,6 @@
 apiVersion: v2
 name: nxrm-ha-clustering
-description: Resilient AWS Deployment of Sonatype Nexus Repository Manager - Universal Binary repository 
+description: Resilient AWS Deployment of Sonatype Nexus Repository - Universal Binary repository
 
 # A chart can be either an 'application' or a 'library' chart.
 #
