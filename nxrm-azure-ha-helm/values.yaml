@@ -12,7 +12,7 @@ statefulset:
   container:
     image:
       repository: sonatype/nexus3
-      tag: 3.45.1
+      tag: 3.50.0
     containerPort: 8081
     pullPolicy: IfNotPresent
     env:
