@@ -1,4 +1,4 @@
-# Copyright Sonatype, Inc., 2022, All Rights Reserved.
+# Copyright Sonatype, Inc., 2023, All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: nxrm-statefulset
+  name: nxrm-nexus-statefulset
   namespace: nxrm
   labels:
     app: nxrm
 spec:
-  replicas: 3
-  serviceName: "nxrm-3-50-0-nxrm-statefulset"
+  replicas: 2
+  serviceName: nxrm-nexus-statefulset-service
   selector:
     matchLabels:
       app: nxrm
@@ -33,14 +33,13 @@ spec:
       labels:
         app: nxrm
     spec:
-      serviceAccountName: nexus-repository-ha-deployment-sa
       initContainers:
         # chown nexus-data to 'nexus' user and init log directories/files for a new pod
         # otherwise the side car containers will crash a couple of times and backoff whilst waiting
         # for nxrm-app to start and this increases the total start up time.
         - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
           image: busybox:1.33.1
-          command: [ /bin/sh ]
+          command: [/bin/sh]
           args:
             - -c
             - >-
@@ -65,7 +64,9 @@ spec:
             - containerPort: 8081
           env:
             - name: DB_NAME
-              value: "nexus"
+              value: nexus
+            - name: DB_PORT
+              value: 5432
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -91,12 +92,13 @@ spec:
             - name: INSTALL4J_ADD_VM_PARAMS
               value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=/nxrm-secrets/nxrm-license.lic \
           -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
-          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:3306/${DB_NAME} \
+          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require \
           -Dnexus.datastore.nexus.username=${DB_USER} \
-          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+          -Dnexus.datastore.nexus.password=${DB_PASSWORD} \
+          -Dnexus.blobstore.provisionDefaults=false"
           volumeMounts:
             - mountPath: /nxrm-secrets
-              name: nexus-secret
+              name: nxrm-secrets
             - name: nexus-data
               mountPath: /nexus-data
             - name: logback-tasklogfile-override
@@ -104,24 +106,24 @@ spec:
               subPath: logback-tasklogfile-appender-override.xml
         - name: request-log
           image: busybox:1.33.1
-          args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log' ]
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log']
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
         - name: audit-log
           image: busybox:1.33.1
-          args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log' ]
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log']
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
         - name: tasks-log
           image: busybox:1.33.1
-          args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log' ]
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log']
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
       volumes:
-        - name: nexus-secret
+        - name: nxrm-secrets
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
@@ -130,7 +132,7 @@ spec:
               fsType: ext4
         - name: logback-tasklogfile-override
           configMap:
-            name: nxrm-logback-tasklogfile-override
+            name: nxrm-nexus-logback-tasklogfile-override
             items:
               - key: logback-tasklogfile-appender-override.xml
                 path: logback-tasklogfile-appender-override.xml
@@ -139,7 +141,7 @@ spec:
         name: nexus-data
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "nxrm-nexus-ebs-storage"
+        storageClassName: "managed-csi"
         resources:
           requests:
-            storage: 20Gi
+            storage: 100Gi

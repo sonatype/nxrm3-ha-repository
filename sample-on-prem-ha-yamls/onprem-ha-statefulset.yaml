@@ -1,0 +1,117 @@
+# Copyright Sonatype, Inc., 2022, All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Note: This YAML file is just an example and cannot be used as-is.
+# You must fill it out with the appropriate information for your deployment to be able to use it.
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nxrm-statefulset
+  namespace: nxrm
+  labels:
+    app: nxrm
+spec:
+  replicas: 3
+  serviceName: nxrm-statefulset-service
+  selector:
+    matchLabels:
+      app: nxrm
+  template:
+    metadata:
+      labels:
+        app: nxrm
+    spec:
+      initContainers:
+        - name: chown-nexusdata-owner-to-nexus
+          image: busybox:1.33.1
+          resources:
+            limits:
+              cpu: "0.2" #This is an example. Update as needed
+              memory: "512Mi" #This is an example. Update as needed
+            requests:
+              cpu: "0.1" #This is an example. Update as needed
+              memory: "256Mi" #This is an example. Update as needed
+          command: [/bin/sh]
+          args:
+            - -c
+            - >-
+              chown -R '200:200' /nexus-data &&
+              chown -R '200:200' /blobs
+          volumeMounts:
+            - name: nexusdata
+              mountPath: /nexus-data
+            - name: nfs-blob-storage
+              mountPath: /blobs
+      terminationGracePeriodSeconds: 20
+      containers:
+        - name: nxrm-app
+          image: sonatype/nexus3:3.50.0
+          resources:
+            limits:
+              cpu: "0.3" #This is an example. Update as needed
+              memory: "3072Mi" #This is an example. Update as needed
+            requests:
+              cpu: "0.25" #This is an example. Update as needed
+              memory: "2048Mi" #This is an example. Update as needed
+          securityContext:
+            runAsUser: 200
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: DB_NAME
+              value: <db-name>
+            - name: DB_USER
+              value: <db-user>
+            - name: DB_PASSWORD
+              value: <db-password>
+            - name: LICENSE_FILE
+              value: /etc/nxrm-license/nxrm-license.lic
+            - name: NEXUS_SECURITY_INITIAL_PASSWORD
+              value: <yournexusadminpassword>
+            - name: NEXUS_SEARCH_INDEX_REBUILD_ON_STARTUP
+              value: "true"
+            - name: INSTALL4J_ADD_VM_PARAMS
+              value: "-Xms2703m -Xmx2703m \
+          -Dnexus.licenseFile=${LICENSE_FILE} \
+          -Dnexus.datastore.clustered.enabled=true \
+          -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
+          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://postgres_url:5432/${DB_NAME} \
+          -Dnexus.datastore.nexus.username=${DB_USER} \
+          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+          volumeMounts:
+            - name: nexusdata
+              mountPath: /nexus-data
+            - name: nfs-blob-storage
+              mountPath: /blobs
+            - name: license-volume
+              mountPath: /etc/nxrm-license
+
+      volumes:
+        - name: nfs-blob-storage
+          persistentVolumeClaim:
+            claimName: nfs-blobstorage-claim
+        - name: license-volume
+          configMap:
+            name: nxrm-license
+  volumeClaimTemplates:
+    - metadata:
+        name: nexusdata
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "nxrm-local-storage"
+        resources:
+          requests:
+            storage: 20Gi

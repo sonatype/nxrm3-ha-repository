@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Note: This YAML file is just an example and cannot be used as-is. 
+# Note: This YAML file is just an example and cannot be used as-is.
 # You must fill it out with the appropriate information for your deployment to be able to use it.
 
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nxrm-logback-tasklogfile-override
+  name: nxrm-nexus-logback-tasklogfile-override
   namespace: nxrm
 data:
   logback-tasklogfile-appender-override.xml: |
