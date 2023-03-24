@@ -16,18 +16,7 @@
 # You must fill it out with the appropriate information for your deployment to be able to use it.
 
 apiVersion: v1
-kind: Service
+kind: Namespace
 metadata:
-  name: nxrm-nexus-docker-service
-  namespace: nxrm
-  labels:
-    app: nxrm
-spec:
-  type:  NodePort
-  selector:
-    app: nxrm
-  ports:
-    - name: docker-service
-      protocol: TCP
-      port: 9090
-      targetPort: 8081
+  name: nxrm
+---

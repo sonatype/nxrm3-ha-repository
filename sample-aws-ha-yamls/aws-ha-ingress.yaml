@@ -1,6 +1,18 @@
 # Copyright Sonatype, Inc., 2022, All Rights Reserved.
 #
-#If you require your clients to access more than one Docker Repository, you must use an external load balancer (e.g., NGINX) as a reverse proxy instead of this ingress for Docker YAML.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# If you require your clients to access more than one Docker Repository, you must use an external load balancer (e.g., NGINX) as a reverse proxy instead of this ingress for Docker YAML.
 # See our documentation at https://help.sonatype.com/repomanager3/nexus-repository-administration/formats/docker-registry/docker-repository-reverse-proxy-strategies
 # Note that <scheme> should typically be set to internal.
 #
