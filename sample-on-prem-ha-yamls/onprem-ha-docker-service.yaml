@@ -14,7 +14,8 @@
 #
 # Note: This YAML file is just an example and cannot be used as-is.
 # You must fill it out with the appropriate information for your deployment to be able to use it.
-# Please ignore this file if you don't use docker repositories or if you'll be Nexus Repository's docker subdomain feature
+#
+# Please ignore this file if you don't use docker repositories or if you will be using Sonatype Nexus Repository's docker subdomain feature
 # or reverse proxy for your docker repositories.
 
 apiVersion: v1
