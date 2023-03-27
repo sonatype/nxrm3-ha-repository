@@ -12,11 +12,6 @@
  */
 @Library(['private-pipeline-library', 'jenkins-shared', 'nxrm-jenkins-shared']) _
 
-final jira = [
-    versionPrefix: '', project: 'NEXUS', projectId: '12410',
-    credentialId : 'jenkins-jira', autoRelease: true, failOnError: true
-]
-
 properties([
   parameters([
     string(
