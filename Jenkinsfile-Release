@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2020-present Sonatype, Inc. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
+@Library(['private-pipeline-library', 'jenkins-shared', 'nxrm-jenkins-shared']) _
+
+properties([
+  parameters([
+    string(
+      name: 'appVersion',
+      description: 'Version of the application image, like "3.41.0"',
+    ),
+    string(
+      name: 'chartVersion',
+      description: '(Optional) Version of the Chart, like "41.0.0". If omitted, it will be calculated from the appVersion.',
+    ),
+  ])
+])
+
+final chartVersion = calculateChartVersion(params.chartVersion, params.appVersion)
+
+dockerizedBuildPipeline(
+  prepare: {
+    if (! params.appVersion) {
+      error('The appVersion is required.')
+    }
+    githubStatusUpdate('pending')
+  },
+  buildAndTest: {
+    sonatypeZionGitConfig()
+    runSafely "git checkout ${gitBranch(env)}"
+    runSafely "./upgrade.sh ./nxrm3-ha-repository/nxrm-aws-ha-helm ${chartVersion} ${params.appVersion}"
+    runSafely "./upgrade.sh ./nxrm3-ha-repository/nxrm-azure-ha-helm ${chartVersion} ${params.appVersion}"
+    runSafely './build.sh'
+    runSafely 'git add nxrm3-ha-repository'
+  },
+  skipVulnerabilityScan: true,
+  archiveArtifacts: 'docs/*',
+  testResults: [],
+  deployCondition: { true },
+  deploy: {
+    runSafely 'git add docs'
+    runSafely "git commit -m 'Release Update for ${chartVersion}'"
+
+    sshagent(credentials: [sonatypeZionCredentialsId()]) {
+      runSafely 'git push'
+    }
+  },
+  postDeploy: {
+    // Create tags
+    String tagName = "${chartVersion}"
+    runSafely "git tag -a ${tagName} -m 'Release Update: ${chartVersion}'"
+    sshagent(credentials: [sonatypeZionCredentialsId()]) {
+      runSafely "git push origin ${tagName}"
+    }
+  },
+  onSuccess: {
+    nxrmBuildNotifications(currentBuild, env)
+  },
+  onFailure: {
+    nxrmBuildNotifications(currentBuild, env)
+  }
+)
+
+String calculateChartVersion(final String chartVersion, final String appVersion) {
+  if (chartVersion) {
+    return chartVersion
+  }
+
+  if (! appVersion) {
+    error 'Failed to calculate chartVersion with no appVersion.'
+  }
+
+  final versionParts = parseVersionString(appVersion)
+  final chartMajor = versionParts[1]
+  final chartMinor = versionParts[2]
+
+  if (! chartMajor || ! chartMinor) {
+    error "Failed to calculate chartVersion from appVersion: ${appVersion}"
+  }
+
+  return [chartMajor, chartMinor, '0'].join('.')
+}
