@@ -20,6 +20,10 @@ set -e
 helm lint ./nxrm-aws-ha-helm
 helm lint ./nxrm-azure-ha-helm
 
+# unit test
+(cd ./nxrm-aws-ha-helm; helm unittest -3 -t junit -o test-output.xml .)
+(cd ./nxrm-azure-ha-helm; helm unittest -3 -t junit -o test-output.xml .)
+
 # package the charts into tgz archives
 helm package ./nxrm-aws-ha-helm --destination docs
 helm package ./nxrm-azure-ha-helm --destination docs

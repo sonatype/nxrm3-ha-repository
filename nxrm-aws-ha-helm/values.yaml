@@ -59,8 +59,8 @@ ingress:
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
     external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
-  # dockerIngress:  #Ingress for Docker Connector - comment out if you don't use docker repositories
-  #   enabled: false
+  dockerIngress:  #Ingress for Docker Connector
+    enabled: false
   #   annotations:
   #     kubernetes.io/ingress.class: alb # comment out if you don't use docker repositories
   #     alb.ingress.kubernetes.io/scheme: internal # scheme comment out if you don't use docker repositories
