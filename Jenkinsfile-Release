@@ -40,8 +40,8 @@ dockerizedBuildPipeline(
     runSafely "./upgrade.sh ./nxrm-aws-ha-helm ${chartVersion} ${params.appVersion}"
     runSafely "./upgrade.sh ./nxrm-azure-ha-helm ${chartVersion} ${params.appVersion}"
     runSafely './build.sh'
-    runSafely 'git add nxrm3-ha-repository/nxrm-aws-ha-helm'
-    runSafely 'git add nxrm3-ha-repository/nxrm-zure-ha-helm'
+    runSafely 'git add nxrm-aws-ha-helm'
+    runSafely 'git add nxrm-azure-ha-helm'
   },
   skipVulnerabilityScan: true,
   archiveArtifacts: 'docs/*',
