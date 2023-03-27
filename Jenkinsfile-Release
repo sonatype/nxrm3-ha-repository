@@ -37,10 +37,11 @@ dockerizedBuildPipeline(
   buildAndTest: {
     sonatypeZionGitConfig()
     runSafely "git checkout ${gitBranch(env)}"
-    runSafely "./upgrade.sh ./nxrm3-ha-repository/nxrm-aws-ha-helm ${chartVersion} ${params.appVersion}"
-    runSafely "./upgrade.sh ./nxrm3-ha-repository/nxrm-azure-ha-helm ${chartVersion} ${params.appVersion}"
+    runSafely "./upgrade.sh ./nxrm-aws-ha-helm ${chartVersion} ${params.appVersion}"
+    runSafely "./upgrade.sh ./nxrm-azure-ha-helm ${chartVersion} ${params.appVersion}"
     runSafely './build.sh'
-    runSafely 'git add nxrm3-ha-repository'
+    runSafely 'git add nxrm3-ha-repository/nxrm-aws-ha-helm'
+    runSafely 'git add nxrm3-ha-repository/nxrm-zure-ha-helm'
   },
   skipVulnerabilityScan: true,
   archiveArtifacts: 'docs/*',

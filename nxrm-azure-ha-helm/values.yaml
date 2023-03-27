@@ -35,6 +35,8 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  dockerIngress: #Ingress for Docker Connector
+    enabled: false
 storageClass:
   name: managed-csi
   zones:
@@ -53,6 +55,7 @@ service:  #Nexus Repo NodePort Service
     port: 80
     targetPort: 8081
   docker:  #Nodeport Service for Docker Service
+    enabled: false
     type: NodePort
     protocol: TCP
     port: 9090
