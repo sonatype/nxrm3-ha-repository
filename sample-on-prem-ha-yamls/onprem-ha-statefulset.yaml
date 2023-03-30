@@ -58,13 +58,14 @@ spec:
       containers:
         - name: nxrm-app
           image: sonatype/nexus3:3.50.0
+          # See help documentation, these are minimum system requirements
           resources:
             limits:
-              cpu: "0.3" #This is an example. Update as needed
-              memory: "3072Mi" #This is an example. Update as needed
+              cpu: 4 #This is an example. Update as needed
+              memory: "8Gi" #This is an example. Update as needed
             requests:
-              cpu: "0.25" #This is an example. Update as needed
-              memory: "2048Mi" #This is an example. Update as needed
+              cpu: 4 #This is an example. Update as needed
+              memory: "8Gi" #This is an example. Update as needed
           securityContext:
             runAsUser: 200
           imagePullPolicy: IfNotPresent
