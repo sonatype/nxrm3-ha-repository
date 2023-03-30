@@ -20,10 +20,25 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
   container:
     image:
       repository: sonatype/nexus3
       tag: 3.50.0
+    resources:
+      # See help documentation, these are minimum sysem requirements
+      requests:
+        cpu: 4
+        memory: "8Gi"
+      limits:
+        cpu: 4
+        memory: "8Gi"
     containerPort: 8081
     pullPolicy: IfNotPresent
     env:
@@ -34,14 +49,35 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
   auditLogContainer:
     image:
       repository: busybox
       tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
   taskLogContainer:
     image:
       repository: busybox
       tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
 serviceAccount:
   name: nexus-repository-deployment-sa #This service account in managed by Helm
   role: arn:aws:iam::000000000000:role/nxrm-nexus-role #Role created in the "AWS Secrets Manager" section of the HA documentation
@@ -50,16 +86,16 @@ serviceAccount:
     role: arn:aws:iam::000000000000:role/nexusrepo-external-dns-irsa-role #Role with route53 permissions needed by external-dns
 ingress:
   #host: "example.com" #host to apply this ingress rule to. Uncomment this in your values.yaml and set it as you wish
-  #dockersubdomain: true # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. This will result in the creation of routing rules in your ALB for sub domains of your host. Thus, you must also uncomment and set the host
+  dockersubdomain: false # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. This will result in the creation of routing rules in your ALB for sub domains of your host. Thus, you must also uncomment and set the host
   annotations:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internal # scheme
     alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
     # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
-    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
-  dockerIngress:  #Ingress for Docker Connector
+#    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
+#    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
+  dockerIngress:  #Ingress for Docker Connector - comment out if you don't use docker repositories
     enabled: false
   #   annotations:
   #     kubernetes.io/ingress.class: alb # comment out if you don't use docker repositories

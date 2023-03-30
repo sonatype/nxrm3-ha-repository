@@ -54,10 +54,25 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          resources:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
       terminationGracePeriodSeconds: 20
       containers:
         - name: nxrm-app
           image: sonatype/nexus3:3.50.0
+          # See help documentation, these are minimum sysem requirements
+          resources:
+            limits:
+              cpu: 4 #This is an example. Update as needed
+              memory: "8Gi" #This is an example. Update as needed
+            requests:
+              cpu: 4 #This is an example. Update as needed
+              memory: "8Gi" #This is an example. Update as needed
           securityContext:
             runAsUser: 200
           imagePullPolicy: IfNotPresent
@@ -108,18 +123,39 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          resources:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
         - name: audit-log
           image: busybox:1.33.1
           args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log' ]
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          resources:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
         - name: tasks-log
           image: busybox:1.33.1
           args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log' ]
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          resources:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
       volumes:
         - name: nexus-secret
           csi:
