@@ -21,7 +21,7 @@ statefulset:
       repository: sonatype/nexus3
       tag: 3.50.0
     resources:
-      # See help documentation, these are minimum sysem requirements
+      # See help documentation, these are minimum system requirements
       requests:
         cpu: 4
         memory: "8Gi"
