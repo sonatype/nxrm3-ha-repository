@@ -37,7 +37,7 @@ If the Nexus Repository deployment will contain more than one Docker repository,
 * A [Docker Subdomain Connector](https://help.sonatype.com/repomanager3/nexus-repository-administration/formats/docker-registry/docker-subdomain-connector) with external DNS to route traffic to each Docker subdomain
 
 ## Helm Chart for an HA Nexus Repository Deployment in AWS 
-We provide a [Helm chart for those deploying to an AWS environment](https://github.com/sonatype/nxrm3-ha-repository/tree/main/nxrm-aws-resiliency).
+We provide a [Helm chart for those deploying to an AWS environment](https://github.com/sonatype/nxrm3-ha-repository/tree/main/nxrm-aws-ha-helm).
 
 ## Sample YAML Files for an HA Nexus Repository Deployment
 If you do not wish to use the Helm chart, you can use the sample YAML files in the [Sample AWS HA YAML Files section](https://github.com/sonatype/nxrm3-ha-repository/tree/main/sample-aws-ha-yamls) to help set up the YAMLs you will need for a Nexus Repository HA deployment.
