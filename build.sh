@@ -12,7 +12,7 @@
 # Eclipse Foundation. All other trademarks are the property of their respective owners.
 #
 
-helm plugin install https://github.com/quintush/helm-unittest
+helm plugin install --version "0.2.11" https://github.com/quintush/helm-unittest
 
 set -e
 
