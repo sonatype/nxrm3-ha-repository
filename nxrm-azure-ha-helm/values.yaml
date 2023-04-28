@@ -1,5 +1,7 @@
 # Declare variables to be passed into your templates.
 namespaces:
+  # allow user to create namespace ahead of time and/or reuse existing namespaces
+  create: false
   nexusNs: nexusrepo
 statefulset:
   clusterRegion: us-east-1
@@ -68,11 +70,23 @@ statefulset:
         cpu: "0.1"
         memory: "256Mi"
 ingress:
+  # [ingress.host] hostname for providing access to your installation
+  # host: "nxrm.example.com"
+
+  # [ingress.tls.secretName] secret name to be utilized by cert-manager when signing
+  # tls:
+  #   secretName: "nxrm-tls-cert"
+
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # [cert-manager - http01-edit-in-place] - may help with certificate signing challenges
+    # acme.cert-manager.io/http01-edit-in-place: 'true'
+    # [cert-manager - cluster-issuer] - specifies the issuer to use for targeting a certificate authority
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
   dockerIngress: #Ingress for Docker Connector
     enabled: false
+
 storageClass:
   name: managed-csi
   zones:
@@ -100,7 +114,7 @@ secret:
   # userAssignedIdentityID: a managed identity or service principal that
   # has secrets management access to the key vault
   userAssignedIdentityID: "userAssignedIdentityID"
-  tenandId: "tenantId"
+  tenantId: "tenantId"
   keyvaultName: keyvaultname
   provider: azure
   license:
