@@ -52,7 +52,7 @@ spec:
           volumeMounts:
             - name: nexusdata
               mountPath: /nexus-data
-            - name: nfs-blob-storage
+            - name: nxrm-blobstorage-claim
               mountPath: /blobs
       terminationGracePeriodSeconds: 20
       containers:
