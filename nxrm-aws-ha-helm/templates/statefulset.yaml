@@ -76,13 +76,13 @@ spec:
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
             - name: INSTALL4J_ADD_VM_PARAMS
-              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=/nxrm-secrets/{{ .Values.secret.license.alias }} \
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=/{{ .Values.license.path }}/{{ .Values.license.filename }} \
           -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
           -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME} \
           -Dnexus.datastore.nexus.username=${DB_USER} \
           -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
           volumeMounts:
-            - mountPath: /nxrm-secrets
+            - mountPath: /{{ .Values.license.path }}
               name: nxrm-secrets
             - name: nexus-data
               mountPath: /nexus-data
@@ -114,6 +114,7 @@ spec:
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
       volumes:
+        {{- if .Values.secret.secretsstore.enabled }}
         - name: nxrm-secrets
           csi:
             driver: secrets-store.csi.k8s.io
@@ -121,12 +122,16 @@ spec:
             volumeAttributes:
               secretProviderClass: {{ .Chart.Name }}-{{ .Chart.Version }}.{{ .Release.Name }}-secret
               fsType: ext4
+        {{- end }}
         - name: logback-tasklogfile-override
           configMap:
             name: {{ .Chart.Name }}-{{ .Chart.Version }}.{{ .Release.Name }}-logback-tasklogfile-override
             items:
               - key: logback-tasklogfile-appender-override.xml
                 path: logback-tasklogfile-appender-override.xml
+        {{- with .Values.statefulset.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
   volumeClaimTemplates:
     - metadata:
         name: nexus-data

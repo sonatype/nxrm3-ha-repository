@@ -78,6 +78,7 @@ statefulset:
       requests:
         cpu: "0.1"
         memory: "256Mi"
+  volumes: []
 serviceAccount:
   name: nexus-repository-deployment-sa #This service account in managed by Helm
   role: arn:aws:iam::000000000000:role/nxrm-nexus-role #Role created in the "AWS Secrets Manager" section of the HA documentation
@@ -124,11 +125,18 @@ service:  #Nexus Repo NodePort Service
     protocol: TCP
     port: 9090
     targetPort: 8081
+
+license:
+  path: nxrm-secrets
+  filename: nxrm-license.lic
+
 secret:
-  license:
-    arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
-    alias: nxrm-license.lic
-  rds:
-    arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrmrds-cred-nexus
-  adminpassword:
-    arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:admin-nxrm-password
+  secretsstore:
+    enabled: true
+    license:
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
+      alias: nxrm-license.lic
+    rds:
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrmrds-cred-nexus
+    adminpassword:
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:admin-nxrm-password
