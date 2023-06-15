@@ -100,7 +100,7 @@ secret:
   # userAssignedIdentityID: a managed identity or service principal that
   # has secrets management access to the key vault
   userAssignedIdentityID: "userAssignedIdentityID"
-  tenandId: "tenantId"
+  tenantId: "tenantId"
   keyvaultName: keyvaultname
   provider: azure
   license:
