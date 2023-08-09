@@ -37,21 +37,21 @@ on each node in your Kubernetes cluster for storing nexus repository runtime (lo
     mkdir -p /var/nexus-repo-mgr-work-dir/work5
     ```
 
-* You must chown all the directories you create to ```200:200``` as follows: ```chown -R 200:200 /var/nexus-repo-work/ ```
+* You must chown all the directories you create to ```200:200``` as follows: ```chown -R 200:200 /var/nexus-repo-mgr-work-dir/ ```
 
 # YAML Order
 
 1. [Namespaces YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-namespaces.yaml)
-4. [License Configuration Mapping](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-license-config-mapping.yaml)
-5. [NFS Persistent Volume](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-blobs-nfs-persistent-volume.yaml)
-6. [NFS Persistent Volume Claim](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-blobs-nfs-persistent-volume-claim.yaml)
-7. [Storage Class YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-storage-class.yaml)
-8. [Local Persistent Volume](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-nexus-data-local-persistent-volume.yaml)
-9. [StatefulSet YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-statefulset.yaml)
-10. [Services YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-services.yaml)
-11. [Ingress YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-ingress.yaml)
-12. [Docker Ingress YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-ingress.yaml)
-13. [Docker Service YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-service.yaml)
+2. [License Configuration Mapping](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-license-config-mapping.yaml)
+3. [NFS Persistent Volume](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-blobs-nfs-persistent-volume.yaml)
+4. [NFS Persistent Volume Claim](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-blobs-nfs-persistent-volume-claim.yaml)
+5. [Storage Class YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-storage-class.yaml)
+6. [Local Persistent Volume](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-nexus-data-local-persistent-volume.yaml)
+7. [StatefulSet YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-statefulset.yaml)
+8. [Services YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-services.yaml)
+9. [Ingress YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-ingress.yaml)
+10.[Docker Ingress YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-ingress.yaml)
+11.[Docker Service YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-service.yaml)
 
 > **Note** The resources created by these YAMLs are not in the default namespace.
 
