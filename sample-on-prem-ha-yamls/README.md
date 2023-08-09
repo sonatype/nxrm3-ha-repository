@@ -19,11 +19,28 @@ Ensure you have filled out the YAML files with appropriate information for your 
 
 > **Note** The YAML files in this section are just examples and cannot be copy-pasted and used as-is. You must fill them out with the appropriate information for your deployment to be able to use them.
 
+## Storage
+
+### Local storage
+
+By default, the [onprem-ha-statefulset.yaml](onprem-ha-statefulset.yaml) uses local storage. You'll need to create directories
+on each node in your Kubernetes cluster for storing nexus repository runtime (logs, config dump etc) data.
+
+* The number of directories you create should be driven by the number of instances (i.e. replicas) of Nexus repository you wish to run in your Kubernetes cluster.
+    Presently, there are five persistence volumes in the [onprem-ha-nexus-data-local-persistent-volume.yaml](onprem-ha-nexus-data-local-persistent-volume.yaml) file.
+    Thus, you need to create five directories on each node as shown below:
+    ```
+    mkdir -p /var/nexus-repo-work/work2
+    mkdir -p /var/nexus-repo-work/work3
+    mkdir -p /var/nexus-repo-work/work4
+    mkdir -p /var/nexus-repo-work/work5
+    ```
+
+* You must chown all the directories you create to ```200:200``` as follows: ```chown -R 200:200 /var/nexus-repo-work/ ```
+
 # YAML Order
 
 1. [Namespaces YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-namespaces.yaml)
-2. [Local Workdir Configmap](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-nexus-data-local-workdir-configmap.yaml)
-3. [Local Workdir Daemonset](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-nexus-data-local-workdir-daemonset.yaml)
 4. [License Configuration Mapping](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-license-config-mapping.yaml)
 5. [NFS Persistent Volume](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-blobs-nfs-persistent-volume.yaml)
 6. [NFS Persistent Volume Claim](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-blobs-nfs-persistent-volume-claim.yaml)

@@ -33,31 +33,10 @@ spec:
       labels:
         app: nxrm
     spec:
-      initContainers:
-        - name: chown-nexusdata-owner-to-nexus
-          image: busybox:1.33.1
-          resources:
-            limits:
-              cpu: "0.2" #This is an example. Update as needed
-              memory: "512Mi" #This is an example. Update as needed
-            requests:
-              cpu: "0.1" #This is an example. Update as needed
-              memory: "256Mi" #This is an example. Update as needed
-          command: [/bin/sh]
-          args:
-            - -c
-            - >-
-              chown -R '200:200' /nexus-data &&
-              chown -R '200:200' /blobs
-          volumeMounts:
-            - name: nexusdata
-              mountPath: /nexus-data
-            - name: nxrm-blobstorage-claim
-              mountPath: /blobs
       terminationGracePeriodSeconds: 20
       containers:
         - name: nxrm-app
-          image: sonatype/nexus3:3.50.0
+          image: sonatype/nexus3:latest
           # See help documentation, these are minimum system requirements
           resources:
             limits:

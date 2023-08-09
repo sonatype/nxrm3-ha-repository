@@ -28,7 +28,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nxrm-local-storage
   local:
-    path: /nexus-repo-mgr-work-dir/work1
+    path: /var/nexus-repo-mgr-work-dir/work1
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -51,7 +51,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nxrm-local-storage
   local:
-    path: /nexus-repo-mgr-work-dir/work2
+    path: /var/nexus-repo-mgr-work-dir/work2
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -74,7 +74,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nxrm-local-storage
   local:
-    path: /nexus-repo-mgr-work-dir/work3
+    path: /var/nexus-repo-mgr-work-dir/work3
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -97,7 +97,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nxrm-local-storage
   local:
-    path: /nexus-repo-mgr-work-dir/work4
+    path: /var/nexus-repo-mgr-work-dir/work4
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -120,7 +120,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nxrm-local-storage
   local:
-    path: /nexus-repo-mgr-work-dir/work5
+    path: /var/nexus-repo-mgr-work-dir/work5
   nodeAffinity:
     required:
       nodeSelectorTerms:
