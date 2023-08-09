@@ -30,10 +30,11 @@ on each node in your Kubernetes cluster for storing nexus repository runtime (lo
     Presently, there are five persistence volumes in the [onprem-ha-nexus-data-local-persistent-volume.yaml](onprem-ha-nexus-data-local-persistent-volume.yaml) file.
     Thus, you need to create five directories on each node as shown below:
     ```
-    mkdir -p /var/nexus-repo-work/work2
-    mkdir -p /var/nexus-repo-work/work3
-    mkdir -p /var/nexus-repo-work/work4
-    mkdir -p /var/nexus-repo-work/work5
+    mkdir -p /var/nexus-repo-mgr-work-dir/work1
+    mkdir -p /var/nexus-repo-mgr-work-dir/work2
+    mkdir -p /var/nexus-repo-mgr-work-dir/work3
+    mkdir -p /var/nexus-repo-mgr-work-dir/work4
+    mkdir -p /var/nexus-repo-mgr-work-dir/work5
     ```
 
 * You must chown all the directories you create to ```200:200``` as follows: ```chown -R 200:200 /var/nexus-repo-work/ ```
