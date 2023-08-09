@@ -1,0 +1,11 @@
+suite: test namespaces
+templates:
+  - namespaces.yaml
+tests:
+  - it: should create namespace
+    asserts:
+      - isKind:
+          of: Namespace
+      - equal:
+          path: metadata.name
+          value: "nexusrepo"
