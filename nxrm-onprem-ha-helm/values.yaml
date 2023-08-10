@@ -36,7 +36,7 @@ statefulset:
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       user: nexus
       password: nexus
-      jdbcUrl: jdbc:postgresql://localhost:5433/nexus
+      jdbcUrl: jdbc:postgresql://localhost:5432/nexus
       nexusInitialPassword: nexusabc
 ingress:
   name: nexus-ingress
