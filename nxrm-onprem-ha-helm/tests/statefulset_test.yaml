@@ -79,13 +79,13 @@ tests:
             - name: DATASTORE_CLUSTERED_ENABLED
               value: "true"
             - name: NEXUS_DATASTORE_NEXUS_JDBCURL
-              value: "jdbc:postgresql://localhost:5433/nexus"
+              value: "jdbc:postgresql://localhost:5432/nexus"
             - name: NEXUS_DATASTORE_NEXUS_USERNAME
               value: "nexus"
             - name: NEXUS_DATASTORE_NEXUS_PASSWORD
               value: "nexus"
             - name: LICENSE_FILE
-              value: /nexus-data/etc/nexus-repo-license/nexus-repo-license.lic
+              value: /var/nexus-repo-license/nexus-repo-license.lic
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               value: "nexusabc"
             - name: INSTALL4J_ADD_VM_PARAMS
@@ -99,7 +99,7 @@ tests:
               - name: nexusdata
                 mountPath: /nexus-data
               - name: license-volume
-                mountPath: /nexus-data/etc/nexus-repo-license
+                mountPath: /var/nexus-repo-license
                 readOnly: true
       - equal:
           path: spec.template.spec.volumes

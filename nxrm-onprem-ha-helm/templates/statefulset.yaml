@@ -34,8 +34,6 @@ spec:
           ports:
             - containerPort: {{ .Values.statefulset.container.containerPort }}
           env:
-            - name: IS_OPEN_SHIFT_DEPLOYMENT
-              value: "true"
             - name: DATASTORE_CLUSTERED_ENABLED
               value: "{{ .Values.statefulset.container.env.clustered }}"
             - name: NEXUS_DATASTORE_NEXUS_JDBCURL
@@ -45,7 +43,7 @@ spec:
             - name: NEXUS_DATASTORE_NEXUS_PASSWORD
               value: "{{ .Values.statefulset.container.env.password }}"
             - name: LICENSE_FILE
-              value: /var/nexus-repository-license/etc/nexus-repo-license/nexus-repo-license.lic
+              value: /var/nexus-repo-license/nexus-repo-license.lic
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               value: "{{ .Values.statefulset.container.env.nexusInitialPassword }}"
             - name: INSTALL4J_ADD_VM_PARAMS
@@ -56,7 +54,7 @@ spec:
             - name: nexusdata
               mountPath: /nexus-data
             - name: license-volume
-              mountPath: /var/nexus-repository-license/etc/nexus-repo-license
+              mountPath: /var/nexus-repo-license
               readOnly: true
       volumes:
         - name: license-volume
