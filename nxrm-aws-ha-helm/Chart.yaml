@@ -34,7 +34,7 @@ keywords:
   - ci
   - repository-manager
   - nexus3
-home: https://www.sonatype.com/nexus-repository-oss
+home: https://www.sonatype.com/products/sonatype-nexus-repository
 icon: https://sonatype.github.io/helm3-charts/NexusRepo_Vertical.svg
 maintainers:
   - name: Sonatype
