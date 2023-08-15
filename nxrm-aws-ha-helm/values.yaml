@@ -30,7 +30,7 @@ statefulset:
   container:
     image:
       repository: sonatype/nexus3
-      tag: latest
+      tag: 3.58.1
     resources:
       # See help documentation, these are minimum system requirements
       requests:
