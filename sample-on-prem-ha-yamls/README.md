@@ -24,7 +24,7 @@ Ensure you have filled out the YAML files with appropriate information for your 
 ### Local storage
 
 By default, the [onprem-ha-statefulset.yaml](onprem-ha-statefulset.yaml) uses local storage. You'll need to create directories
-on each node in your Kubernetes cluster for storing nexus repository runtime (logs, config dump etc) data.
+on each node in your Kubernetes cluster for storing Sonatype Nexus Repository runtime data (logs, config dump, etc.).
 
 * The number of directories you create should be driven by the number of Sonatype Nexus Repository instances (i.e., replicas) you wish to run in your Kubernetes cluster.
     Presently, there are five persistence volumes in the [onprem-ha-nexus-data-local-persistent-volume.yaml](onprem-ha-nexus-data-local-persistent-volume.yaml) file.
