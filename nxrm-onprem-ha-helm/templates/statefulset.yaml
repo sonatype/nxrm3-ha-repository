@@ -64,7 +64,7 @@ spec:
     - metadata:
         name: nexusdata
       spec:
-        accessModes: [ {{ .Values.nexusData.local.enabled | ternary "ReadWriteOnce" ".Values.nexusData.nfs.pvc.accessModes" }} ]
+        accessModes: [ {{ .Values.nexusData.local.enabled | ternary "ReadWriteOnce" .Values.nexusData.nfs.pvc.accessModes }} ]
         storageClassName: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.nexusData.storageClass.name}}
         resources:
           requests:
