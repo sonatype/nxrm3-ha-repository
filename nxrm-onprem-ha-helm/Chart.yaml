@@ -1,6 +1,6 @@
 apiVersion: v2
-name: nxrm-ha-aws
-description: Resilient AWS Deployment of Sonatype Nexus Repository - Universal Binary repository
+name: nxrm-ha
+description: Highly available deployment of Sonatype Nexus Repository
 
 # A chart can be either an 'application' or a 'library' chart.
 #
@@ -15,13 +15,13 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 59.0.0
+version: 58.1.0
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: 3.59.0
+appVersion: 3.58.1
 
 keywords:
   - artifacts
@@ -34,7 +34,7 @@ keywords:
   - ci
   - repository-manager
   - nexus3
-home: https://www.sonatype.com/products/sonatype-nexus-repository
+home: https://www.sonatype.com/nexus-repository-oss
 icon: https://sonatype.github.io/helm3-charts/NexusRepo_Vertical.svg
 maintainers:
   - name: Sonatype

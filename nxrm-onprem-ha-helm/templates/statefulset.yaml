@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Values.statefulset.name }}
+  namespace: {{ .Values.namespaces.nexusNs }}
+  labels:
+    app: nxrm
+spec:
+  replicas: {{.Values.statefulset.replicaCount}}
+  serviceName: "{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Release.Name }}-{{ .Values.statefulset.name }}"
+  selector:
+    matchLabels:
+      app: nxrm
+  template:
+    metadata:
+      labels:
+        app: nxrm
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
+      containers:
+        - name: nxrm-app
+          image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.tag }}
+          # See help documentation, these are minimum system requirements
+          resources:
+            {{ toYaml .Values.statefulset.container.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          imagePullPolicy: {{ .Values.statefulset.container.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.statefulset.container.containerPort }}
+          env:
+            - name: DATASTORE_CLUSTERED_ENABLED
+              value: "{{ .Values.statefulset.container.env.clustered }}"
+            - name: NEXUS_DATASTORE_NEXUS_JDBCURL
+              value: "{{ .Values.statefulset.container.env.jdbcUrl }}"
+            - name: NEXUS_DATASTORE_NEXUS_USERNAME
+              value: "{{ .Values.statefulset.container.env.user }}"
+            - name: NEXUS_DATASTORE_NEXUS_PASSWORD
+              value: "{{ .Values.statefulset.container.env.password }}"
+            - name: LICENSE_FILE
+              value: /var/nexus-repo-license/nexus-repo-license.lic
+            - name: NEXUS_SECURITY_INITIAL_PASSWORD
+              value: "{{ .Values.statefulset.container.env.nexusInitialPassword }}"
+            - name: INSTALL4J_ADD_VM_PARAMS
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} \
+          -Dnexus.licenseFile=${LICENSE_FILE} \
+          -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
+          volumeMounts:
+            - name: nexusdata
+              mountPath: /nexus-data
+            - name: license-volume
+              mountPath: /var/nexus-repo-license
+              readOnly: true
+      volumes:
+        - name: license-volume
+          secret:
+            secretName: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.license.secretName }}
+  volumeClaimTemplates:
+    - metadata:
+        name: nexusdata
+      spec:
+        accessModes: [ {{ .Values.nexusData.local.enabled | ternary "ReadWriteOnce" .Values.nexusData.nfs.pvc.accessModes }} ]
+        storageClassName: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.nexusData.storageClass.name}}
+        resources:
+          requests:
+            storage: {{ .Values.nexusData.pvc.size }}

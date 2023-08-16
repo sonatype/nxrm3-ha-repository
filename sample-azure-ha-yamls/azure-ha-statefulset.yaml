@@ -63,7 +63,7 @@ spec:
       terminationGracePeriodSeconds: 20
       containers:
         - name: nxrm-app
-          image: sonatype/nexus3:3.50.0
+          image: sonatype/nexus3:latest
           # See help documentation, these are minimum system requirements
           resources:
             limits:
