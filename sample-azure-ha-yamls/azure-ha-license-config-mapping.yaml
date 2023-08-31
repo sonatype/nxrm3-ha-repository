@@ -23,4 +23,4 @@ configMapGenerator:
     files:
       - nxrm-license.lic
 resources:
-  - azure-ha-statefulset.yaml
+  - azure-ha-kustomize-statefulset.yaml
