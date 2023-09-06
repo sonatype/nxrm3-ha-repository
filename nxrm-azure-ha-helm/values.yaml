@@ -1,44 +1,44 @@
 # Declare variables to be passed into your templates.
 namespaces:
-  nexusNs: nexusrepo
+  nexusNs: nexusrepo  #Namespace for AKS cluster
 statefulset:
-  clusterRegion: us-east-1
-  name: nxrm-statefulset
-  clusterName: nxrm-nexus
+  #clusterRegion: us-east-1  #This is not being used.  
+  name: nxrm-statefulset    #Name of the Stateful Set that will be created
+  clusterName: nxrm-nexus    #Name of the AKS clustert that will be created
   initContainer:
     image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
+      repository: busybox   #Busybox container Image for the Initcontainer that creates the Nexus Log file directories
+      tag: 1.33.1           #Version og the Busy box container Image    
+    resources:             #CPU and Memory limitsa and requests for the Busybox container Image
       limits:
-        cpu: "0.2"
+        cpu: "0.2"           
         memory: "512Mi"
       requests:
         cpu: "0.1"
         memory: "256Mi"
-  container:
+  container:             
     image:
-      repository: sonatype/nexus3
-      tag: 3.58.1
-    resources:
+      repository: sonatype/nexus3    #Nexus Repsoitory Image       
+      tag: 3.58.1                    #Version of Nexus Repsoitory   
+    resources:                       # CPU and Memory limitsa and requests for the Nexus Repository container Image
       # See help documentation, these are minimum system requirements
-      requests:
+      requests:    
         cpu: 4
         memory: "8Gi"
       limits:
         cpu: 4
         memory: "8Gi"
-    containerPort: 8081
+    containerPort: 8081             #Port where the Nexus Repositry will run in each container
     pullPolicy: IfNotPresent
     env:
-      nexusDBName: nexus
-      nexusDBPort: 3306
-      install4jAddVmParams: "-Xms2703m -Xmx2703m"
+      nexusDBName: nexus          #Name of the Nexus Repository Component Database (PostgreSQL)
+      nexusDBPort: 3306           #Port of the Nexus Repository Component Database (PostgreSQL)
+      install4jAddVmParams: "-Xms2703m -Xmx2703m"      #JVM Parameters for Nexus containers 
   requestLogContainer:
     image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
+      repository: busybox     #Busybox container Image for the side car container that stores nexus request log
+      tag: 1.33.1             #Busybox  Image version for the side car container that stores nexus request log
+    resources:                #CPU and Memory limits for the Busybox  container that stores nexus request log
       limits:
         cpu: "0.2"
         memory: "512Mi"
@@ -47,20 +47,20 @@ statefulset:
         memory: "256Mi"
   auditLogContainer:
     image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
+      repository: busybox       #Busybox container Image for the side car container that stores nexus audit log
+      tag: 1.33.1               #Busybox  Image version for the side car container that stores nexus audit log
+    resources:                  #CPU and Memory limits for the Busybox  container that stores nexus audit log
       limits:
         cpu: "0.2"
         memory: "512Mi"
       requests:
         cpu: "0.1"
         memory: "256Mi"
-  taskLogContainer:
-    image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
+  taskLogContainer:            
+    image:                     
+      repository: busybox      #Busybox container Image for the side car container that stores nexus Task log      
+      tag: 1.33.1              #Busybox  Image version for the side car container that stores nexus Task log    
+    resources:                 #CPU and Memory limits for the Busybox  container that stores nexus Task log
       limits:
         cpu: "0.2"
         memory: "512Mi"
@@ -69,45 +69,44 @@ statefulset:
         memory: "256Mi"
 ingress:
   annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-  dockerIngress: #Ingress for Docker Connector
-    enabled: false
+    kubernetes.io/ingress.class: nginx       #Provider class for the Ingress Controller    
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" #Server-side HTTPS enforcement through redirect
+  dockerIngress: #Ingress for Docker Connector   
+    enabled: false       #Flag to enable (True) or disable (False) Ingress controller
 storageClass:
-  name: managed-csi
-  zones:
-    zone1: zone1
+  name: managed-csi     #Name of the Storage class required for the Persisitent volumes
+  zones:                
+    zone1: zone1        
     zone2: zone2
     zone3: zone3
   iopsPerGB: "10"
 pvc:
-  accessModes: ReadWriteOnce
-  storage: 100Gi
+  accessModes: ReadWriteOnce   #Access modes for the Persistent Volume Claim 
+  storage: 10Gi               #Storage size of the Persistent Volumes (Set this to a suitable value based on your deployment scale)    
 
 service:  #Nexus Repo NodePort Service
   nexus:
-    type: NodePort
+    type: NodePort        #NodePort Service configurations required to serve as the external entry for incoming requests to Nexus Repository  
     protocol: TCP
     port: 80
     targetPort: 8081
   docker:  #Nodeport Service for Docker Service
-    enabled: false
-    type: NodePort
+    enabled: false   ##Flag to enable (True) or disable (False) Node Port Service for Docker
+    type: NodePort   #NodePort Service configurations required to serve as the external entry for incoming Docker requests to Nexus Repository  
     protocol: TCP
     port: 9090
     targetPort: 8081
 secret:
-  # userAssignedIdentityID: a managed identity or service principal that
-  # has secrets management access to the key vault
-  userAssignedIdentityID: "userAssignedIdentityID"
-  tenantId: "tenantId"
-  keyvaultName: keyvaultname
-  provider: azure
+  
+  userAssignedIdentityID: "userAssignedIdentityID" # userAssignedIdentityID: a managed identity or service principal that has secrets management access to the key vault
+  tenantId: "tenantId"   #Name of the Tenant Id for Azure Key Vault Service
+  keyvaultName: keyvaultname #Name of the Azure Key Vault Service
+  provider: azure  
   license:
-    name: nxrm-license.lic
+    name: nxrm-license.lic #Name of the Nexus License file
   db:
-    user: nxrm-db-user
-    password: nxrm-db-password
-    host: nxrm-db-host
-  adminPassword: nxrm-admin-password
+    user: nxrm-db-user   #Name of the Database Username attribute configured as Secret
+    password: nxrm-db-password  #Name of the Database Password  attribute configured as Secret
+    host: nxrm-db-host  #Name of the Database hostname attribute configured as Secret
+  adminPassword: nxrm-admin-password #Name of the Nexus Admin Password attribute configured as Secret
 
