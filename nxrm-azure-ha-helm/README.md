@@ -21,12 +21,14 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 ## Installing this Chart
 
 1. Check out this git repository.
+   
+2. Enter your custom values in the supplied values.yaml.
 
-2. Install this chart using the following:
+3. Install this chart using the following:
   
 ```helm install nxrm nxrm3-ha-repository/nxrm-azure-ha-helm -f values.yaml```
   
-3. Get the Nexus Repository link using the following:
+4. Get the Nexus Repository link using the following:
   
 ```kubectl get ingresses -n nexusrepo```
 
