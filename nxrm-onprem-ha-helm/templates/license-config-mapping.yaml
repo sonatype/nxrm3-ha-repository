@@ -1,9 +1,10 @@
+{{- if or .Values.statefulset.container.env.clustered (and .Values.statefulset.container.env.jdbcUrl ( contains "postgresql" .Values.statefulset.container.env.jdbcUrl)) }}
 apiVersion: v1
 kind: Secret
 metadata:
   name: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.license.secretName }}
-  namespace: "{{ .Values.namespaces.nexusNs }}"
 type: Opaque
 data:
   nexus-repo-license.lic: |-
     {{ $.Values.license.fileContentsBase64 }}
+{{- end }}

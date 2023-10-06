@@ -1,11 +1,18 @@
 # For local: we create a storage class below based on Kubernetes recommendation: https://kubernetes.io/docs/concepts/storage/storage-classes/#local
 # In addition, having this storage class allows us to do automatic creation of persistent volume claims based on the
 # pre created persistent volume objects. See statefulset's volumeClaimTemplates for 'nexusdata' volume for how we use this.
+{{- if .Values.nexusData.storageClass.enabled }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.nexusData.storageClass.name}}
-  namespace: {{ .Values.namespaces.nexusNs }}
-provisioner: {{ .Values.nexusData.local.storageClass.provisioner }}
-volumeBindingMode: WaitForFirstConsumer
+  name: {{ .Values.nexusData.storageClass.name }}
+provisioner: {{ .Values.nexusData.storageClass.provisioner }}
+volumeBindingMode: {{ .Values.nexusData.storageClass.volumeBindingMode }}
 reclaimPolicy: {{ .Values.nexusData.storageClass.reclaimPolicy }}
+{{- if .Values.nexusData.storageClass.parameters }}
+parameters:
+{{- with .Values.nexusData.storageClass.parameters }}
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end -}}
+{{- end -}}

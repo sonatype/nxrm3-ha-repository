@@ -4,6 +4,9 @@ templates:
   - ingress.yaml
 tests:
   - it: renders with defaults
+    set:
+      ingress:
+        enabled: "true"
     asserts:
       - hasDocuments:
           count: 1

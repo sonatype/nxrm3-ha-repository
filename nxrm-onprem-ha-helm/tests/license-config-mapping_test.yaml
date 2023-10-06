@@ -6,13 +6,35 @@ release:
 chart:
   version: "latest"
 tests:
-  - it: should create license secret
+  - it: should create license secret when jdbc url set and clustered false
+    set:
+      statefulset:
+        container:
+          env:
+            jdbcUrl: jdbc:postgresql:server:port
+            clustered: false
     asserts:
       - isKind:
           of: Secret
       - equal:
-          path: metadata.namespace
-          value: "nexusrepo"
+          path: metadata.name
+          value: "nxrm-ha-latest-test-release-nexus-repo-license"
+      - equal:
+          path: data
+          value:
+            nexus-repo-license.lic: |-
+              your_license_file_contents_in_base_64
+
+  - it: should create license secret when clustered true and jdbc url not set
+    set:
+      statefulset:
+        container:
+          env:
+            jdbcUrl: null
+            clustered: true
+    asserts:
+      - isKind:
+          of: Secret
       - equal:
           path: metadata.name
           value: "nxrm-ha-latest-test-release-nexus-repo-license"

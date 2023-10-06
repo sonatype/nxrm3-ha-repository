@@ -1,25 +1,10 @@
-# Declare variables to be passed into your templates.
 namespaces:
   nexusNs: nexusrepo
 statefulset:
   name: nexusrepo-statefulset
-  clusterName: nexusrepo-cluster
   replicaCount: 1
-  initContainer:
-    image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
-      limits:
-        cpu: "0.2"
-        memory: "512Mi"
-      requests:
-        cpu: "0.1"
-        memory: "256Mi"
   container:
-    image:
-      repository: sonatype/nexus3
-      tag: 3.58.1
+    imageName: registry.connect.redhat.com/sonatype/nexus-repository-manager:3.61.0-ubi-2
     resources:
       # See help documentation, these are minimum system requirements
       requests:
@@ -30,81 +15,54 @@ statefulset:
         memory: "8Gi"
     containerPort: 8081
     pullPolicy: IfNotPresent
-    terminationGracePeriod: 20
+    terminationGracePeriod: 120
     env:
-      clustered: true
+      clustered: false
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       user: nexus
       password: nexus
-      jdbcUrl: jdbc:postgresql://localhost:5432/nexus
+      jdbcUrl: null
       nexusInitialPassword: nexusabc
+  livenessProbe:
+    failureThreshold: 6
+    initialDelaySeconds: 240
+    path: /
+    periodSeconds: 60
+  readinessProbe:
+    failureThreshold: 6
+    initialDelaySeconds: 240
+    path: /
+    periodSeconds: 60
+  imagePullSecrets: {}
 ingress:
   name: nexus-ingress
   enabled: false
-  #host: "example.com" #host to apply this ingress rule to. Uncomment this in your values.yaml and set it as you wish
-  dockerSubdomain: false # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. You should also make sure your create routing rules in your load balancer for sub domains of your host. Thus, you must also uncomment and set the host
-  annotations:
-    kubernetes.io/ingress.class: nginx
+  host: "example.com"
+  defaultRule: false
+  additionalRules: null
+  tls:
+    enabled: false
+    secretName: "tlsSecretName"
+  dockerSubdomain: false
+  annotations: null
   dockerIngress:  #Ingress for Docker Connector - comment out if you don't use docker repositories
     name: nexus-docker-ingress
-#    host: "example.com"
+    host: "example.com"
     enabled: false
-    annotations:
-      kubernetes.io/ingress.class: nginx
-workDir:
-  configMapName: create-nexus-workdir-config
-  daemonSetName: create-nexus-work-dir
-  workDirCreator:
-    initContainer:
-      image:
-        repository: ubuntu
-        tag: 23.04
-    container:
-      image:
-        repository: busybox
-        tag: 1.33.1
+    annotations: null
 nexusData:
-  pv:
-    directoryPrefix: /var/nexus-repo-mgr-work-dir/work
   pvc:
-    size: 100Gi
+    size: 2Gi
+    accessMode: ReadWriteOnce
   storageClass:
     name: nexusrepo-storage
     reclaimPolicy: Retain
-  local:
-    enabled: true
-    accessMode: ReadWriteOnce
-    storageClass:
-      provisioner: kubernetes.io/no-provisioner
-    pv:
-      name: nexusrepo-local-storage-pv
-      size: 200Gi
-      nodeAffinity:
-        required:
-          nodeSelectorTerms:
-            - matchExpressions:
-                - key: kubernetes.io/hostname
-                  operator: In
-                  values:
-                    - "example-node-1"
-                    - "example-node-2"
-                    - "example-node-3"
-  nfs:
     enabled: false
-    accessMode: ReadWriteMany
-    storageClass:
-      provisioner: nfs-prov
-    pv:
-      name: nexusrepo-nfs-storage-pv
-      size: 200Gi
-      mountPath: /nexusdata/mountPath #Path where blobs should be stored on your NFS drive
-      mountOptions:
-        - hard
-        - nfsvers=4.1
-      server:
-        ip: 70.71.156.85 #NFS server IP address
-    pvc:
-      accessModes: ReadWriteMany
+    volumeBindingMode: "WaitForFirstConsumer"
+    provisioner: "provisioner" # E.g. kubernetes.io/no-provisioner. For dynamic provisioners see: https://docs.openshift.com/container-platform/4.13/storage/dynamic-provisioning.html
+    parameters: {}
+  volumeClaimTemplate:
+    enabled: false
 license:
   secretName: nexus-repo-license
   fileContentsBase64: your_license_file_contents_in_base_64
@@ -123,6 +81,4 @@ service:  #Nexus Repo NodePort Service
     type: NodePort
     protocol: TCP
     port: 9090
-    targetPort: 8081
-
-
+    targetPort: 9090

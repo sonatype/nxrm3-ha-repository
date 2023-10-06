@@ -6,24 +6,25 @@ release:
 chart:
   version: "latest"
 tests:
-  - it: should create nexus pod
+  - it: should create nexus pod with dynamic nexusdata volume
     set:
       statefulset:
+        container:
+          env:
+            jdbcUrl: "jdbc:postgresql://your_database_server:5432/nexus"
+            clustered: true
+        imagePullSecrets:
+          name: abc123
         replicaCount: 2
       nexusData:
-        local:
+        volumeClaimTemplate:
           enabled: true
-        nfs:
-          enabled: false
     asserts:
       - isKind:
           of: StatefulSet
       - equal:
           path: metadata.name
           value: "nxrm-ha-latest-nexusrepo-statefulset"
-      - equal:
-          path: metadata.namespace
-          value: "nexusrepo"
 
       - equal:
           path: metadata.labels.app
@@ -46,15 +47,15 @@ tests:
           value: "nxrm"
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
-          value: 20
+          value: 120
 
       - equal:
           path: spec.template.spec.containers[0].name
           value: nxrm-app
 
-      - equal:
+      - matchRegex:
           path: spec.template.spec.containers[0].image
-          value: sonatype/nexus3:latest
+          pattern: "^registry.connect.redhat.com/sonatype/nexus-repository-manager"
 
       - equal:
           path: spec.template.spec.containers[0].resources
@@ -73,26 +74,68 @@ tests:
           path: spec.template.spec.containers[0].ports
           value:
             - containerPort: 8081
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet
+          value:
+            path: /
+            port: 8081
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
+          value: 240
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.periodSeconds
+          value: 60
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.failureThreshold
+          value: 6
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet
+          value:
+            path: /
+            port: 8081
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
+          value: 240
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.periodSeconds
+          value: 60
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.failureThreshold
+          value: 6
+
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: nxrm-ha-latest-abc123
       - equal:
           path: spec.template.spec.containers[0].env
           value:
+            - name: IS_OPEN_SHIFT_DEPLOYMENT
+              value: "true"
             - name: DATASTORE_CLUSTERED_ENABLED
               value: "true"
             - name: NEXUS_DATASTORE_NEXUS_JDBCURL
-              value: "jdbc:postgresql://localhost:5432/nexus"
+              value: "jdbc:postgresql://your_database_server:5432/nexus"
             - name: NEXUS_DATASTORE_NEXUS_USERNAME
               value: "nexus"
             - name: NEXUS_DATASTORE_NEXUS_PASSWORD
               value: "nexus"
             - name: LICENSE_FILE
               value: /var/nexus-repo-license/nexus-repo-license.lic
-            - name: NEXUS_SECURITY_INITIAL_PASSWORD
-              value: "nexusabc"
             - name: INSTALL4J_ADD_VM_PARAMS
               value: "-Xms2703m -Xmx2703m \
           -Dnexus.licenseFile=${LICENSE_FILE} \
           -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
-
+            - name: NEXUS_SECURITY_INITIAL_PASSWORD
+              value: "nexusabc"
       - equal:
           path: spec.template.spec.containers[0].volumeMounts
           value:
@@ -118,10 +161,10 @@ tests:
 
       - equal:
           path: spec.volumeClaimTemplates[0].spec.storageClassName
-          value: "nxrm-ha-latest-test-release-nexusrepo-storage"
+          value: "nexusrepo-storage"
 
       - equal:
           path: spec.volumeClaimTemplates[0].spec.resources
           value:
             requests:
-              storage: 100Gi
+              storage: 2Gi

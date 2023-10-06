@@ -1,6 +1,6 @@
 apiVersion: v2
-name: nxrm-ha-aws
-description: Resilient AWS Deployment of Sonatype Nexus Repository - Universal Binary repository
+name: nxrm-ha
+description: Resilient Deployment of Sonatype Nexus Repository - Universal Binary repository
 
 # A chart can be either an 'application' or a 'library' chart.
 #

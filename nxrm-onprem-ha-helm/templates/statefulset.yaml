@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Values.statefulset.name }}
-  namespace: {{ .Values.namespaces.nexusNs }}
   labels:
     app: nxrm
 spec:
@@ -17,12 +16,36 @@ spec:
         app: nxrm
     spec:
       terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
+      {{- if .Values.statefulset.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Values.statefulset.imagePullSecrets.name}}
+      {{- end }}
       containers:
         - name: nxrm-app
-          image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.tag }}
+          image: {{ .Values.statefulset.container.imageName }}
           # See help documentation, these are minimum system requirements
           resources:
             {{ toYaml .Values.statefulset.container.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.statefulset.livenessProbe.path }}
+              port: {{ .Values.statefulset.container.containerPort }}
+            initialDelaySeconds: {{ .Values.statefulset.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.statefulset.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.statefulset.livenessProbe.failureThreshold }}
+            {{- if .Values.statefulset.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.statefulset.livenessProbe.timeoutSeconds }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.statefulset.readinessProbe.path }}
+              port: {{ .Values.statefulset.container.containerPort }}
+            initialDelaySeconds: {{ .Values.statefulset.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.statefulset.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
+            {{- if .Values.statefulset.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.statefulset.readinessProbe.timeoutSeconds }}
+            {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
             seccompProfile:
@@ -34,8 +57,16 @@ spec:
           ports:
             - containerPort: {{ .Values.statefulset.container.containerPort }}
           env:
+            - name: IS_OPEN_SHIFT_DEPLOYMENT
+              value: "true"
+            {{- if .Values.statefulset.container.env.clustered }}
             - name: DATASTORE_CLUSTERED_ENABLED
               value: "{{ .Values.statefulset.container.env.clustered }}"
+            {{ else }}
+            - name: DATASTORE_ENABLED
+              value: "true"
+            {{- end }}
+            {{- if and .Values.statefulset.container.env.jdbcUrl ( contains "postgresql" .Values.statefulset.container.env.jdbcUrl) }}
             - name: NEXUS_DATASTORE_NEXUS_JDBCURL
               value: "{{ .Values.statefulset.container.env.jdbcUrl }}"
             - name: NEXUS_DATASTORE_NEXUS_USERNAME
@@ -44,28 +75,49 @@ spec:
               value: "{{ .Values.statefulset.container.env.password }}"
             - name: LICENSE_FILE
               value: /var/nexus-repo-license/nexus-repo-license.lic
+            {{- end }}
+            - name: INSTALL4J_ADD_VM_PARAMS
+            {{- if .Values.statefulset.container.env.clustered }}
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} \
+              -Dnexus.licenseFile=${LICENSE_FILE} -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
+            {{- else }}
+            {{- if and .Values.statefulset.container.env.jdbcUrl ( contains "postgresql" .Values.statefulset.container.env.jdbcUrl) }}
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} \
+                          -Dnexus.datastore.enabled=true -Dnexus.licenseFile=${LICENSE_FILE} -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
+            {{- else }}
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} \
+                        -Dnexus.datastore.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
+            {{- end }}
+            {{- end }}
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               value: "{{ .Values.statefulset.container.env.nexusInitialPassword }}"
-            - name: INSTALL4J_ADD_VM_PARAMS
-              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} \
-          -Dnexus.licenseFile=${LICENSE_FILE} \
-          -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
           volumeMounts:
             - name: nexusdata
               mountPath: /nexus-data
+  {{- if and .Values.statefulset.container.env.jdbcUrl ( contains "postgresql" .Values.statefulset.container.env.jdbcUrl) }}
             - name: license-volume
               mountPath: /var/nexus-repo-license
               readOnly: true
+  {{- end }}
       volumes:
+  {{- if and .Values.statefulset.container.env.jdbcUrl ( contains "postgresql" .Values.statefulset.container.env.jdbcUrl) }}
         - name: license-volume
           secret:
             secretName: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.license.secretName }}
+  {{- end }}
+  {{- if  (not .Values.nexusData.volumeClaimTemplate.enabled) }}
+        - name: nexusdata
+          emptyDir:
+            sizeLimit: {{ .Values.nexusData.pvc.size }}
+  {{- end }}
+  {{- if .Values.nexusData.volumeClaimTemplate.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: nexusdata
       spec:
-        accessModes: [ {{ .Values.nexusData.local.enabled | ternary "ReadWriteOnce" .Values.nexusData.nfs.pvc.accessModes }} ]
-        storageClassName: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.nexusData.storageClass.name}}
+        accessModes: [ {{ .Values.nexusData.pvc.accessMode }} ]
+        storageClassName: {{ .Values.nexusData.storageClass.name}}
         resources:
           requests:
             storage: {{ .Values.nexusData.pvc.size }}
+  {{- end }}

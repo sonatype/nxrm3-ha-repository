@@ -2,7 +2,6 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  namespace: {{ .Values.namespaces.nexusNs }}
   name: {{ .Chart.Name }}-{{ .Values.ingress.name }}
   {{- with .Values.ingress.annotations }}
   annotations:
@@ -10,12 +9,9 @@ metadata:
   {{- end }}
 spec:
   rules:
-    {{- if .Values.ingress.host }}
+    {{- if .Values.ingress.defaultRule }}
     - host: {{ .Values.ingress.host }}
       http:
-    {{- else }}
-    - http:
-    {{- end }}
         paths:
           - path: /
             pathType: Prefix
@@ -24,7 +20,11 @@ spec:
                 name: {{ .Chart.Name }}-{{ .Values.service.nexus.name }}
                 port:
                   number: {{ .Values.service.nexus.port }}
-    {{- if and .Values.ingress.host .Values.ingress.dockerSubdomain }}
+    {{- end }}
+    {{- with .Values.ingress.additionalRules }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.ingress.dockerSubdomain }}
     - host: "*.{{ .Values.ingress.host }}"
       http:
         paths:
@@ -36,13 +36,19 @@ spec:
                 port:
                   number: {{ .Values.service.nexus.port }}
     {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+      {{- if .Values.ingress.tls.secretName }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+      {{- end }}
+  {{- end }}
 {{- end }}
 ---
 {{- if .Values.ingress.dockerIngress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  namespace: {{ .Values.namespaces.nexusNs }}
   name: {{ .Chart.Name }}-{{ .Values.ingress.dockerIngress.name }}
   {{- with .Values.ingress.dockerIngress.annotations }}
   annotations:
@@ -50,12 +56,8 @@ metadata:
   {{- end }}
 spec:
   rules:
-    {{- if .Values.ingress.dockerIngress.host }}
     - host: {{ .Values.ingress.dockerIngress.host }}
       http:
-    {{- else}}
-    - http:
-    {{- end }}
         paths:
           - path: /
             pathType: Prefix
