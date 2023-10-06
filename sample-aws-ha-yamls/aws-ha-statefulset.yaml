@@ -175,7 +175,7 @@ spec:
         name: nexus-data
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "nxrm-nexus-ebs-storage"
+        storageClassName: "nxrm-nexus-storage"
         resources:
           requests:
             storage: 20Gi

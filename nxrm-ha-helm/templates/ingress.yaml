@@ -1,3 +1,4 @@
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -23,6 +24,19 @@ spec:
                 name: {{ .Chart.Name }}-service
                 port:
                   number: {{ .Values.service.nexus.port }}
+    {{- if and .Values.ingress.host .Values.ingress.dockersubdomain }}
+    - host: "*.{{ .Values.ingress.host }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Chart.Name }}-service
+                port:
+                  number: {{ .Values.service.nexus.port }}
+    {{- end }}
+{{- end}}
 ---
 {{- if .Values.ingress.dockerIngress.enabled -}}
 apiVersion: networking.k8s.io/v1
@@ -50,4 +64,4 @@ spec:
                 name: {{ .Chart.Name }}-docker-service
                 port:
                   number: {{ .Values.service.docker.port }}
-{{- end}}
+{{- end }}

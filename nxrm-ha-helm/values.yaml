@@ -1,0 +1,170 @@
+# Declare variables to be passed into your templates.
+namespaces:
+  nexusNs: nexusrepo
+  cloudwatchNs: amazon-cloudwatch
+  externaldnsNs: nexus-externaldns
+azure:
+  enabled: false
+  keyvault:
+    enabled: false
+aws:
+  enabled: false
+  secretmanager:
+    enabled:false
+  externaldns:
+    enabled: false
+    domainFilter: example.com #your root domain e.g example.com
+    awsZoneType: private # hosted zone to look at (valid values are public, private or no value for both)
+    clusterRegion: us-east-1
+  fluentbit:
+    enabled: false #set this to true to enable sending of logs to CloudWatch
+    logsRegion: us-east-1
+    fluentBitVersion: 2.28.0
+  serviceAccount:
+    name: nexus-repository-deployment-sa #This service account in managed by Helm
+    role: arn:aws:iam::000000000000:role/nxrm-nexus-role #Role created in the "AWS Secrets Manager" section of the HA documentation
+    externaldns:
+      name: external-dns
+      role: arn:aws:iam::000000000000:role/nexusrepo-external-dns-irsa-role #Role with route53 permissions needed by external-dns
+statefulset:
+  name: nxrm-statefulset
+  serviceName: nxrm-statefulset-service
+  clusterName: nxrm-nexus
+  replicaCount: 3
+  initContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  container:
+    image:
+      repository: sonatype/nexus3
+      tag: 3.58.1
+    resources:
+      # See help documentation, these are minimum system requirements
+      requests:
+        cpu: 4
+        memory: "8Gi"
+      limits:
+        cpu: 4
+        memory: "8Gi"
+    containerPort: 8081
+    pullPolicy: IfNotPresent
+    env:
+      nexusDBName: nexus
+      nexusDBPort: 3306
+      install4jAddVmParams: "-Xms2703m -Xmx2703m"
+      jdbcUrlParams: "" # Must start with a '?' e.g. "?foo=bar&baz=foo"
+  requestLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  auditLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  taskLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+ingress:
+  enabled: false
+  host: null #host to apply this ingress rule to e.g. example.com. Set it as you wish
+  dockersubdomain: false # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. This will result in the creation of routing rules in your load balancer for sub domains of your host. Thus, you must also set the host
+  annotations:
+#  Note: the annotations below are just a guide; delete or insert more as needed depending on your use case: aws, azure, on prem
+#    kubernetes.io/ingress.class: alb
+#    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+#    alb.ingress.kubernetes.io/scheme: internal # scheme
+#    alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
+#    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
+#    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
+  dockerIngress:  #Ingress for Docker Connector - comment out if you don't use docker repositories
+    enabled: false
+  #   annotations:
+  #     kubernetes.io/ingress.class: alb # comment out if you don't use docker repositories
+  #     alb.ingress.kubernetes.io/scheme: internal # scheme comment out if you don't use docker repositories
+  #     alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids, comment out if you don't use docker repositories
+storageClass:
+  enabled: false
+  name: storageClassName
+  type: type
+  fsType: "fsType" # e.g. ext4
+  provisioner: provisionerName # E.g. for AKS use managed-csi. For AWS EKS: ebs.csi.aws.com. In case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
+  zones:
+    zone1: zone1
+    zone2: zone2
+    zone3: zone3
+  iopsPerGB: "10"
+pvc:
+  accessModes: ReadWriteOnce
+  storage: 100Gi
+
+service:  #Nexus Repo NodePort Service
+  nexus:
+    enabled: false
+    type: NodePort
+    protocol: TCP
+    port: 80
+    targetPort: 8081
+  docker:  #Nodeport Service for Docker Service
+    enabled: false
+    type: NodePort
+    protocol: TCP
+    port: 9090
+    targetPort: 8081
+secret:
+  secretProviderClass: "secretProviderClass"
+  license:
+    name: nxrm-license.lic
+  adminpassword:
+    name: "admin_nxrm_password"
+  azure:
+    # userAssignedIdentityID: a managed identity or service principal that
+    # has secrets management access to the key vault
+    userAssignedIdentityID: "userAssignedIdentityID"
+    tenantId: "tenantId"
+    keyvaultName: keyvaultname
+    useVMManagedIdentity: true
+  provider: provider # e.g. aws, azure etc
+  db:
+    user: nxrm-db-user
+    password: nxrm-db-password
+    host: nxrm-db-host
+  aws:
+    license:
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
+    adminpassword:
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:admin-nxrm-password
+    rds:
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrmrds-cred-nexus
+

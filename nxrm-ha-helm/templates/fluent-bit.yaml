@@ -1,4 +1,5 @@
-{{- if .Values.fluentbit.enabled -}}
+{{- if .Values.aws.enabled }}
+{{- if .Values.fluentbit.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -45,7 +46,7 @@ data:
   http.port: "2020"
   read.head: "Off"
   read.tail: "On"
-  logs.region: {{ .Values.statefulset.logsRegion }}
+  logs.region: {{ .Values.aws.fluentbit.logsRegion }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -264,7 +265,7 @@ spec:
     spec:
       containers:
         - name: fluent-bit
-          image: amazon/aws-for-fluent-bit:{{ .Values.statefulset.fluentBitVersion }}
+          image: amazon/aws-for-fluent-bit:{{ .Values.aws.fluentbit.fluentBitVersion }}
           imagePullPolicy: Always
           env:
             - name: AWS_REGION
@@ -360,3 +361,4 @@ spec:
         - operator: "Exists"
           effect: "NoSchedule"
   {{- end }}
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.service.nexus.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -13,6 +14,7 @@ spec:
     - protocol: {{ .Values.service.nexus.protocol }}
       port: {{ .Values.service.nexus.port }}
       targetPort: {{ .Values.service.nexus.targetPort }}
+{{- end }}
 ---
 {{- if .Values.service.docker.enabled -}}
 apiVersion: v1
@@ -31,4 +33,4 @@ spec:
       protocol: {{ .Values.service.docker.protocol }}
       port: {{ .Values.service.docker.port }}
       targetPort: {{ .Values.service.docker.targetPort }}
-{{- end}}
+{{- end }}

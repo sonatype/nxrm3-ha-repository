@@ -68,6 +68,7 @@ statefulset:
         cpu: "0.1"
         memory: "256Mi"
 ingress:
+  dockersubdomain: false
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"

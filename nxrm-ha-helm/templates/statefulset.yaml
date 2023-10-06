@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Release.Name }}-{{ .Values.statefulset.name }}
+  name: {{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Values.statefulset.name }}
   namespace: {{ .Values.namespaces.nexusNs }}
   labels:
     app: nxrm
 spec:
   replicas: {{.Values.statefulset.replicaCount}}
-  serviceName: "{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Release.Name }}-{{ .Values.statefulset.name }}"
+  serviceName: "{{ .Values.statefulset.serviceName }}"
   selector:
     matchLabels:
       app: nxrm
@@ -16,6 +16,9 @@ spec:
       labels:
         app: nxrm
     spec:
+      {{- if .Values.aws.enabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
       initContainers:
         # chown nexus-data to 'nexus' user and init log directories/files for a new pod
         # otherwise the side car containers will crash a couple of times and backoff whilst waiting
@@ -77,10 +80,9 @@ spec:
             - name: INSTALL4J_ADD_VM_PARAMS
               value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=/nxrm-secrets/{{ .Values.secret.license.name }} \
           -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
-          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME}?sslmode=require \
+          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME}{{ .Values.statefulset.container.env.jdbcUrlParams }} \
           -Dnexus.datastore.nexus.username=${DB_USER} \
-          -Dnexus.datastore.nexus.password=${DB_PASSWORD} \
-          -Dnexus.blobstore.provisionDefaults=false"
+          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
           volumeMounts:
             - mountPath: /nxrm-secrets
               name: nxrm-secrets
@@ -119,7 +121,7 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: {{ .Chart.Name }}-{{ .Chart.Version }}.{{ .Release.Name }}-secret
+              secretProviderClass: {{ .Values.secret.secretProviderClass }}
               fsType: ext4
         - name: logback-tasklogfile-override
           configMap:
@@ -131,8 +133,8 @@ spec:
     - metadata:
         name: nexus-data
       spec:
-        accessModes: [ "{{.Values.pvc.accessModes }}" ]
-        storageClassName: "{{.Values.storageClass.name}}"
+        accessModes: [ "{{ .Values.pvc.accessModes }}" ]
+        storageClassName: "{{ .Values.storageClass.name }}"
         resources:
           requests:
             storage: {{.Values.pvc.storage }}
