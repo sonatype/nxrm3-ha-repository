@@ -19,7 +19,9 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 
 ---
 ## Installing this Chart
+You can install this helm chart from the git repository or sonatype helm index.
 
+### From git repository
 1. Check out this git repository.
 
 2. Enter your custom values in the supplied values.yaml.  
@@ -31,6 +33,8 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 4. Get the Nexus Repository link using the following:
   
 ```kubectl get ingresses -n nexusrepo```
+
+### From Sonatype Helm index
 
 ---
 

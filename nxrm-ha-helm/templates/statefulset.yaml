@@ -17,7 +17,12 @@ spec:
         app: nxrm
     spec:
       {{- if .Values.aws.enabled }}
-      serviceAccountName: {{ .Values.serviceAccount.name }}
+      serviceAccountName: {{ .Values.aws.serviceAccount.name }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
+      {{ - if .Values.statefulset.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.statefulset.imagePullSecrets.name}}
       {{- end }}
       initContainers:
         # chown nexus-data to 'nexus' user and init log directories/files for a new pod
@@ -41,7 +46,6 @@ spec:
               mountPath: /nexus-data
           resources:
             {{ toYaml .Values.statefulset.initContainer.resources | nindent 12 }}
-      terminationGracePeriodSeconds: 20
       containers:
         - name: nxrm-app
           image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.tag }}
@@ -52,6 +56,26 @@ spec:
             - containerPort: {{ .Values.statefulset.container.containerPort }}
           resources:
             {{ toYaml .Values.statefulset.container.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.statefulset.livenessProbe.path }}
+              port: {{ .Values.statefulset.container.containerPort }}
+            initialDelaySeconds: {{ .Values.statefulset.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.statefulset.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.statefulset.livenessProbe.failureThreshold }}
+            {{ - if .Values.statefulset.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.statefulset.livenessProbe.timeoutSeconds }}
+            {{ - end }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.statefulset.readinessProbe.path }}
+              port: {{ .Values.statefulset.container.containerPort }}
+            initialDelaySeconds: {{ .Values.statefulset.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.statefulset.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
+            {{ - if .Values.statefulset.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.statefulset.readinessProbe.timeoutSeconds }}
+            {{ - end }}
           env:
             - name: DB_NAME
               value: "{{ .Values.statefulset.container.env.nexusDBName }}"
@@ -77,15 +101,27 @@ spec:
                   key: nexus-admin-password
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
+            - name: LICENSE_FILE
+          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
+              value: /nxrm-secrets/{{ .Values.secret.license.name }}
+          {{ else }}
+              value: {{ .Values.secret.license.mountPath }}/{{ .Values.secret.license.name }}
+          {{ end }}
             - name: INSTALL4J_ADD_VM_PARAMS
-              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=/nxrm-secrets/{{ .Values.secret.license.name }} \
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=${LICENSE_FILE} \
           -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
           -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME}{{ .Values.statefulset.container.env.jdbcUrlParams }} \
           -Dnexus.datastore.nexus.username=${DB_USER} \
           -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
           volumeMounts:
-            - mountPath: /nxrm-secrets
-              name: nxrm-secrets
+          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
+            - name: nxrm-secrets
+              mountPath: /nxrm-secrets
+          {{- else }}
+            - name: license-volume
+              mountPath: {{ .Values.secret.license.mountPath }}
+              readOnly: true
+          {{ end }}
             - name: nexus-data
               mountPath: /nexus-data
             - name: logback-tasklogfile-override
@@ -116,6 +152,7 @@ spec:
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
       volumes:
+      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
         - name: nxrm-secrets
           csi:
             driver: secrets-store.csi.k8s.io
@@ -123,6 +160,13 @@ spec:
             volumeAttributes:
               secretProviderClass: {{ .Values.secret.secretProviderClass }}
               fsType: ext4
+      {{- else }}
+        - name: license-volume
+          secret:
+            secretName: {{ .Values.secret.license.name }}
+      {{- else }}
+
+      {{ end }}
         - name: logback-tasklogfile-override
           configMap:
             name: {{ .Chart.Name }}-{{ .Chart.Version }}.{{ .Release.Name }}-logback-tasklogfile-override

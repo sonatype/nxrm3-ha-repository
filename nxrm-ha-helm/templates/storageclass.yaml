@@ -5,9 +5,12 @@ metadata:
   name: "{{ .Values.storageClass.name }}"
   namespace: {{ .Values.namespaces.nexusNs }}
 provisioner: {{ .Values.storageClass.provisioner }}
+volumeBindingMode: {{ .Values.storageClass.volumeBindingMode }}
+reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
+{{- if .Values.storageClass.parameters }}
 parameters:
-  type: {{ .Values.storageClass.type }}
-  fsType: "{{ .Values.storageClass.fsType }}"
-  iopsPerGB: "{{ .Values.storageClass.iopsPerGB }}"
-volumeBindingMode: WaitForFirstConsumer
+{{- with .Values.storageClass.parameters }}
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end -}}
 {{- end }}

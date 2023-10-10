@@ -103,7 +103,7 @@ spec:
   {{- if and .Values.statefulset.container.env.jdbcUrl ( contains "postgresql" .Values.statefulset.container.env.jdbcUrl) }}
         - name: license-volume
           secret:
-            secretName: {{ .Chart.Name }}-{{ .Chart.Version}}-{{ .Release.Name }}-{{ .Values.license.secretName }}
+            secretName: {{ .Values.license.secretName }}
   {{- end }}
   {{- if  (not .Values.nexusData.volumeClaimTemplate.enabled) }}
         - name: nexusdata
