@@ -17,7 +17,7 @@ tests:
 
       - equal:
           path: metadata.name
-          value: "nxrm-ha-nexus-repo-service"
+          value: "nexus-service"
 
       - equal:
           path: metadata.labels.app
@@ -54,7 +54,7 @@ tests:
 
       - equal:
           path: metadata.name
-          value: "nxrm-ha-nexus-repo-docker-service"
+          value: "nexus-docker-service"
 
       - equal:
           path: metadata.labels.app

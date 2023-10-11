@@ -4,14 +4,14 @@ metadata:
   name: {{ .Values.namespaces.nexusNs }}
 ---
 {{- if .Values.aws.enabled }}
-{{- if .Values.fluentbit.enabled }}
+{{- if .Values.aws.fluentbit.enabled }}
 apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ .Values.namespaces.cloudwatchNs }}
 {{- end }}
 ---
-{{- if .Values.externaldns.enabled }}
+{{- if .Values.aws.externaldns.enabled }}
 apiVersion: v1
 kind: Namespace
 metadata:

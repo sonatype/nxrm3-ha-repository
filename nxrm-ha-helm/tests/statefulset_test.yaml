@@ -8,6 +8,7 @@ chart:
 tests:
   - it: should create nexus pod with dynamic nexusdata volume
     set:
+      soteag
       statefulset:
         container:
           env:

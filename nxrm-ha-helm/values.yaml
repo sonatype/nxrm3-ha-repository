@@ -148,7 +148,7 @@ storageClass:
   iopsPerGB: "10"
 pvc:
   accessModes: ReadWriteOnce
-  storage: 100Gi
+  storage: 2Gi
 
 service:  #Nexus Repo NodePort Service
   nexus:
@@ -164,7 +164,7 @@ service:  #Nexus Repo NodePort Service
     type: NodePort
     protocol: TCP
     port: 9090
-    targetPort: 8081
+    targetPort: 9090
 secret:
   secretProviderClass: "secretProviderClass"
   license:

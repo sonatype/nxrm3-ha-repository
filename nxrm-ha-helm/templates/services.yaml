@@ -20,7 +20,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.service.docker.name }}-docker-service
+  name: {{ .Values.service.docker.name }}
   namespace: {{ .Values.namespaces.nexusNs }}
   labels:
     app: nxrm

@@ -1,0 +1,41 @@
+suite: test external dns for aws
+templates:
+  - external-dns.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+tests:
+  - it: should create external dns objects
+    set:
+      aws:
+        enabled: true
+        externaldns:
+          enabled: true
+    asserts:
+      - documentIndex: 0
+        isKind:
+          of: ClusterRole
+
+      - documentIndex: 0
+        equal:
+          path: metadata.name
+          value: "external-dns"
+
+      - documentIndex: 1
+        isKind:
+          of: ClusterRoleBinding
+
+      - documentIndex: 1
+        equal:
+          path: metadata.name
+          value: "external-dns-viewer"
+
+      - documentIndex: 2
+        isKind:
+          of: Deployment
+
+      - documentIndex: 2
+        equal:
+          path: metadata.name
+          value: "external-dns"

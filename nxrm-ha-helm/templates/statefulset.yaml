@@ -20,7 +20,7 @@ spec:
       serviceAccountName: {{ .Values.aws.serviceAccount.name }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
-      {{ - if .Values.statefulset.imagePullSecrets }}
+      {{- if .Values.statefulset.imagePullSecrets }}
       imagePullSecrets:
         - name: {{ .Values.statefulset.imagePullSecrets.name}}
       {{- end }}
@@ -63,9 +63,9 @@ spec:
             initialDelaySeconds: {{ .Values.statefulset.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.statefulset.livenessProbe.periodSeconds }}
             failureThreshold: {{ .Values.statefulset.livenessProbe.failureThreshold }}
-            {{ - if .Values.statefulset.livenessProbe.timeoutSeconds }}
+            {{- if .Values.statefulset.livenessProbe.timeoutSeconds }}
             timeoutSeconds: {{ .Values.statefulset.livenessProbe.timeoutSeconds }}
-            {{ - end }}
+            {{- end }}
           readinessProbe:
             httpGet:
               path: {{ .Values.statefulset.readinessProbe.path }}
@@ -73,9 +73,9 @@ spec:
             initialDelaySeconds: {{ .Values.statefulset.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.statefulset.readinessProbe.periodSeconds }}
             failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
-            {{ - if .Values.statefulset.readinessProbe.timeoutSeconds }}
+            {{- if .Values.statefulset.readinessProbe.timeoutSeconds }}
             timeoutSeconds: {{ .Values.statefulset.readinessProbe.timeoutSeconds }}
-            {{ - end }}
+            {{- end }}
           env:
             - name: DB_NAME
               value: "{{ .Values.statefulset.container.env.nexusDBName }}"
@@ -164,8 +164,6 @@ spec:
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}
-      {{- else }}
-
       {{ end }}
         - name: logback-tasklogfile-override
           configMap:

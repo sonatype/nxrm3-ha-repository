@@ -1,0 +1,68 @@
+suite: test fluent bit yaml for aws
+templates:
+  - fluent-bit.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+tests:
+  - it: should create fluent bit objects
+    set:
+      aws:
+        enabled: true
+        fluentbit:
+          enabled: true
+    asserts:
+      - documentIndex: 0
+        isKind:
+          of: ServiceAccount
+
+      - documentIndex: 0
+        equal:
+          path: metadata.name
+          value: "nxrm-ha-latest.test-release-fluent-bit"
+
+      - documentIndex: 1
+        isKind:
+          of: ClusterRole
+
+      - documentIndex: 1
+        equal:
+          path: metadata.name
+          value: "nxrm-ha-latest.test-release-fluent-bit-role"
+
+      - documentIndex: 2
+        isKind:
+          of: ClusterRoleBinding
+
+      - documentIndex: 2
+        equal:
+          path: metadata.name
+          value: "nxrm-ha-latest.test-release-fluent-bit-role-binding"
+
+      - documentIndex: 3
+        isKind:
+          of: ConfigMap
+
+      - documentIndex: 3
+        equal:
+          path: metadata.name
+          value: "fluent-bit-cluster-info"
+
+      - documentIndex: 4
+        isKind:
+          of: ConfigMap
+
+      - documentIndex: 4
+        equal:
+          path: metadata.name
+          value: "nxrm-ha-latest.test-release-fluent-bit-config"
+
+      - documentIndex: 5
+        isKind:
+          of: DaemonSet
+
+      - documentIndex: 5
+        equal:
+          path: metadata.name
+          value: "nxrm-ha-latest.test-release-fluent-bit"

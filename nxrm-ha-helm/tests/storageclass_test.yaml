@@ -1,6 +1,6 @@
 suite: test storage class
 templates:
-  - storage-class.yaml
+  - storageclass.yaml
 release:
   name: "test-release"
 chart:
@@ -8,9 +8,13 @@ chart:
 tests:
   - it: should create storage class
     set:
-      nexusData:
-        storageClass:
-          enabled: true
+      storageClass:
+        enabled: true
+        name: "nexusrepo-storage"
+        provisioner: "provisioner"
+        parameters:
+          foo: bar
+          baz: bay
     asserts:
       - isKind:
           of: StorageClass
@@ -29,3 +33,9 @@ tests:
       - equal:
           path: reclaimPolicy
           value: "Retain"
+
+      - equal:
+          path: parameters
+          value:
+            foo: bar
+            baz: bay

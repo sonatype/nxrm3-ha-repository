@@ -1,6 +1,6 @@
 # comment out sa if it was previously created
 {{- if .Values.aws.enabled }}
-{{- if .Values.externaldns.enabled }}
+{{- if .Values.aws.externaldns.enabled }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -29,7 +29,7 @@ roleRef:
   name: external-dns
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.serviceAccount.externaldns.name }}
+    name: {{ .Values.aws.serviceAccount.externaldns.name }}
     namespace: {{ .Values.namespaces.externaldnsNs }}
 ---
 apiVersion: apps/v1
