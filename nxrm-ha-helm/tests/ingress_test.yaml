@@ -28,7 +28,7 @@ tests:
           path: metadata.annotations
           value:
             kubernetes.io/ingress.class: nginx
-      - notExists:
+      - isNull:
           path: spec.rules
 
   - it: should create nexus ingress with default HTTP rule
