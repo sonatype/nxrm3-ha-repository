@@ -22,7 +22,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
       {{- if .Values.statefulset.imagePullSecrets }}
       imagePullSecrets:
-        - name: {{ .Values.statefulset.imagePullSecrets.name}}
+        - name: {{ .Values.statefulset.imagePullSecrets.name }}
       {{- end }}
       initContainers:
         # chown nexus-data to 'nexus' user and init log directories/files for a new pod

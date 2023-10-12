@@ -45,7 +45,7 @@ statefulset:
   container:
     image:
       repository: sonatype/nexus3
-      tag: 3.58.1
+      tag: latest
     resources:
       # See help documentation, these are minimum system requirements
       requests:
@@ -59,9 +59,9 @@ statefulset:
     terminationGracePeriod: 120
     env:
       nexusDBName: nexus
-      nexusDBPort: 3306
+      nexusDBPort: 5432
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
-      jdbcUrlParams: "" # Must start with a '?' e.g. "?foo=bar&baz=foo"
+      jdbcUrlParams: "?foo=bar" # Must start with a '?' e.g. "?foo=bar&baz=foo"
   requestLogContainer:
     image:
       repository: busybox
