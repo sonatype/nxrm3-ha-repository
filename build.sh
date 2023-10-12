@@ -17,13 +17,10 @@ helm plugin install --version "0.2.11" https://github.com/quintush/helm-unittest
 set -e
 
 # lint yaml of charts
-helm lint ./nxrm-aws-ha-helm
-helm lint ./nxrm-azure-ha-helm
+helm lint ./nxrm-ha-helm
 
 # unit test
-(cd ./nxrm-aws-ha-helm; helm unittest -3 -t junit -o test-output.xml .)
-(cd ./nxrm-azure-ha-helm; helm unittest -3 -t junit -o test-output.xml .)
+(cd ./nxrm-ha-helm; helm unittest -3 -t junit -o test-output.xml .)
 
 # package the charts into tgz archives
-helm package ./nxrm-aws-ha-helm --destination docs
-helm package ./nxrm-azure-ha-helm --destination docs
+helm package ./nxrm-ha-helm --destination docs
