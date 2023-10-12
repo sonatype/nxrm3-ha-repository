@@ -174,18 +174,22 @@ secret:
     mountPath: /var/nexus-repo-license
   adminpassword:
     name: "admin_nxrm_password"
+    alias: "admin_nxrm_password-alias"
   azure:
     # userAssignedIdentityID: a managed identity or service principal that
     # has secrets management access to the key vault
     userAssignedIdentityID: "userAssignedIdentityID"
-    tenantId: "tenantId"
-    keyvaultName: keyvaultname
+    tenantId: "azureTenantId"
+    keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
   provider: provider # e.g. aws, azure etc
   db:
     user: nxrm-db-user
+    userAlias: nxrm-db-user-alias
     password: nxrm-db-password
+    passwordAlias: nxrm-db-password-alias
     host: nxrm-db-host
+    hostAlias: nxrm-db-host-alias
   aws:
     license:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license

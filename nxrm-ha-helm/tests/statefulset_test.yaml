@@ -6,7 +6,7 @@ release:
 chart:
   version: "latest"
 tests:
-  - it: should get license from secret provider when aws secret manager enabled
+  - it: should mount secret store volume when aws secret manager enabled
     set:
       secret:
         secretProviderClass: "awsSecretProvider"
@@ -35,7 +35,7 @@ tests:
                 fsType: ext4
                 secretProviderClass: "awsSecretProvider"
 
-  - it: should get license from secret provider when azure keyvault enabled
+  - it: should mount secret store volume when azure keyvault enabled
     set:
       secret:
         secretProviderClass: "azureVaultProvider"
@@ -64,10 +64,8 @@ tests:
                 fsType: ext4
                 secretProviderClass: "azureVaultProvider"
 
-  - it: should  get license from secret object when aws secret manager and azure are not enabled
+  - it: should not mount secret store volume when aws secret manager and azure keyvault are not enabled
     set:
-      secret:
-        secretProviderClass: "awsSecretProvider"
       aws:
         secretmanager:
           enabled: false
