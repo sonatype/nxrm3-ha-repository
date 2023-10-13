@@ -1,4 +1,4 @@
-{{- if .Values.secret.license.enabled }}
+{{- if .Values.secret.license.licenseSecret.enabled }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -7,5 +7,5 @@ metadata:
 type: Opaque
 data:
   {{ .Values.secret.license.name }}: |-
-    {{ .Values.secret.license.fileContentsBase64 }}
+    {{ .Values.secret.license.licenseSecret.fileContentsBase64 }}
 {{- end }}

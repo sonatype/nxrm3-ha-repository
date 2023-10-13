@@ -10,7 +10,8 @@ tests:
     set:
       secret:
         license:
-          enabled: true
+          licenseSecret:
+            enabled: true
     asserts:
       - isKind:
           of: Secret

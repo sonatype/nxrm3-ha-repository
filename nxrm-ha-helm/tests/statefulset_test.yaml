@@ -10,7 +10,8 @@ tests:
     set:
       secret:
         license:
-          enabled: true
+          licenseSecret:
+            enabled: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[6]
@@ -34,7 +35,7 @@ tests:
     set:
       secret:
         secretProviderClass: "awsSecretProvider"
-        db:
+        dbSecret:
           enabled: true
           name: nxrm-db-secret
     asserts:

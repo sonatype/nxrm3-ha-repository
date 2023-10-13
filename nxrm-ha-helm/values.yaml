@@ -172,9 +172,10 @@ secret:
   secretProviderClass: "secretProviderClass"
   license:
     name: nexus-repo-license.lic
-    enabled: false
-    fileContentsBase64: your_license_file_contents_in_base_64
-    mountPath: /var/nexus-repo-license
+    licenseSecret:
+      enabled: false
+      fileContentsBase64: your_license_file_contents_in_base_64
+      mountPath: /var/nexus-repo-license
   adminpassword:
     name: "admin_nxrm_password"
     alias: "admin_nxrm_password-alias"
@@ -186,9 +187,10 @@ secret:
     keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
   provider: provider # e.g. aws, azure etc
-  db:
+  dbSecret:
     name: "nxrm-db-secret"
     enabled: false
+  db:
     user: nxrm-db-user
     userAlias: nxrm-db-user-alias
     password: nxrm-db-password

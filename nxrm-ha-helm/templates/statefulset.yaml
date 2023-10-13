@@ -82,17 +82,17 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.db.name }}
+                  name: {{ .Values.secret.dbSecret.name }}
                   key: db-password
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.db.name }}
+                  name: {{ .Values.secret.dbSecret.name }}
                   key: db-user
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.db.name }}
+                  name: {{ .Values.secret.dbSecret.name }}
                   key: db-host
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               valueFrom:
@@ -105,7 +105,7 @@ spec:
           {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
               value: /nxrm-secrets/{{ .Values.secret.license.name }}
           {{ else }}
-              value: {{ .Values.secret.license.mountPath }}/{{ .Values.secret.license.name }}
+              value: {{ .Values.secret.license.licenseSecret.mountPath }}/{{ .Values.secret.license.name }}
           {{ end }}
             - name: INSTALL4J_ADD_VM_PARAMS
               value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=${LICENSE_FILE} \
@@ -114,13 +114,13 @@ spec:
           -Dnexus.datastore.nexus.username=${DB_USER} \
           -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
           volumeMounts:
-          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.db.enabled }}
+          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
             - name: nxrm-secrets
               mountPath: /nxrm-secrets
           {{- end }}
-          {{- if .Values.secret.license.enabled }}
+          {{- if .Values.secret.license.licenseSecret.enabled }}
             - name: license-volume
-              mountPath: {{ .Values.secret.license.mountPath }}
+              mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
               readOnly: true
           {{ end }}
             - name: nexus-data
@@ -153,7 +153,7 @@ spec:
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
       volumes:
-      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.db.enabled }}
+      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
         - name: nxrm-secrets
         {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled }}
           csi:
@@ -164,10 +164,10 @@ spec:
               fsType: ext4
         {{ else }}
           secret:
-            secretName: {{ .Values.secret.db.name }}
+            secretName: {{ .Values.secret.dbSecret.name }}
         {{ end }}
       {{ end }}
-      {{- if .Values.secret.license.enabled }}
+      {{- if .Values.secret.license.licenseSecret.enabled }}
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}
