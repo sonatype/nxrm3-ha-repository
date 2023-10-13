@@ -139,13 +139,14 @@ storageClass:
   provisioner: provisionerName # E.g. for AKS use managed-csi. For AWS EKS: ebs.csi.aws.com. In case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
   volumeBindingMode: "WaitForFirstConsumer"
   reclaimPolicy: Retain
-  type: type
-  fsType: "fsType" # e.g. ext4
+#  parameters:
+#    type: type
+#    fsType: "fsType" # e.g. ext4
+#    iopsPerGB: "10"
   zones:
     zone1: zone1
     zone2: zone2
     zone3: zone3
-  iopsPerGB: "10"
 pvc:
   accessModes: ReadWriteOnce
   storage: 2Gi
@@ -164,7 +165,7 @@ service:  #Nexus Repo NodePort Service
     type: NodePort
     protocol: TCP
     port: 9090
-    targetPort: 9090
+    targetPort: 8081
 secret:
   secretProviderClass: "secretProviderClass"
   license:
