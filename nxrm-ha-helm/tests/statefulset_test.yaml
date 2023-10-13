@@ -6,6 +6,50 @@ release:
 chart:
   version: "latest"
 tests:
+  - it: should mount license secret when secret.license.enabled
+    set:
+      secret:
+        license:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: LICENSE_FILE
+            value: /var/nexus-repo-license/nexus-repo-license.lic
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: license-volume
+            mountPath: /var/nexus-repo-license
+            readOnly: true
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: license-volume
+            secret:
+              secretName: nexus-repo-license.lic
+
+  - it: should mount db secret when secret.db.enabled is enabled
+    set:
+      secret:
+        secretProviderClass: "awsSecretProvider"
+        db:
+          enabled: true
+          name: nxrm-db-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: nxrm-secrets
+            mountPath: /nxrm-secrets
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: nxrm-secrets
+            secret:
+              secretName: nxrm-db-secret
+
   - it: should mount secret store volume when aws secret manager enabled
     set:
       secret:
@@ -72,6 +116,9 @@ tests:
       azure:
         keyvault:
           enabled: false
+      secret:
+        db:
+          enabled:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[6]
@@ -79,17 +126,14 @@ tests:
             name: LICENSE_FILE
             value: /var/nexus-repo-license/nexus-repo-license.lic
       - equal:
-          path: spec.template.spec.containers[0].volumeMounts[0]
-          value:
-            name: license-volume
-            mountPath: /var/nexus-repo-license
-            readOnly: true
-      - equal:
           path: spec.template.spec.volumes[0]
           value:
-            name: license-volume
-            secret:
-              secretName: nexus-repo-license.lic
+            name: logback-tasklogfile-override
+            configMap:
+              name: nxrm-ha-latest.test-release-logback-tasklogfile-override
+              items:
+                  - key: logback-tasklogfile-appender-override.xml
+                    path: logback-tasklogfile-appender-override.xml
 
   - it: should set service account name when aws enabled
     set:
@@ -239,14 +283,14 @@ tests:
           path: spec.volumeClaimTemplates
 
       - equal:
-          path: spec.template.spec.volumes[2].name
+          path: spec.template.spec.volumes[1].name
           value: nexus-data
 
       - isNotNull:
-          path: spec.template.spec.volumes[2].emptyDir
+          path: spec.template.spec.volumes[1].emptyDir
 
       - equal:
-          path: spec.template.spec.volumes[2].emptyDir.sizeLimit
+          path: spec.template.spec.volumes[1].emptyDir.sizeLimit
           value: "2Gi"
 
 
@@ -467,9 +511,6 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].volumeMounts
           value:
-              - name: license-volume
-                mountPath: /var/nexus-repo-license
-                readOnly: true
               - name: nexus-data
                 mountPath: /nexus-data
               - name: logback-tasklogfile-override
@@ -477,12 +518,6 @@ tests:
                 subPath: logback-tasklogfile-appender-override.xml
       - equal:
           path: spec.template.spec.volumes[0]
-          value:
-            name: license-volume
-            secret:
-              secretName: nexus-repo-license.lic
-      - equal:
-          path: spec.template.spec.volumes[1]
           value:
             name: logback-tasklogfile-override
             configMap:

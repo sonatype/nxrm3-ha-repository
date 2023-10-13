@@ -187,6 +187,8 @@ secret:
     useVMManagedIdentity: true
   provider: provider # e.g. aws, azure etc
   db:
+    name: "nxrm-db-secret"
+    enabled: false
     user: nxrm-db-user
     userAlias: nxrm-db-user-alias
     password: nxrm-db-password

@@ -82,17 +82,17 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: nxrm-db-secret
+                  name: {{ .Values.secret.db.name }}
                   key: db-password
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: nxrm-db-secret
+                  name: {{ .Values.secret.db.name }}
                   key: db-user
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
-                  name: nxrm-db-secret
+                  name: {{ .Values.secret.db.name }}
                   key: db-host
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               valueFrom:
@@ -114,10 +114,11 @@ spec:
           -Dnexus.datastore.nexus.username=${DB_USER} \
           -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
           volumeMounts:
-          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
+          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.db.enabled }}
             - name: nxrm-secrets
               mountPath: /nxrm-secrets
-          {{- else }}
+          {{- end }}
+          {{- if .Values.secret.license.enabled }}
             - name: license-volume
               mountPath: {{ .Values.secret.license.mountPath }}
               readOnly: true
@@ -152,15 +153,21 @@ spec:
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
       volumes:
-      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
+      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.db.enabled }}
         - name: nxrm-secrets
+        {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled }}
           csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
               secretProviderClass: {{ .Values.secret.secretProviderClass }}
               fsType: ext4
-      {{- else }}
+        {{ else }}
+          secret:
+            secretName: {{ .Values.secret.db.name }}
+        {{ end }}
+      {{ end }}
+      {{- if .Values.secret.license.enabled }}
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}

@@ -3,6 +3,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ .Values.secret.license.name }}
+  namespace: {{ .Values.namespaces.nexusNs }}
 type: Opaque
 data:
   {{ .Values.secret.license.name }}: |-
