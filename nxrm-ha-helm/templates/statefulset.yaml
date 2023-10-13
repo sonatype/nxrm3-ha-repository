@@ -171,6 +171,12 @@ spec:
             items:
               - key: logback-tasklogfile-appender-override.xml
                 path: logback-tasklogfile-appender-override.xml
+  {{- if  (not .Values.pvc.volumeClaimTemplate.enabled) }}
+        - name: nexus-data
+          emptyDir:
+            sizeLimit: {{ .Values.pvc.storage }}
+  {{- end }}
+  {{- if .Values.pvc.volumeClaimTemplate.enabled }}
   volumeClaimTemplates:
     - metadata:
         name: nexus-data
@@ -180,3 +186,4 @@ spec:
         resources:
           requests:
             storage: {{.Values.pvc.storage }}
+  {{- end }}

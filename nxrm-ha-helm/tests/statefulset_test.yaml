@@ -200,6 +200,56 @@ tests:
               cpu: "0.1"
               memory: "256Mi"
 
+  - it: should use volumeClaimTemplate when enabled
+    set:
+      storageClass:
+        name: "nexusrepo-storage"
+      pvc:
+        volumeClaimTemplate:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: nexus-data
+
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.accessModes
+          value:
+            - ReadWriteOnce
+
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.storageClassName
+          value: "nexusrepo-storage"
+
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources
+          value:
+            requests:
+              storage: 2Gi
+
+  - it: should use emptyDir when volumeClaimTemplate when not enabled
+    set:
+      storageClass:
+        name: "nexusrepo-storage"
+      pvc:
+        volumeClaimTemplate:
+          enabled: false
+    asserts:
+      - isNull:
+          path: spec.volumeClaimTemplates
+
+      - equal:
+          path: spec.template.spec.volumes[2].name
+          value: nexus-data
+
+      - isNotNull:
+          path: spec.template.spec.volumes[2].emptyDir
+
+      - equal:
+          path: spec.template.spec.volumes[2].emptyDir.sizeLimit
+          value: "2Gi"
+
+
   - it: should create nxrm-app container with dynamic nexusdata volume
     set:
       storageClass:
@@ -440,24 +490,6 @@ tests:
               items:
                 - key: logback-tasklogfile-appender-override.xml
                   path: logback-tasklogfile-appender-override.xml
-      - equal:
-          path: spec.volumeClaimTemplates[0].metadata.name
-          value: nexus-data
-
-      - equal:
-          path: spec.volumeClaimTemplates[0].spec.accessModes
-          value:
-            - ReadWriteOnce
-
-      - equal:
-          path: spec.volumeClaimTemplates[0].spec.storageClassName
-          value: "nexusrepo-storage"
-
-      - equal:
-          path: spec.volumeClaimTemplates[0].spec.resources
-          value:
-            requests:
-              storage: 2Gi
 
   - it: should create request-log container
     asserts:

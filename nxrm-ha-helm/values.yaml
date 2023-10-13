@@ -150,6 +150,8 @@ storageClass:
 pvc:
   accessModes: ReadWriteOnce
   storage: 2Gi
+  volumeClaimTemplate:
+    enabled: false
 
 service:  #Nexus Repo NodePort Service
   nexus:
