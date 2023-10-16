@@ -176,10 +176,14 @@ secret:
     enabled: false # Enable to apply database-secret.yaml which allows you to specify db credentials
   db:
     user: nxrm-db-user
+    userAlias: nxrm-db-user-alias
     password: nxrm-db-password
+    passwordAlias: nxrm-db-password-alias
     host: nxrm-db-host
+    hostAlias: nxrm-db-host-alias
   nexusAdmin:
-    name: "admin_nxrm_password"
+    name: "nexusAdminPassword"
+    alias: "admin-nxrm-password-alias"
   nexusAdminSecret:
     enabled: false # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
   license:

@@ -97,7 +97,7 @@ spec:
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.nexusAdmin.name }}
+                  name: "{{ .Values.secret.nexusAdmin.name | lower }}-secret"
                   key: nexus-admin-password
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
