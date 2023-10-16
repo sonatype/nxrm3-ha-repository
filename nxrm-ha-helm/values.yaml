@@ -179,7 +179,7 @@ secret:
     password: nxrm-db-password
     host: nxrm-db-host
   nexusAdmin:
-    name: "admin-nxrm-password"
+    name: "admin_nxrm_password"
   nexusAdminSecret:
     enabled: false # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
   license:
