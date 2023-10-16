@@ -170,15 +170,24 @@ service:  #Nexus Repo NodePort Service
     targetPort: 8081
 secret:
   secretProviderClass: "secretProviderClass"
+  provider: provider # e.g. aws, azure etc
+  dbSecret:
+    name: "nxrm-db-secret"
+    enabled: false # Enable to apply database-secret.yaml which allows you to specify db credentials
+  db:
+    user: nxrm-db-user
+    password: nxrm-db-password
+    host: nxrm-db-host
+  nexusAdmin:
+    name: "admin-nxrm-password"
+  nexusAdminSecret:
+    enabled: false # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
   license:
     name: nexus-repo-license.lic
     licenseSecret:
       enabled: false
       fileContentsBase64: your_license_file_contents_in_base_64
       mountPath: /var/nexus-repo-license
-  adminpassword:
-    name: "admin_nxrm_password"
-    alias: "admin_nxrm_password-alias"
   azure:
     # userAssignedIdentityID: a managed identity or service principal that
     # has secrets management access to the key vault
@@ -186,17 +195,6 @@ secret:
     tenantId: "azureTenantId"
     keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
-  provider: provider # e.g. aws, azure etc
-  dbSecret:
-    name: "nxrm-db-secret"
-    enabled: false
-  db:
-    user: nxrm-db-user
-    userAlias: nxrm-db-user-alias
-    password: nxrm-db-password
-    passwordAlias: nxrm-db-password-alias
-    host: nxrm-db-host
-    hostAlias: nxrm-db-host-alias
   aws:
     license:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license

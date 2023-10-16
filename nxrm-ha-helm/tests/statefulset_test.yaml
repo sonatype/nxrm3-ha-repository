@@ -486,7 +486,7 @@ tests:
             name: NEXUS_SECURITY_INITIAL_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: nxrm-admin-secret
+                name: admin-nxrm-password
                 key: nexus-admin-password
       - equal:
           path: spec.template.spec.containers[0].env[5]
