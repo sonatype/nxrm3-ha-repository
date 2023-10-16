@@ -4,13 +4,13 @@ namespaces:
   cloudwatchNs: amazon-cloudwatch
   externaldnsNs: nexus-externaldns
 azure:
-  enabled: false
+  enabled: false  #set to true to enable aws specific yamls/snippets
   keyvault:
-    enabled: false
+    enabled: false # set to true to pull license, db and nexus admin password secrets from azure key vault
 aws:
-  enabled: false
+  enabled: false #set to true to enable aws specific yamls like external dns and fluent bit
   secretmanager:
-    enabled: false
+    enabled: false # set to true to pull license, db and nexus admin password secrets from aws secret manager
   externaldns:
     enabled: false
     domainFilter: example.com #your root domain e.g example.com
@@ -193,8 +193,7 @@ secret:
       fileContentsBase64: your_license_file_contents_in_base_64
       mountPath: /var/nexus-repo-license
   azure:
-    # userAssignedIdentityID: a managed identity or service principal that
-    # has secrets management access to the key vault
+    # a managed identity or service principal that has secrets management access to the key vault
     userAssignedIdentityID: "userAssignedIdentityID"
     tenantId: "azureTenantId"
     keyvaultName: yourazurekeyvault
