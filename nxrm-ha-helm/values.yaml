@@ -185,7 +185,7 @@ secret:
     name: "nexusAdminPassword"
     alias: "admin-nxrm-password-alias"
   nexusAdminSecret:
-    create: false # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
+    enabled: false # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
   license:
     name: nexus-repo-license.lic
     licenseSecret:
