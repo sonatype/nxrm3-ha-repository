@@ -113,12 +113,12 @@ ingress:
   dockersubdomain: false # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. This will result in the creation of routing rules in your load balancer for sub domains of your host. Thus, you must also set the host
   defaultRule: false
   additionalRules: null
+  ingressClassName: null # e.g. nginx, alb
   tls:
     enabled: false
     secretName: "tlsSecretName"
   annotations:
 #  Note: the annotations below are just a guide; delete or insert more as needed depending on your use case: aws, azure, on prem
-#    kubernetes.io/ingress.class: alb
 #    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 #    alb.ingress.kubernetes.io/scheme: internal # scheme
 #    alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
@@ -134,19 +134,15 @@ ingress:
   #     alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids, comment out if you don't use docker repositories
     annotations:
 storageClass:
-  enabled: false
-  name: storageClassName
-  provisioner: provisionerName # E.g. for AKS use managed-csi. For AWS EKS: ebs.csi.aws.com. In case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
+  enabled: false # For built-in storage class, set storageClass.enabled to false
+  name: storageClassName # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. managed-csi for AKS
+  provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use managed-csi. For AWS EKS: ebs.csi.aws.com. In case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
   volumeBindingMode: "WaitForFirstConsumer"
   reclaimPolicy: Retain
 #  parameters:
 #    type: type
 #    fsType: "fsType" # e.g. ext4
 #    iopsPerGB: "10"
-  zones:
-    zone1: zone1
-    zone2: zone2
-    zone3: zone3
 pvc:
   accessModes: ReadWriteOnce
   storage: 2Gi
@@ -186,6 +182,7 @@ secret:
     alias: "admin-nxrm-password-alias"
   nexusAdminSecret:
     enabled: false # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
+    adminPassword: yourinitialnexuspassword #You should change this when you login for the first time
   license:
     name: nexus-repo-license.lic
     licenseSecret:
@@ -198,6 +195,7 @@ secret:
     tenantId: "azureTenantId"
     keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
+    usePodIdentity: false
   aws:
     license:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
