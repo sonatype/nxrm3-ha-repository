@@ -65,6 +65,6 @@ spec:
             - --txt-owner-id=external-dns
           env:
             - name: AWS_DEFAULT_REGION
-              value: {{ .Values.aws.externaldns.clusterRegion }}
+              value: {{ .Values.aws.clusterRegion }}
 {{- end }}
 {{- end }}
