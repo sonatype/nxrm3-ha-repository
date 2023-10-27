@@ -2,35 +2,67 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.service.nexus.name }}
+  name: {{ include "nexus.fullname" . }}
   namespace: {{ .Values.namespaces.nexusNs }}
+{{- if .Values.service.annotations }}
+  annotations:
+    {{ toYaml .Values.service.annotations | indent 4 }}
+{{- end }}
   labels:
-    app: nxrm
+  {{- include "nexus.labels" . | nindent 4 }}
+  {{- if .Values.nexus.extraLabels }}
+    {{- with .Values.nexus.extraLabels }}
+      {{ toYaml . | indent 4 }}
+    {{- end }}
+  {{- end }}
 spec:
   type: {{ .Values.service.nexus.type }}
   selector:
-    app: nxrm
+    {{- include "nexus.selectorLabels" . | nindent 4 }}
+    {{- if $.Values.nexus.extraSelectorLabels }}
+      {{- with $.Values.nexus.extraSelectorLabels }}
+        {{ toYaml . | indent 4 }}
+      {{- end }}
+    {{- end }}
   ports:
-    - protocol: {{ .Values.service.nexus.protocol }}
+    - name: nexus-ui
+      protocol: {{ .Values.service.nexus.protocol }}
       port: {{ .Values.service.nexus.port }}
       targetPort: {{ .Values.service.nexus.targetPort }}
 {{- end }}
 ---
-{{- if .Values.service.docker.enabled -}}
+{{- if .Values.nexus.docker.enabled -}}
+{{ range $registry := Values.nexus.docker.registries }}
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.service.docker.name }}
-  namespace: {{ .Values.namespaces.nexusNs }}
+  name: {{ include "nexus.fullname" $ | trunc 49 }}-docker-{{ $registry.port }}
+  namespace: {{ $.Values.namespaces.nexusNs }}
+  {{- if $.Values.service.annotations }}
+  annotations:
+    {{ toYaml $.Values.service.annotations | indent 4 }}
+  {{- end }}
   labels:
-    app: nxrm
+    {{- include "nexus.labels" $ | nindent 4 }}
+    {{- if $.Values.nexus.extraLabels }}
+      {{- with $.Values.nexus.extraLabels }}
+        {{ toYaml . | indent 4 }}
+      {{- end }}
+    {{- end }}
 spec:
-  type: {{ .Values.service.docker.type }}
+  type: {{ $.Values.nexus.docker.type }}
   selector:
-    app: nxrm
+    {{- include "nexus.selectorLabels" $ | nindent 4 }}
+    {{- if $.Values.nexus.extraSelectorLabels }}
+      {{- with $.Values.nexus.extraSelectorLabels }}
+        {{ toYaml . | indent 4 }}
+      {{- end }}
+    {{- end }}
   ports:
-    - name: docker-service
-      protocol: {{ .Values.service.docker.protocol }}
-      port: {{ .Values.service.docker.port }}
-      targetPort: {{ .Values.service.docker.targetPort }}
+    - name: docker-{{ $registry.port }}
+      protocol: {{ $.Values.nexus.docker.protocol }}
+      port: {{ $registry.port }}
+      targetPort: {{ $registry.targetPort }}
+{{- end }}
 {{- end }}

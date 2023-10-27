@@ -1,59 +1,87 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Values.statefulset.name }}
+  name: {{ template "nexus.fullname" . }}
   namespace: {{ .Values.namespaces.nexusNs }}
   labels:
-    app: nxrm
+{{ include "nexus.labels" . | indent 4 }}
+  {{- if .Values.nexus.extraLabels }}
+    {{- with .Values.nexus.extraLabels }}
+      {{ toYaml . | indent 4 }}
+    {{- end }}
+  {{- end }}
+{{- if .Values.statefulset.annotations }}
+  annotations:
+    {{ toYaml .Values.statefulset.annotations | nindent 4 }}
+{{- end }}
 spec:
   replicas: {{.Values.statefulset.replicaCount}}
   serviceName: "{{ .Values.statefulset.serviceName }}"
   selector:
     matchLabels:
-      app: nxrm
+      {{- include "nexus.selectorLabels" . | nindent 6 }}
+      {{- if .Values.nexus.extraSelectorLabels }}
+        {{- with .Values.nexus.extraSelectorLabels }}
+          {{ toYaml . | indent 6 }}
+        {{- end }}
+      {{- end }}
   template:
     metadata:
+      annotations:
+        checksum/configmap-properties: {{ include (print .Template.BasePath "/configmap-properties.yaml") $ | sha256sum }}
+        {{- if .Values.statefulset.podAnnotations }}
+          {{ toYaml .Values.statefulset.podAnnotations | nindent 8}}
+        {{- end }}
       labels:
-        app: nxrm
+        {{- include "nexus.selectorLabels" . | nindent 8 }}
     spec:
-      {{- if .Values.aws.enabled }}
-      serviceAccountName: {{ .Values.aws.serviceAccount.name }}
+      {{- if .Values.serviceAccount.enabled }}
+      serviceAccountName: {{ include "nexus.serviceAccountName" . }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
+      {{- if .Values.statefulset.initContainers }}
+      initContainers:
+        {{ toYaml .Values.statefulset.initContainers | nindent 8 }}
+      {{- end }}
+      {{- if .Values.statefulset.nodeSelector }}
+      nodeSelector:
+        {{ toYaml .Values.statefulset.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.statefulset.hostAliases }}
+      hostAliases:
+        {{ toYaml .Values.statefulset.hostAliases | nindent 8 }}
+      {{- end }}
       {{- if .Values.statefulset.imagePullSecrets }}
       imagePullSecrets:
         - name: {{ .Values.statefulset.imagePullSecrets.name }}
       {{- end }}
-      initContainers:
-        # chown nexus-data to 'nexus' user and init log directories/files for a new pod
-        # otherwise the side car containers will crash a couple of times and backoff whilst waiting
-        # for nxrm-app to start and this increases the total start up time.
-        - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
-          image: {{ .Values.statefulset.initContainer.image.repository }}:{{ .Values.statefulset.initContainer.image.tag }}
-          command: [/bin/sh]
-          args:
-            - -c
-            - >-
-              mkdir -p /nexus-data/etc/logback &&
-              mkdir -p /nexus-data/log/tasks &&
-              mkdir -p /nexus-data/log/audit &&
-              touch -a /nexus-data/log/tasks/allTasks.log &&
-              touch -a /nexus-data/log/audit/audit.log &&
-              touch -a /nexus-data/log/request.log &&
-              chown -R '200:200' /nexus-data
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
-          resources:
-            {{ toYaml .Values.statefulset.initContainer.resources | nindent 12 }}
       containers:
         - name: nxrm-app
           image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.tag }}
-          securityContext:
-            runAsUser: 200
           imagePullPolicy: {{ .Values.statefulset.container.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+          lifecycle:
+          {{- if .Values.statefulset.postStart.command }}
+          postStart:
+            exec:
+              command: {{ .Values.statefulset.postStart.command }}
+          {{- end }}
           ports:
-            - containerPort: {{ .Values.statefulset.container.containerPort }}
+            - name: nexus-ui
+              containerPort: {{ .Values.statefulset.container.containerPort }}
+            {{- if .Values.nexus.docker.enabled }}
+            {{- range .Values.nexus.docker.registries }}
+            - name: docker-{{ .port }}
+              containerPort: {{ .port }}
+            {{- end }}
+            {{- end }}
           resources:
             {{ toYaml .Values.statefulset.container.resources | nindent 12 }}
           livenessProbe:
@@ -82,22 +110,22 @@ spec:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.dbSecret.name }}
+                  name: {{ template "nexus.name" . }}-dbsecret
                   key: db-password
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.dbSecret.name }}
+                  name: {{ template "nexus.name" . }}-dbsecret
                   key: db-user
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.secret.dbSecret.name }}
+                  name: {{ template "nexus.name" . }}-dbsecret
                   key: db-host
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.secret.nexusAdmin.name | lower }}-secret"
+                  name: {{ template "nexus.name" . }}-adminsecret
                   key: nexus-admin-password
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
@@ -134,6 +162,18 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+            {{- if .Values.config.enabled }}
+            - mountPath: {{ .Values.config.mountPath }}
+              name: {{ template "nexus.name" . }}-conf
+            {{- end }}              
+            {{- if .Values.nexus.properties.override }}
+            - mountPath: /nexus-data/etc/nexus.properties
+              name: {{ template "nexus.name" . }}-properties
+              subPath: nexus.properties
+            {{- end }}
+            {{- if .Values.statefulset.additionalVolumeMounts}}
+              {{ toYaml .Values.statefulset.additionalVolumeMounts | nindent 12 }}
+            {{- end }}
           resources:
             {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
         - name: audit-log
@@ -152,7 +192,30 @@ spec:
               mountPath: /nexus-data
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
+        {{- if .Values.statefulset.additionalContainers }}
+          {{ toYaml .Values.statefulset.additionalContainers | nindent 8 }}
+        {{- end }}
+      {{- if .Values.nexus.securityContext }}
+      securityContext:
+        {{ toYaml .Values.nexus.securityContext | nindent 8 }}
+      {{- end }}
       volumes:
+      {{- if .Values.config.enabled }}
+        - name: {{ template "nexus.name" . }}-conf
+          configMap:
+            name: {{ template "nexus.name" . }}-conf
+      {{- end }}
+      {{- if .Values.nexus.properties.override }}
+        - name: {{ template "nexus.name" . }}-properties
+        configMap:
+          name: {{ template "nexus.name" . }}-properties
+          items:
+            - key: nexus.properties
+              path: nexus.properties
+      {{- end }}
+      {{- if .Values.statefulset.additionalVolumes }}
+        {{ toYaml .Values.statefulset.additionalVolumes | nindent 8 }}
+      {{- end }}
       {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
         - name: nxrm-secrets
         {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled }}
@@ -164,7 +227,7 @@ spec:
               fsType: ext4
         {{ else }}
           secret:
-            secretName: {{ .Values.secret.dbSecret.name }}
+            secretName: {{ template "nexus.name" . }}-dbsecret
         {{ end }}
       {{ end }}
       {{- if .Values.secret.license.licenseSecret.enabled }}
@@ -183,6 +246,10 @@ spec:
           emptyDir:
             sizeLimit: {{ .Values.pvc.storage }}
   {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+    {{- end }}
   {{- if .Values.pvc.volumeClaimTemplate.enabled }}
   volumeClaimTemplates:
     - metadata:

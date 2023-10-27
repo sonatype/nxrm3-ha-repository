@@ -13,8 +13,7 @@ tests:
         host: null
         dockersubdomain: false
         defaultRule: false
-        annotations:
-          kubernetes.io/ingress.class: nginx
+        ingressClassName: nginx
 
     asserts:
       - isKind:
@@ -25,9 +24,9 @@ tests:
           value: "nexus-ingress"
 
       - equal:
-          path: metadata.annotations
+          path: spec.ingressClassName
           value:
-            kubernetes.io/ingress.class: nginx
+            nginx
       - isNull:
           path: spec.rules
 
@@ -38,8 +37,7 @@ tests:
         host: null
         dockersubdomain: false
         defaultRule: true
-        annotations:
-          kubernetes.io/ingress.class: nginx
+        ingressClassName: nginx
 
     asserts:
       - isKind:
@@ -50,9 +48,9 @@ tests:
           value: "nexus-ingress"
 
       - equal:
-          path: metadata.annotations
+          path: spec.ingressClassName
           value:
-            kubernetes.io/ingress.class: nginx
+            nginx
       - isNotNull:
           path: spec.rules
 
@@ -63,8 +61,7 @@ tests:
         host: null
         dockersubdomain: false
         defaultRule: true
-        annotations:
-          kubernetes.io/ingress.class: nginx
+        ingressClassName: nginx
 
     asserts:
       - isKind:
@@ -75,9 +72,9 @@ tests:
           value: "nexus-ingress"
 
       - equal:
-          path: metadata.annotations
+          path: spec.ingressClassName
           value:
-            kubernetes.io/ingress.class: nginx
+            nginx
       - equal:
           path: spec.rules
           value:
@@ -98,8 +95,7 @@ tests:
         host: example.com
         dockersubdomain: false
         defaultRule: true
-        annotations:
-          kubernetes.io/ingress.class: nginx
+        ingressClassName: nginx
 
     asserts:
       - isKind:
@@ -110,9 +106,9 @@ tests:
           value: "nexus-ingress"
 
       - equal:
-          path: metadata.annotations
+          path: spec.ingressClassName
           value:
-            kubernetes.io/ingress.class: nginx
+            nginx
 
       - equal:
           path: spec.rules
@@ -135,8 +131,7 @@ tests:
         host: example.com
         dockersubdomain: true
         defaultRule: true
-        annotations:
-          kubernetes.io/ingress.class: nginx
+        ingressClassName: nginx
 
     asserts:
       - isKind:
@@ -147,9 +142,9 @@ tests:
           value: "nexus-ingress"
 
       - equal:
-          path: metadata.annotations
+          path: spec.ingressClassName
           value:
-            kubernetes.io/ingress.class: nginx
+            nginx
 
       - equal:
           path: spec.rules
@@ -180,8 +175,8 @@ tests:
       ingress:
         dockerIngress:
           enabled: "true"
-          annotations:
-            kubernetes.io/ingress.class: nginx
+          ingressClassName: nginx
+
     asserts:
       - isKind:
           of: Ingress
@@ -191,9 +186,9 @@ tests:
           value: "docker-ingress"
 
       - equal:
-          path: metadata.annotations
+          path: spec.ingressClassName
           value:
-            kubernetes.io/ingress.class: nginx
+            nginx
 
       - equal:
           path: spec.rules
@@ -214,8 +209,8 @@ tests:
         dockerIngress:
           enabled: "true"
           host: docker.example.com
-          annotations:
-            kubernetes.io/ingress.class: nginx
+          ingressClassName: nginx
+
     asserts:
       - isKind:
           of: Ingress
@@ -225,9 +220,9 @@ tests:
           value: "docker-ingress"
 
       - equal:
-          path: metadata.annotations
+          path: spec.ingressClassName
           value:
-            kubernetes.io/ingress.class: nginx
+            nginx
 
       - equal:
           path: spec.rules
@@ -242,3 +237,55 @@ tests:
                         name: "nexus-docker-service"
                         port:
                           number: 9090
+
+
+  - it: should specify tls hosts
+    set:
+      ingress:
+        enabled: true
+        host: null
+        dockersubdomain: false
+        defaultRule: false
+        ingressClassName: nginx
+        tls:
+          - secretName: "tlsSecretName1"
+            hosts:
+            - repo.foo1
+            - repo.bar1
+          - secretName: "tlsSecretName2"
+            hosts:
+              - repo.foo2
+              - repo.bar2
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "nexus-ingress"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+
+      - equal:
+          path: spec.tls[0].hosts
+          value:
+            - repo.foo1
+            - repo.bar1
+
+      - equal:
+          path: spec.tls[0].secretName
+          value: tlsSecretName1
+
+
+      - equal:
+          path: spec.tls[1].hosts
+          value:
+            - repo.foo2
+            - repo.bar2
+
+      - equal:
+          path: spec.tls[1].secretName
+          value: tlsSecretName2
