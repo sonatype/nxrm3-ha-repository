@@ -1,0 +1,41 @@
+suite: test storage class
+templates:
+  - storageclass.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+tests:
+  - it: should create storage class
+    set:
+      storageClass:
+        enabled: true
+        name: "nexusrepo-storage"
+        provisioner: "provisioner"
+        parameters:
+          foo: bar
+          baz: bay
+    asserts:
+      - isKind:
+          of: StorageClass
+      - equal:
+          path: metadata.name
+          value: "nexusrepo-storage"
+
+      - equal:
+          path: provisioner
+          value: "provisioner"
+
+      - equal:
+          path: volumeBindingMode
+          value: "WaitForFirstConsumer"
+
+      - equal:
+          path: reclaimPolicy
+          value: "Retain"
+
+      - equal:
+          path: parameters
+          value:
+            foo: bar
+            baz: bay

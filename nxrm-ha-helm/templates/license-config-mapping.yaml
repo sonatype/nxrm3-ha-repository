@@ -1,0 +1,11 @@
+{{- if .Values.secret.license.licenseSecret.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.secret.license.name }}
+  namespace: {{ .Values.namespaces.nexusNs }}
+type: Opaque
+data:
+  {{ .Values.secret.license.name }}: |-
+    {{ .Values.secret.license.licenseSecret.fileContentsBase64 }}
+{{- end }}

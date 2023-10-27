@@ -1,0 +1,196 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-"}}-{{ .Values.statefulset.name }}
+  namespace: {{ .Values.namespaces.nexusNs }}
+  labels:
+    app: nxrm
+spec:
+  replicas: {{.Values.statefulset.replicaCount}}
+  serviceName: "{{ .Values.statefulset.serviceName }}"
+  selector:
+    matchLabels:
+      app: nxrm
+  template:
+    metadata:
+      labels:
+        app: nxrm
+    spec:
+      {{- if .Values.aws.enabled }}
+      serviceAccountName: {{ .Values.aws.serviceAccount.name }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
+      {{- if .Values.statefulset.imagePullSecrets }}
+      imagePullSecrets:
+        - name: {{ .Values.statefulset.imagePullSecrets.name }}
+      {{- end }}
+      initContainers:
+        # chown nexus-data to 'nexus' user and init log directories/files for a new pod
+        # otherwise the side car containers will crash a couple of times and backoff whilst waiting
+        # for nxrm-app to start and this increases the total start up time.
+        - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
+          image: {{ .Values.statefulset.initContainer.image.repository }}:{{ .Values.statefulset.initContainer.image.tag }}
+          command: [/bin/sh]
+          args:
+            - -c
+            - >-
+              mkdir -p /nexus-data/etc/logback &&
+              mkdir -p /nexus-data/log/tasks &&
+              mkdir -p /nexus-data/log/audit &&
+              touch -a /nexus-data/log/tasks/allTasks.log &&
+              touch -a /nexus-data/log/audit/audit.log &&
+              touch -a /nexus-data/log/request.log &&
+              chown -R '200:200' /nexus-data
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /nexus-data
+          resources:
+            {{ toYaml .Values.statefulset.initContainer.resources | nindent 12 }}
+      containers:
+        - name: nxrm-app
+          image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.tag }}
+          securityContext:
+            runAsUser: 200
+          imagePullPolicy: {{ .Values.statefulset.container.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.statefulset.container.containerPort }}
+          resources:
+            {{ toYaml .Values.statefulset.container.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.statefulset.livenessProbe.path }}
+              port: {{ .Values.statefulset.container.containerPort }}
+            initialDelaySeconds: {{ .Values.statefulset.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.statefulset.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.statefulset.livenessProbe.failureThreshold }}
+            {{- if .Values.statefulset.livenessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.statefulset.livenessProbe.timeoutSeconds }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.statefulset.readinessProbe.path }}
+              port: {{ .Values.statefulset.container.containerPort }}
+            initialDelaySeconds: {{ .Values.statefulset.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.statefulset.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
+            {{- if .Values.statefulset.readinessProbe.timeoutSeconds }}
+            timeoutSeconds: {{ .Values.statefulset.readinessProbe.timeoutSeconds }}
+            {{- end }}
+          env:
+            - name: DB_NAME
+              value: "{{ .Values.statefulset.container.env.nexusDBName }}"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.dbSecret.name }}
+                  key: db-password
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.dbSecret.name }}
+                  key: db-user
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.dbSecret.name }}
+                  key: db-host
+            - name: NEXUS_SECURITY_INITIAL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.secret.nexusAdmin.name | lower }}-secret"
+                  key: nexus-admin-password
+            - name: NEXUS_SECURITY_RANDOMPASSWORD
+              value: "false"
+            - name: LICENSE_FILE
+          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
+              value: /nxrm-secrets/{{ .Values.secret.license.name }}
+          {{ else }}
+              value: {{ .Values.secret.license.licenseSecret.mountPath }}/{{ .Values.secret.license.name }}
+          {{ end }}
+            - name: INSTALL4J_ADD_VM_PARAMS
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=${LICENSE_FILE} \
+          -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
+          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME}{{ .Values.statefulset.container.env.jdbcUrlParams }} \
+          -Dnexus.datastore.nexus.username=${DB_USER} \
+          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+          volumeMounts:
+          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
+            - name: nxrm-secrets
+              mountPath: /nxrm-secrets
+          {{- end }}
+          {{- if .Values.secret.license.licenseSecret.enabled }}
+            - name: license-volume
+              mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
+              readOnly: true
+          {{ end }}
+            - name: nexus-data
+              mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
+        - name: request-log
+          image: {{ .Values.statefulset.requestLogContainer.image.repository }}:{{ .Values.statefulset.requestLogContainer.image.tag }}
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log']
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /nexus-data
+          resources:
+            {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
+        - name: audit-log
+          image: {{ .Values.statefulset.auditLogContainer.image.repository }}:{{ .Values.statefulset.auditLogContainer.image.tag }}
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log']
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /nexus-data
+          resources:
+            {{ toYaml .Values.statefulset.auditLogContainer.resources | nindent 12 }}
+        - name: tasks-log
+          image: {{ .Values.statefulset.taskLogContainer.image.repository }}:{{ .Values.statefulset.taskLogContainer.image.tag }}
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log']
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /nexus-data
+          resources:
+            {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
+      volumes:
+      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
+        - name: nxrm-secrets
+        {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled }}
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.secret.secretProviderClass }}
+              fsType: ext4
+        {{ else }}
+          secret:
+            secretName: {{ .Values.secret.dbSecret.name }}
+        {{ end }}
+      {{ end }}
+      {{- if .Values.secret.license.licenseSecret.enabled }}
+        - name: license-volume
+          secret:
+            secretName: {{ .Values.secret.license.name }}
+      {{ end }}
+        - name: logback-tasklogfile-override
+          configMap:
+            name: {{ .Chart.Name }}-{{ .Chart.Version }}.{{ .Release.Name }}-logback-tasklogfile-override
+            items:
+              - key: logback-tasklogfile-appender-override.xml
+                path: logback-tasklogfile-appender-override.xml
+  {{- if  (not .Values.pvc.volumeClaimTemplate.enabled) }}
+        - name: nexus-data
+          emptyDir:
+            sizeLimit: {{ .Values.pvc.storage }}
+  {{- end }}
+  {{- if .Values.pvc.volumeClaimTemplate.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: nexus-data
+      spec:
+        accessModes: [ "{{ .Values.pvc.accessModes }}" ]
+        storageClassName: "{{ .Values.storageClass.name }}"
+        resources:
+          requests:
+            storage: {{.Values.pvc.storage }}
+  {{- end }}

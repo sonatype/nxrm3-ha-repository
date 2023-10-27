@@ -1,0 +1,81 @@
+suite: test services
+templates:
+  - services.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+tests:
+  - it: should create nexus service
+    set:
+      service:
+        nexus:
+          enabled: "true"
+    asserts:
+      - isKind:
+          of: Service
+
+      - equal:
+          path: metadata.name
+          value: "nexus-service"
+
+      - equal:
+          path: metadata.labels.app
+          value: "nxrm"
+
+      - equal:
+          path: spec.type
+          value: "NodePort"
+
+      - equal:
+          path: spec.selector.app
+          value: "nxrm"
+
+      - equal:
+          path: spec.ports[0].protocol
+          value: "TCP"
+
+      - equal:
+          path: spec.ports[0].port
+          value: 80
+
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8081
+
+  - it: should create docker service
+    set:
+      service:
+        docker:
+          enabled: "true"
+    asserts:
+      - isKind:
+          of: Service
+
+      - equal:
+          path: metadata.name
+          value: "nexus-docker-service"
+
+      - equal:
+          path: metadata.labels.app
+          value: "nxrm"
+
+      - equal:
+          path: spec.type
+          value: "NodePort"
+
+      - equal:
+          path: spec.selector.app
+          value: "nxrm"
+
+      - equal:
+          path: spec.ports[0].protocol
+          value: "TCP"
+
+      - equal:
+          path: spec.ports[0].port
+          value: 9090
+
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8081

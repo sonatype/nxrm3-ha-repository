@@ -1,0 +1,25 @@
+suite: test license config map
+templates:
+  - license-config-mapping.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+tests:
+  - it: should create license secret
+    set:
+      secret:
+        license:
+          licenseSecret:
+            enabled: true
+    asserts:
+      - isKind:
+          of: Secret
+      - equal:
+          path: metadata.name
+          value: "nexus-repo-license.lic"
+      - equal:
+          path: data
+          value:
+            nexus-repo-license.lic: |-
+              your_license_file_contents_in_base_64

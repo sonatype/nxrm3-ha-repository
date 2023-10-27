@@ -1,0 +1,41 @@
+suite: test namespaces
+templates:
+  - namespaces.yaml
+tests:
+  - it: should create nexusrepo namespace
+    asserts:
+      - isKind:
+          of: Namespace
+      - equal:
+          path: metadata.name
+          value: "nexusrepo"
+
+  - it: should create cloudwatch namespace
+    set:
+      aws:
+        enabled: true
+        fluentbit:
+          enabled: true
+    asserts:
+      - documentIndex: 1
+        isKind:
+          of: Namespace
+      - documentIndex: 1
+        equal:
+          path: metadata.name
+          value: "amazon-cloudwatch"
+
+  - it: should create external dns namespace
+    set:
+      aws:
+        enabled: true
+        externaldns:
+          enabled: true
+    asserts:
+      - documentIndex: 1
+        isKind:
+          of: Namespace
+      - documentIndex: 1
+        equal:
+          path: metadata.name
+          value: "nexus-externaldns"
