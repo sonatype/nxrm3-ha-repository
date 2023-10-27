@@ -4,7 +4,7 @@ namespaces:
   cloudwatchNs: amazon-cloudwatch
   externaldnsNs: nexus-externaldns
 azure:
-  enabled: false  #set to true to enable aws specific yamls/snippets
+  enabled: false  #set to true to enable azure specific yamls/snippets
   keyvault:
     enabled: false # set to true to pull license, db and nexus admin password secrets from azure key vault
 aws:
