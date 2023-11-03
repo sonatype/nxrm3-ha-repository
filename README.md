@@ -56,7 +56,7 @@ you configure dynamic provisioning of persistent storage or attach dedicated loc
 * Set the `storageClass.name` parameter to a storage class name. This could be one of the default storage classes automatically created in your managed Kubernetes cluster on your chosen cloud (e.g., if you're using AWS EKS) or one that you would like to create.
   * If you would like to create a dedicated storage class (i.e., you don't want to use the default), then in addition to specifying a value for `storageClass.name`, you must also set `storageClass.enabled` parameter to `true`.
   * Set the `nexusData.volumeClaimTemplate.enabled` parameter to true.
-  * Set the `storageClass.provisioner` e.g. for AWS EBS, ebs.csi.aws.com
+  * Set the `storageClass.provisioner` (e.g., for AWS EBS, you would use `ebs.csi.aws.com`).
 
 ## Format Limitations
 HA supports all formats that PostgreSQL supports.
