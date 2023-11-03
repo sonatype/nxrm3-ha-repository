@@ -134,8 +134,8 @@ Azure Key Vault is disabled by default. If you would like to store your database
 The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
 
 #### Storage:
-* Attach dedicated disks to your Kubernetes worker nodes
-* Install the Local Persistence Volume Static Provisioner and configure it to automatically create persistent volumes for your chosen storage class name as documented [here](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)
+* Attach dedicated disks to your Kubernetes worker nodes.
+* Install the Local Persistence Volume Static Provisioner and configure it to automatically create persistent volumes for your chosen storage class name as documented [here](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner).
 
 #### Secrets
 * Database credentials:
