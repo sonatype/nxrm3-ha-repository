@@ -113,10 +113,10 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
 
 #### Secrets
 Azure Key Vault is disabled by default. If you would like to store your database secrets and license in Azure Key Vault, do as follows:
-* Set `azure.keyvault.enabled` to `true`
-  * Database credentials:
-    * Store database credentials (i.e. host, user and password) in Azure Key Vault
-    * In your values.yaml,
+* Set `azure.keyvault.enabled` to `true`.
+  * Database credentials
+    * Store database credentials (i.e., host, user, and password) in Azure Key Vault.
+    * In your values.yaml, do the following:
       * Set the keys to use for getting the database credentials from Azure Key Vault:  
         `db:
           user: username
@@ -124,11 +124,11 @@ Azure Key Vault is disabled by default. If you would like to store your database
           host: host`
       * Set the parameters nested in `secret.azure` accordingly. 
   * Initial Nexus Repository Admin Password
-    * Store initial Nexus repository Admin password in Azure Key Vault
-    * Set the `secret.nexusAdmin.name` to the key you used in Azure Key Vault
-  * License:
-    * Store your Nexus Repository Pro license in Azure Key Vault
-    * Set the `secret.license.name` to Azure Key Vault secret containing your Nexus Repository Pro license
+    * Store initial Nexus repository Admin password in Azure Key Vault.
+    * Set the `secret.nexusAdmin.name` to the key you used in Azure Key Vault.
+  * License
+    * Store your Nexus Repository Pro license in Azure Key Vault.
+    * Set the `secret.license.name` to Azure Key Vault secret containing your Nexus Repository Pro license.
 
 ### On-premises
 The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
