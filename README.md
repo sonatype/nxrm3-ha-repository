@@ -131,7 +131,7 @@ Azure Key Vault is disabled by default. If you would like to store your database
     * Set the `secret.license.name` to Azure Key Vault secret containing your Nexus Repository Pro license
 
 ### On-premises
-The chart doesn't install any cloud specific resources when `aws.enabled`  and `azure.enabled` are false.
+The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
 
 #### Storage:
 * Attach dedicated disks to your Kubernetes worker nodes
