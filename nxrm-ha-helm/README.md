@@ -18,6 +18,119 @@
 This Helm chart configures the Kubernetes resources that are needed for a high-availability (HA) Nexus Repository deployment on AWS/Azure/Onprem.
 
 ---
+
+# Pre-requisites
+
+### Storage
+The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
+you configure dynamic provisioning of persistent storage or attach dedicated local disks based on your deployment environment as explained below.
+
+#### Cloud deployments (AWS/Azure)
+* Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster on your chosen cloud deployment. Please refer to AWS EKS/Azure AKS documentation for details on configuring CSI drivers.
+
+#### On-premises deployments
+1. Attach separate disks (i.e., separate from the root disk) to your worker nodes.
+2. Install the Local Persistence Volume Static Provisioner. Please refer to [Local Persistence Volume Static Provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner) documentation.
+3. Use the Local Persistence Volume Static Provisioner to automatically create persistent volumes for your chosen storage class name as documented [here](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)
+
+#### Configuring for dynamic persistent volume provisioning
+* Set the `storageClass.name` parameter to a storage class name. This could be one of the default storage classes automatically created in your managed Kubernetes cluster on your chosen cloud (e.g., if you're using AWS EKS) or one that you would like to create.
+   * If you would like to create a dedicated storage class (i.e., you don't want to use the default), then in addition to specifying a value for `storageClass.name`, you must also set `storageClass.enabled` parameter to `true`.
+   * Set the `nexusData.volumeClaimTemplate.enabled` parameter to `true`.
+   * Set the `storageClass.provisioner` (e.g., for AWS EBS, you would use `ebs.csi.aws.com`).
+
+## Format Limitations
+HA supports all formats that PostgreSQL supports.
+
+
+## Deployment Configuration
+
+### AWS
+* Set `aws.enabled` to `true`.
+
+#### Storage:
+* Set `pvc.volumeClaimTemplate.enabled` to `true`.
+* Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
+   * If you're running on Cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for AWS, you might use `gp2`).
+   * Alternatively, if you would like to create your own storage class, then do the following:
+      * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file.
+      * Enable it by setting `storageClass.enabled` to `true`.
+
+#### Secrets
+AWS Secret Manager is disabled by default. If you would like to store your database secrets and license in AWS Secrets Manager, do as follows:
+* Set `aws.secretmanager.enabled` to `true`.
+   * Database credentials:
+      * Store database credentials (i.e., host, user and password) in AWS secret manager.
+      * In your values.yaml, do the following:
+         * Set the keys and aliases to use for getting the database credentials from secrets manager:  
+           `db:
+           user: username
+           userAlias: nxrm-db-user
+           password: password
+           passwordAlias: nxrm-db-password
+           host: host
+           hostAlias: nxrm-db-host`
+            * Update the `secret.aws.rds.arn` to your Secret Manager ARN containing database credentials.
+   * Initial Nexus Repository Admin Password
+      * Store initial Nexus repository Admin password in AWS Secrets Manager.
+      * Set the `secret.nexusAdmin.name` to the key you used in Secrets Manager.
+      * Set the `secret.nexusAdmin.alias` to the alias you would like the helm chart to use.
+      * Update the `secret.aws.adminpassword.arn` to your Secret Manager ARN containing initial admin password.
+   * License
+      * Store your Nexus Repository Pro license in AWS Secrets Manager.
+      * Update the `secret.aws.license.arn` to your Secret Manager ARN containing your Nexus Repository Pro license.
+
+
+### Azure
+* Set `azure.enabled` to `true`.
+
+#### Storage:
+* Set `pvc.volumeClaimTemplate.enabled` to `true`.
+* Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
+   * If you're running on cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for Azure, you might use `managed-csi`).
+   * Alternatively, if you would like to create your own storage class, then do the following:
+      * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file.
+      * Enable it by setting `storageClass.enabled` to `true`.
+
+#### Secrets
+Azure Key Vault is disabled by default. If you would like to store your database secrets and license in Azure Key Vault, do as follows:
+* Set `azure.keyvault.enabled` to `true`.
+   * Database credentials
+      * Store database credentials (i.e., host, user, and password) in Azure Key Vault.
+      * In your values.yaml, do the following:
+         * Set the keys to use for getting the database credentials from Azure Key Vault:  
+           `db:
+           user: username
+           password: password
+           host: host`
+         * Set the parameters nested in `secret.azure` accordingly.
+   * Initial Nexus Repository Admin Password
+      * Store initial Nexus repository Admin password in Azure Key Vault.
+      * Set the `secret.nexusAdmin.name` to the key you used in Azure Key Vault.
+   * License
+      * Store your Nexus Repository Pro license in Azure Key Vault.
+      * Set the `secret.license.name` to Azure Key Vault secret containing your Nexus Repository Pro license.
+
+### On-premises
+The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
+
+#### Storage:
+* Attach dedicated disks to your Kubernetes worker nodes.
+* Install the Local Persistence Volume Static Provisioner and configure it to automatically create persistent volumes for your chosen storage class name as documented [here](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner).
+
+#### Secrets
+* Database credentials
+   * Set `secret.dbSecret.enabled` to `true` to enable [database-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fdatabase-secret.yaml) for storing database secrets.
+   * Specify values for [database-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fdatabase-secret.yaml).
+* Initial Nexus Repository Admin Password
+   * Set `secret.nexusAdminSecret.enabled` to `true` to enable [nexus-admin-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fnexus-admin-secret.yaml) for storing initial Nexus Repository admin password secret.
+   * Specify values for [nexus-admin-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fnexus-admin-secret.yaml).
+* License
+   * Set the `secret.license.licenseSecret.enabled` to `true` to enable [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml) for storing your Nexus Repository Pro license.
+   * Specify values for [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml).
+
+
+
 ## Installing this Chart
 You can install this helm chart from the git repository or sonatype helm index.
 
