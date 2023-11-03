@@ -104,12 +104,12 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
 * Set `azure.enabled` to `true`.
 
 #### Storage:
-* Set `pvc.volumeClaimTemplate.enabled` to `true`
+* Set `pvc.volumeClaimTemplate.enabled` to `true`.
 * Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
-  * If you're running on Cloud and would like to use an in-built storage class, set this to the name of that storage class E.g. for Azure `managed-csi`
-  * Alternatively, if you would like to create your own storage class then:
-    * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file
-    * Enable it by setting `storageClass.enabled` to true
+  * If you're running on cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for Azure, you might use `managed-csi`).
+  * Alternatively, if you would like to create your own storage class, then do the following:
+    * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file.
+    * Enable it by setting `storageClass.enabled` to `true`.
 
 #### Secrets
 Azure Key Vault is disabled by default. If you would like to store your database secrets and license in Azure Key Vault, do as follows:
