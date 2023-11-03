@@ -101,7 +101,7 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
  
 
 ### Azure
-* Set `azure.enabled` to `true`
+* Set `azure.enabled` to `true`.
 
 #### Storage:
 * Set `pvc.volumeClaimTemplate.enabled` to `true`
