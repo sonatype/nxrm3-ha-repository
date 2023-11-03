@@ -70,7 +70,7 @@ HA supports all formats that PostgreSQL supports.
 #### Storage:
   * Set `pvc.volumeClaimTemplate.enabled` to `true`.
   * Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
-    * If you're running on Cloud and would like to use an in-built storage class, set this to the name of that storage class E.g. for AWS `gp2`
+    * If you're running on Cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for AWS, you might use `gp2`).
     * Alternatively, if you would like to create your own storage class then:
       * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file
       * Enable it by setting `storageClass.enabled` to true 
