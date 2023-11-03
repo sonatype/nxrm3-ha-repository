@@ -138,12 +138,12 @@ The chart doesn't install any cloud-specific resources when `aws.enabled` and `a
 * Install the Local Persistence Volume Static Provisioner and configure it to automatically create persistent volumes for your chosen storage class name as documented [here](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner).
 
 #### Secrets
-* Database credentials:
+* Database credentials
   * Set `secret.dbSecret.enabled` to `true` to enable [database-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fdatabase-secret.yaml) for storing database secrets.
-  * Specify values for [database-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fdatabase-secret.yaml)
+  * Specify values for [database-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fdatabase-secret.yaml).
 * Initial Nexus Repository Admin Password
   * Set `secret.nexusAdminSecret.enabled` to `true` to enable [nexus-admin-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fnexus-admin-secret.yaml) for storing initial Nexus Repository admin password secret.
-  * Specify values for [nexus-admin-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fnexus-admin-secret.yaml)
-* License:
-  * Set the `secret.license.licenseSecret.enabled` to true enable [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml) for storing your Nexus Repository Pro license
-  * Specify values for [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml)
+  * Specify values for [nexus-admin-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fnexus-admin-secret.yaml).
+* License
+  * Set the `secret.license.licenseSecret.enabled` to `true` to enable [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml) for storing your Nexus Repository Pro license.
+  * Specify values for [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml).
