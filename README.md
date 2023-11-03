@@ -65,7 +65,7 @@ HA supports all formats that PostgreSQL supports.
 ## Deployment Configuration
 
 ### AWS
-* Set `aws.enabled` to `true`
+* Set `aws.enabled` to `true`.
 
 #### Storage:
   * Set `pvc.volumeClaimTemplate.enabled` to `true`
