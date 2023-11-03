@@ -73,7 +73,7 @@ HA supports all formats that PostgreSQL supports.
     * If you're running on Cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for AWS, you might use `gp2`).
     * Alternatively, if you would like to create your own storage class, then do the following:
       * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file.
-      * Enable it by setting `storageClass.enabled` to true 
+      * Enable it by setting `storageClass.enabled` to `true`. 
 
 #### Secrets
 AWS Secret Manager is disabled by default. If you would like to store your database secrets and license in AWS Secrets Manager, do as follows:
