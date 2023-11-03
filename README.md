@@ -77,10 +77,10 @@ HA supports all formats that PostgreSQL supports.
 
 #### Secrets
 AWS Secret Manager is disabled by default. If you would like to store your database secrets and license in AWS Secrets Manager, do as follows:
-* Set `aws.secretmanager.enabled` to `true`
+* Set `aws.secretmanager.enabled` to `true`.
   * Database credentials:
-    * Store database credentials (i.e. host, user and password) in AWS secret manager
-    * In your values.yaml,
+    * Store database credentials (i.e., host, user and password) in AWS secret manager.
+    * In your values.yaml, do the following:
       * Set the keys and aliases to use for getting the database credentials from secrets manager:  
           `db:
              user: username
@@ -89,15 +89,15 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
              passwordAlias: nxrm-db-password
              host: host
              hostAlias: nxrm-db-host`
-        * Update the `secret.aws.rds.arn` to your Secret Manager ARN containing database credentials
+        * Update the `secret.aws.rds.arn` to your Secret Manager ARN containing database credentials.
   * Initial Nexus Repository Admin Password
-    * Store initial Nexus repository Admin password in AWS Secrets Manager 
-    * Set the `secret.nexusAdmin.name` to the key you used in secrets manager
-    * Set the `secret.nexusAdmin.alias` to the alias you would like the helm chart to use
-    * Update the `secret.aws.adminpassword.arn` to your Secret Manager ARN containing initial admin password
-  * License:
-    * Store your Nexus Repository Pro license in AWS Secrets Manager
-    * Update the `secret.aws.license.arn` to your Secret Manager ARN containing your Nexus Repository Pro license
+    * Store initial Nexus repository Admin password in AWS Secrets Manager. 
+    * Set the `secret.nexusAdmin.name` to the key you used in Secrets Manager.
+    * Set the `secret.nexusAdmin.alias` to the alias you would like the helm chart to use.
+    * Update the `secret.aws.adminpassword.arn` to your Secret Manager ARN containing initial admin password.
+  * License
+    * Store your Nexus Repository Pro license in AWS Secrets Manager.
+    * Update the `secret.aws.license.arn` to your Secret Manager ARN containing your Nexus Repository Pro license.
  
 
 ### Azure
