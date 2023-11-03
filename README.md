@@ -48,7 +48,7 @@ you configure dynamic provisioning of persistent storage or attach dedicated loc
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster on your chosen cloud deployment. Please refer to AWS EKS/Azure AKS documentation for details on configuring CSI drivers.
 
 #### On-premises deployments
-1. Attach separate disks (i.e. separate from the root disk) to your worker nodes.
+1. Attach separate disks (i.e., separate from the root disk) to your worker nodes.
 2. Install the Local Persistence Volume Static Provisioner. Please refer to [Local Persistence Volume Static Provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner) documentation.
 3. Use the Local Persistence Volume Static Provisioner to automatically create persistent volumes for your chosen storage class name as documented [here](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)
 
