@@ -315,12 +315,3 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `secret.license.licenseSecret.enabled`                      | Whether or not to install [license-config-mapping.yaml](templates%2Flicense-config-mapping.yaml)                                                                                                                                                                                                                                                                                 | `false`                                          |
 | `secret.license.licenseSecret.fileContentsBase64`           | A base64 representation of your Nexus Repository Pro license                                                                                                                                                                                                                                                                                                                     | your_license_file_contents_in_base_64            |
 | `secret.license.licenseSecret.mountPath`                    | The path where your Nexus Repository Pro license is mounted in the Nexus Repository container                                                                                                                                                                                                                                                                                    | /var/nexus-repo-license                          |
-
-
-
-
-### Persistence
-
-By default, a `PersistentVolumeClaim` is created and mounted into the `/nexus-data` directory. In order to disable this functionality, you can change the `values.yaml` to disable persistence, which will use an `emptyDir` instead.
-
-> *"An emptyDir volume is first created when a Pod is assigned to a Node, and exists as long as that Pod is running on that node. When a Pod is removed from a node for any reason, the data in the emptyDir is deleted forever."*
