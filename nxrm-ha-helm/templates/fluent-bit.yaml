@@ -41,7 +41,7 @@ metadata:
   name: fluent-bit-cluster-info
   namespace: {{ .Values.namespaces.cloudwatchNs }}
 data:
-  cluster.name: {{ .Values.fluentbit.clusterName }}
+  cluster.name: {{ .Values.aws.fluentbit.clusterName }}
   http.server: "On"
   http.port: "2020"
   read.head: "Off"
