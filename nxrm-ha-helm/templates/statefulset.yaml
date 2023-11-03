@@ -60,13 +60,7 @@ spec:
           image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.tag }}
           imagePullPolicy: {{ .Values.statefulset.container.pullPolicy }}
           securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            seccompProfile:
-              type: RuntimeDefault
-            capabilities:
-              drop:
-                - ALL
+            {{ toYaml .Values.nexus.securityContext | nindent 12 }}
           lifecycle:
           {{- if .Values.statefulset.postStart.command }}
           postStart:
@@ -195,10 +189,6 @@ spec:
         {{- if .Values.statefulset.additionalContainers }}
           {{ toYaml .Values.statefulset.additionalContainers | nindent 8 }}
         {{- end }}
-      {{- if .Values.nexus.securityContext }}
-      securityContext:
-        {{ toYaml .Values.nexus.securityContext | nindent 8 }}
-      {{- end }}
       volumes:
       {{- if .Values.config.enabled }}
         - name: {{ template "nexus.name" . }}-conf

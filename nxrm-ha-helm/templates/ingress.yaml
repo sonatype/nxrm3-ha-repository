@@ -65,7 +65,7 @@ spec:
 {{- end}}
 
 {{- if .Values.nexus.docker.enabled }}
-{{ range $registry := Values.nexus.docker.registries }}
+{{ range $registry := .Values.nexus.docker.registries }}
 {{- $fullName := include "nexus.fullname" . -}}
 ---
 apiVersion: networking.k8s.io/v1
