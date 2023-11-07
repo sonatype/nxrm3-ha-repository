@@ -31,7 +31,7 @@ HA requires the following:
 * A blob store location for storing components that can be commonly accessed by all active nodes
 * Connectivity between Nexus Repository, the database, and blob store
 * All architecture must be in one region (if deploying to cloud) or data center (if deploying on-premises)
-* A physical disk for storing Nexus Repository logs and configuration settings used for generating the support zip
+* A disk for storing Nexus Repository logs and configuration settings used for generating the support zip
 
 If the Nexus Repository deployment will contain more than one Docker repository,  you must use one of the following:
 * An external load balancer (e.g., NGINX) as a [reverse proxy](https://help.sonatype.com/display/NXRM3M/Docker+Repository+Reverse+Proxy+Strategies) instead of the provided ingress for Docker YAML 
