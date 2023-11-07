@@ -60,7 +60,7 @@ statefulset:
       nexusDBName: nexus
       nexusDBPort: 5432
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
-      jdbcUrlParams: "?foo=bar" # Must start with a '?' e.g. "?foo=bar&baz=foo"
+      jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
   requestLogContainer:
     image:
       repository: busybox
@@ -134,7 +134,7 @@ ingress:
     annotations:
 storageClass:
   enabled: false # For built-in storage class, set storageClass.enabled to false
-  name: storageClassName # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. managed-csi for AKS
+  name: nexus-storage # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. managed-csi for AKS
   provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use managed-csi. For AWS EKS: ebs.csi.aws.com. In case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
   volumeBindingMode: "WaitForFirstConsumer"
   reclaimPolicy: Retain
