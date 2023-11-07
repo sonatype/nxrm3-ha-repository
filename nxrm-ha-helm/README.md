@@ -26,7 +26,7 @@ The default configuration uses an emptyDir volume for storing Nexus Repository l
 you configure dynamic provisioning of persistent storage or attach dedicated local disks based on your deployment environment as explained below.
 
 #### Cloud deployments (AWS/Azure)
-* Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster on your chosen cloud deployment. Please refer to AWS EKS/Azure AKS documentation for details on configuring CSI drivers.
+* Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment. Please refer to AWS EKS/Azure AKS documentation for details on configuring CSI drivers.
 
 #### On-premises deployments
 1. Attach separate disks (i.e., separate from the root disk) to your worker nodes.
