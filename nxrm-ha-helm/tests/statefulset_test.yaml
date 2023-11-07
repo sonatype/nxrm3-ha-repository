@@ -303,6 +303,9 @@ tests:
         imagePullSecrets:
           name: supersecret
         replicaCount: 2
+        container:
+          env:
+            jdbcUrlParams: ?foo=bar
     asserts:
       - isKind:
           of: StatefulSet

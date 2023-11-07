@@ -74,24 +74,13 @@ spec:
           volumeMounts:
             - name: nexusdata
               mountPath: /nexus-data
-            - name: nfs-blob-storage
-              mountPath: /blobs
             - name: license-volume
               mountPath: /etc/nxrm-license
 
       volumes:
-        - name: nfs-blob-storage
-          persistentVolumeClaim:
-            claimName: nfs-blobstorage-claim
         - name: license-volume
           configMap:
             name: nxrm-license
-  volumeClaimTemplates:
-    - metadata:
-        name: nexusdata
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "nxrm-local-storage"
-        resources:
-          requests:
-            storage: 20Gi
+        - name: nexus-data
+          emptyDir: # This is an example, please replace with a PV and PVC for a disk based volume
+            sizeLimit: 2Gi

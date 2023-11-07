@@ -31,20 +31,8 @@ HA requires the following:
 * A blob store location for storing components that can be commonly accessed by all active nodes
 * Connectivity between Nexus Repository, the database, and blob store
 * All architecture must be in one region (if deploying to cloud) or data center (if deploying on-premises)
+* A disk for storing Nexus Repository logs and configuration settings used for generating the support zip
 
 If the Nexus Repository deployment will contain more than one Docker repository,  you must use one of the following:
 * An external load balancer (e.g., NGINX) as a [reverse proxy](https://help.sonatype.com/display/NXRM3M/Docker+Repository+Reverse+Proxy+Strategies) instead of the provided ingress for Docker YAML 
 * A [Docker Subdomain Connector](https://help.sonatype.com/repomanager3/nexus-repository-administration/formats/docker-registry/docker-subdomain-connector) with external DNS to route traffic to each Docker subdomain
-
-## Helm Chart for an HA Nexus Repository Deployment in AWS 
-We provide a [Helm chart for those deploying to an AWS environment](https://github.com/sonatype/nxrm3-ha-repository/tree/main/nxrm-aws-ha-helm).
-
-## Sample YAML Files for an HA Nexus Repository Deployment
-If you do not wish to use the Helm chart, you can use the sample YAML files in the [Sample AWS HA YAML Files section](https://github.com/sonatype/nxrm3-ha-repository/tree/main/sample-aws-ha-yamls) to help set up the YAMLs you will need for a Nexus Repository HA deployment.
-
-Ensure you have filled out the YAML files with appropriate information for your deployment.
-
-> **Note** The YAML files in this section are just examples and cannot be copy-pasted and used as-is. You must fill them out with the appropriate information for your deployment to be able to use them.
-
-## Format Limitations
-HA supports all formats that PostgreSQL supports.
