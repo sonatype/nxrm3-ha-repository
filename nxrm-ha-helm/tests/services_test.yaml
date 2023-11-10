@@ -31,6 +31,10 @@ tests:
           value: "test-release-nxrm-ha"
 
       - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
           path: metadata.annotations
           value:
             jar: box
@@ -106,6 +110,10 @@ tests:
           path: metadata.name
           value: "test-release-nxrm-ha-docker-5000"
         documentIndex: 0
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
 
       - equal:
           path: metadata.annotations

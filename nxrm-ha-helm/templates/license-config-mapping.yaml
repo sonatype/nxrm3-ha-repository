@@ -8,7 +8,7 @@ metadata:
 {{ include "nexus.labels" . | indent 4 }}
   {{- if .Values.nexus.extraLabels }}
     {{- with .Values.nexus.extraLabels }}
-      {{ toYaml . | indent 4 }}
+      {{ toYaml . | nindent 4 }}
     {{- end }}
   {{- end }}
 type: Opaque
