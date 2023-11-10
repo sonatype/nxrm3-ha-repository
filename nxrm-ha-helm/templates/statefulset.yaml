@@ -4,10 +4,10 @@ metadata:
   name: {{ template "nexus.fullname" . }}
   namespace: {{ .Values.namespaces.nexusNs }}
   labels:
-{{ include "nexus.labels" . | indent 4 }}
+{{ include "nexus.labels" . | nindent 4 }}
   {{- if .Values.nexus.extraLabels }}
     {{- with .Values.nexus.extraLabels }}
-      {{ toYaml . | indent 4 }}
+      {{ toYaml . | nindent 4 }}
     {{- end }}
   {{- end }}
 {{- if .Values.statefulset.annotations }}
@@ -22,7 +22,7 @@ spec:
       {{- include "nexus.selectorLabels" . | nindent 6 }}
       {{- if .Values.nexus.extraSelectorLabels }}
         {{- with .Values.nexus.extraSelectorLabels }}
-          {{ toYaml . | indent 6 }}
+          {{ toYaml . | nindent 6 }}
         {{- end }}
       {{- end }}
   template:
@@ -53,7 +53,7 @@ spec:
       {{- end }}
       {{- if .Values.statefulset.imagePullSecrets }}
       imagePullSecrets:
-        - name: {{ .Values.statefulset.imagePullSecrets.name }}
+        - name: {{ template "nexus.name" . }}-imagepullsecret
       {{- end }}
       containers:
         - name: nxrm-app

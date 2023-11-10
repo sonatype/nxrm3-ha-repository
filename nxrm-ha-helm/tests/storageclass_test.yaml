@@ -5,6 +5,7 @@ release:
   name: "test-release"
 chart:
   version: "latest"
+  appVersion: "latest"
 tests:
   - it: should create storage class
     set:
@@ -15,6 +16,10 @@ tests:
         parameters:
           foo: bar
           baz: bay
+      nexus:
+        extraLabels:
+          baz: bar
+          bay: foo
     asserts:
       - isKind:
           of: StorageClass
@@ -39,3 +44,13 @@ tests:
           value:
             foo: bar
             baz: bay
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            baz: bar
+            bay: foo

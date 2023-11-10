@@ -9,7 +9,7 @@ metadata:
     {{- include "nexus.labels" . | nindent 4 }}
     {{- if .Values.nexus.extraLabels }}
       {{- with .Values.nexus.extraLabels }}
-        {{ toYaml . | indent 4 }}
+        {{ toYaml . | nindent 4 }}
       {{- end }}
     {{- end }}
   {{- with .Values.ingress.annotations }}
@@ -38,7 +38,7 @@ spec:
                   number: {{ .Values.service.nexus.port }}
     {{- end }}
     {{- with .Values.ingress.additionalRules }}
-    {{ toYaml . | nindent 4 }}
+      {{ toYaml . | nindent 4 }}
     {{- end }}
     {{- if and .Values.ingress.host .Values.ingress.dockersubdomain }}
     - host: "*.{{ .Values.ingress.host }}"
@@ -66,8 +66,7 @@ spec:
 
 {{- if .Values.nexus.docker.enabled }}
 {{ range $registry := .Values.nexus.docker.registries }}
-{{- $fullName := include "nexus.fullname" . -}}
----
+{{- $fullName := include "nexus.fullname" $ -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -77,7 +76,7 @@ metadata:
     {{- include "nexus.labels" $ | nindent 4 }}
     {{- if $.Values.nexus.extraLabels }}
       {{- with $.Values.nexus.extraLabels }}
-        {{ toYaml . | indent 4 }}
+        {{ toYaml . | nindent 4 }}
       {{- end }}
     {{- end }}
   {{- with $.Values.ingress.annotations }}
@@ -103,5 +102,6 @@ spec:
                 name: {{ $fullName | trunc 49 }}-docker-{{ $registry.port }}
                 port:
                   number: {{ $registry.port }}
+---
 {{- end }}
 {{- end }}

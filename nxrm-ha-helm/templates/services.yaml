@@ -6,22 +6,22 @@ metadata:
   namespace: {{ .Values.namespaces.nexusNs }}
 {{- if .Values.service.annotations }}
   annotations:
-    {{ toYaml .Values.service.annotations | indent 4 }}
+    {{ toYaml .Values.service.annotations | nindent 4 }}
 {{- end }}
   labels:
   {{- include "nexus.labels" . | nindent 4 }}
   {{- if .Values.nexus.extraLabels }}
     {{- with .Values.nexus.extraLabels }}
-      {{ toYaml . | indent 4 }}
+      {{ toYaml . | nindent 4 }}
     {{- end }}
   {{- end }}
 spec:
   type: {{ .Values.service.nexus.type }}
   selector:
     {{- include "nexus.selectorLabels" . | nindent 4 }}
-    {{- if $.Values.nexus.extraSelectorLabels }}
-      {{- with $.Values.nexus.extraSelectorLabels }}
-        {{ toYaml . | indent 4 }}
+    {{- if .Values.nexus.extraSelectorLabels }}
+      {{- with .Values.nexus.extraSelectorLabels }}
+        {{ toYaml . | nindent 4 }}
       {{- end }}
     {{- end }}
   ports:
@@ -31,9 +31,8 @@ spec:
       targetPort: {{ .Values.service.nexus.targetPort }}
 {{- end }}
 ---
-{{- if .Values.nexus.docker.enabled -}}
+{{ if .Values.nexus.docker.enabled -}}
 {{ range $registry := .Values.nexus.docker.registries }}
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -41,13 +40,13 @@ metadata:
   namespace: {{ $.Values.namespaces.nexusNs }}
   {{- if $.Values.service.annotations }}
   annotations:
-    {{ toYaml $.Values.service.annotations | indent 4 }}
+    {{ toYaml $.Values.service.annotations | nindent 4 }}
   {{- end }}
   labels:
     {{- include "nexus.labels" $ | nindent 4 }}
     {{- if $.Values.nexus.extraLabels }}
       {{- with $.Values.nexus.extraLabels }}
-        {{ toYaml . | indent 4 }}
+        {{ toYaml . | nindent 4 }}
       {{- end }}
     {{- end }}
 spec:
@@ -56,7 +55,7 @@ spec:
     {{- include "nexus.selectorLabels" $ | nindent 4 }}
     {{- if $.Values.nexus.extraSelectorLabels }}
       {{- with $.Values.nexus.extraSelectorLabels }}
-        {{ toYaml . | indent 4 }}
+        {{ toYaml . | nindent 4 }}
       {{- end }}
     {{- end }}
   ports:
@@ -64,5 +63,6 @@ spec:
       protocol: {{ $.Values.nexus.docker.protocol }}
       port: {{ $registry.port }}
       targetPort: {{ $registry.targetPort }}
-{{- end }}
+---
+{{ end }}
 {{- end }}

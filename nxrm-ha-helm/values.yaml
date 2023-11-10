@@ -192,7 +192,6 @@ service:  #Nexus Repo NodePort Service
   annotations: {}
   nexus:
     enabled: false
-    name: "nexus-service"
     type: NodePort
     protocol: TCP
     port: 80
@@ -201,7 +200,6 @@ secret:
   secretProviderClass: "secretProviderClass"
   provider: provider # e.g. aws, azure etc
   dbSecret:
-    name: "nxrm-db-secret"
     enabled: false # Enable to apply database-secret.yaml which allows you to specify db credentials
   db:
     user: nxrm-db-user
