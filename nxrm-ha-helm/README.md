@@ -155,7 +155,7 @@ You can install this helm chart from the git repository or sonatype helm index.
 
 2. Enter your custom values in the supplied values.yaml.
 3. Install this chart using the following:
-```helm install nxrm nxrm3-ha-repository/nxrm-ha-helm -f values.yaml```
+```helm install nxrm sonatype/nxrm-ha -f values.yaml```
 4. Get the Nexus Repository link using the following:
 ```kubectl get ingresses -n nexusrepo```
 ---
