@@ -32,9 +32,9 @@ statefulset:
   name: nxrm-statefulset
   serviceName: nxrm-statefulset-service
   replicaCount: 3
-  additionalVolumeMounts: {}
-  additionalContainers: {}
-  additionalVolumes: {}
+  additionalVolumeMounts:
+  additionalContainers:
+  additionalVolumes:
   # # Add annotations to statefulset to enhance deployment configurations
   annotations: {}
   podAnnotations: {}

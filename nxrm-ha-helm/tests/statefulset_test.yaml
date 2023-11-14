@@ -1,0 +1,883 @@
+suite: test statefulset
+templates:
+  - statefulset.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+  appVersion: "latest"
+tests:
+  - it: should mount license secret when secret.license.enabled
+    set:
+      secret:
+        license:
+          licenseSecret:
+            enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: LICENSE_FILE
+            value: /var/nexus-repo-license/nexus-repo-license.lic
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: license-volume
+            mountPath: /var/nexus-repo-license
+            readOnly: true
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: license-volume
+            secret:
+              secretName: nexus-repo-license.lic
+
+  - it: should mount db secret when secret.db.enabled is enabled
+    set:
+      secret:
+        secretProviderClass: "awsSecretProvider"
+        dbSecret:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: nxrm-secrets
+            mountPath: /nxrm-secrets
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: nxrm-secrets
+            secret:
+              secretName: nxrm-ha-dbsecret
+
+  - it: should mount secret store volume when aws secret manager enabled
+    set:
+      secret:
+        secretProviderClass: "awsSecretProvider"
+      aws:
+        secretmanager:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: LICENSE_FILE
+            value: /nxrm-secrets/nexus-repo-license.lic
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+              name: nxrm-secrets
+              mountPath: /nxrm-secrets
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: nxrm-secrets
+            csi:
+              driver: secrets-store.csi.k8s.io
+              readOnly: true
+              volumeAttributes:
+                fsType: ext4
+                secretProviderClass: "awsSecretProvider"
+
+  - it: should mount secret store volume when azure keyvault enabled
+    set:
+      secret:
+        secretProviderClass: "azureVaultProvider"
+      azure:
+        keyvault:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: LICENSE_FILE
+            value: /nxrm-secrets/nexus-repo-license.lic
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: nxrm-secrets
+            mountPath: /nxrm-secrets
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: nxrm-secrets
+            csi:
+              driver: secrets-store.csi.k8s.io
+              readOnly: true
+              volumeAttributes:
+                fsType: ext4
+                secretProviderClass: "azureVaultProvider"
+
+  - it: should not mount secret store volume when aws secret manager and azure keyvault are not enabled
+    set:
+      aws:
+        secretmanager:
+          enabled: false
+      azure:
+        keyvault:
+          enabled: false
+      secret:
+        db:
+          enabled:
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: LICENSE_FILE
+            value: /var/nexus-repo-license/nexus-repo-license.lic
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: logback-tasklogfile-override
+            configMap:
+              name: nxrm-ha-latest.test-release-logback-tasklogfile-override
+              items:
+                  - key: logback-tasklogfile-appender-override.xml
+                    path: logback-tasklogfile-appender-override.xml
+
+  - it: should set service account name when aws enabled
+    set:
+      serviceAccount:
+        enabled: true
+      aws:
+        enabled: true
+        secretmanager:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: "nexus-repository-deployment-sa"
+
+  - it: should create pod spec
+    set:
+      statefulset:
+        replicaCount: 2
+        podAnnotations:
+          apples: pear
+          mango: orange
+        annotations:
+          jar: box
+          super: ted
+          bar: baz
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+        extraSelectorLabels:
+          foo/bar: baz
+          baz/foo: bar
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+            bar: baz
+
+      - equal:
+          path: spec.replicas
+          value: 2
+
+      - equal:
+          path: spec.serviceName
+          value: "nxrm-statefulset-service"
+
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
+
+      - isNotNull:
+          path: spec.template.metadata.annotations.checksum/configmap-properties
+
+      - equal:
+          path: spec.template.metadata.annotations.apples
+          value: pear
+
+      - equal:
+          path: spec.template.metadata.annotations.mango
+          value: orange
+
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 120
+
+  - it: should create init container
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: chown-nexusdata-owner-to-nexus-and-init-log-dir
+
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: [ /bin/sh ]
+
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value:
+            - -c
+            - >-
+              mkdir -p /nexus-data/etc/logback &&
+              mkdir -p /nexus-data/log/tasks &&
+              mkdir -p /nexus-data/log/audit &&
+              touch -a /nexus-data/log/tasks/allTasks.log &&
+              touch -a /nexus-data/log/audit/audit.log &&
+              touch -a /nexus-data/log/request.log &&
+              chown -R '200:200' /nexus-data
+
+      - equal:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+      - equal:
+          path: spec.template.spec.initContainers[0].resources
+          value:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+
+  - it: should specify node selectors
+    set:
+      statefulset:
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            disktype: ssd
+
+  - it: should specify host aliases
+    set:
+      statefulset:
+        hostAliases:
+          - ip: "127.0.0.1"
+            hostnames:
+              - "foo.local"
+              - "bar.local"
+          - ip: "10.1.2.3"
+            hostnames:
+              - "foo.remote"
+              - "bar.remote"
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.hostAliases
+          value:
+            - ip: "127.0.0.1"
+              hostnames:
+                - "foo.local"
+                - "bar.local"
+            - ip: "10.1.2.3"
+              hostnames:
+                - "foo.remote"
+                - "bar.remote"
+
+  - it: should create image pull secret when enabled
+    set:
+      statefulset:
+        imagePullSecrets:
+          secret: supersecret
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: nxrm-ha-imagepullsecret
+
+
+  - it: should use volumeClaimTemplate when enabled
+    set:
+      storageClass:
+        name: "nexusrepo-storage"
+      pvc:
+        volumeClaimTemplate:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: nexus-data
+
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.accessModes
+          value:
+            - ReadWriteOnce
+
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.storageClassName
+          value: "nexusrepo-storage"
+
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources
+          value:
+            requests:
+              storage: 2Gi
+
+  - it: should use emptyDir when volumeClaimTemplate when not enabled
+    set:
+      storageClass:
+        name: "nexusrepo-storage"
+      pvc:
+        volumeClaimTemplate:
+          enabled: false
+    asserts:
+      - isNull:
+          path: spec.volumeClaimTemplates
+
+      - equal:
+          path: spec.template.spec.volumes[1].name
+          value: nexus-data
+
+      - isNotNull:
+          path: spec.template.spec.volumes[1].emptyDir
+
+      - equal:
+          path: spec.template.spec.volumes[1].emptyDir.sizeLimit
+          value: "2Gi"
+
+  - it: should create nxrm-app container with dynamic nexusdata volume
+    set:
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+        extraSelectorLabels:
+          foo/bar: baz
+          baz/foo: bar
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              secretName: registry-secret
+              targetPort: 8081
+      storageClass:
+        name: "nexusrepo-storage"
+      statefulset:
+        postStart:
+          command: '["/bin/sh", "-c", "ls"]'
+        imagePullSecrets:
+          secret: supersecret
+        replicaCount: 2
+        container:
+          env:
+            jdbcUrlParams: ?foo=bar
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: spec.replicas
+          value: 2
+
+      - equal:
+          path: spec.serviceName
+          value: "nxrm-statefulset-service"
+
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
+
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 120
+
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: nxrm-ha-imagepullsecret
+
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: chown-nexusdata-owner-to-nexus-and-init-log-dir
+
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: [ /bin/sh ]
+
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value:
+            - -c
+            - >-
+              mkdir -p /nexus-data/etc/logback &&
+              mkdir -p /nexus-data/log/tasks &&
+              mkdir -p /nexus-data/log/audit &&
+              touch -a /nexus-data/log/tasks/allTasks.log &&
+              touch -a /nexus-data/log/audit/audit.log &&
+              touch -a /nexus-data/log/request.log &&
+              chown -R '200:200' /nexus-data
+
+      - equal:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+      - equal:
+          path: spec.template.spec.initContainers[0].resources
+          value:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: nxrm-app
+
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "^sonatype/nexus3:latest"
+
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 200
+
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.postStart.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - ls
+
+      - equal:
+          path: spec.template.spec.containers[0].ports[0]
+          value:
+              containerPort: 8081
+              name: nexus-ui
+
+      - equal:
+          path: spec.template.spec.containers[0].ports[1]
+          value:
+            containerPort: 5000
+            name: docker-5000
+
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: 4
+              memory: "8Gi"
+            limits:
+              cpu: 4
+              memory: "8Gi"
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet
+          value:
+            path: /
+            port: 8081
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
+          value: 120
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.periodSeconds
+          value: 60
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.failureThreshold
+          value: 6
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet
+          value:
+            path: /
+            port: 8081
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
+          value: 120
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.periodSeconds
+          value: 60
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.failureThreshold
+          value: 6
+
+      - equal:
+          path: spec.template.spec.containers[0].env[0]
+          value:
+            name: DB_NAME
+            value: "nexus"
+      - equal:
+          path: spec.template.spec.containers[0].env[1]
+          value:
+            name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: nxrm-ha-dbsecret
+                key: db-password
+      - equal:
+          path: spec.template.spec.containers[0].env[2]
+          value:
+            name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: nxrm-ha-dbsecret
+                key: db-user
+      - equal:
+          path: spec.template.spec.containers[0].env[3]
+          value:
+            name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: nxrm-ha-dbsecret
+                key: db-host
+      - equal:
+          path: spec.template.spec.containers[0].env[4]
+          value:
+            name: NEXUS_SECURITY_INITIAL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: nxrm-ha-adminsecret
+                key: nexus-admin-password
+      - equal:
+          path: spec.template.spec.containers[0].env[5]
+          value:
+            name: NEXUS_SECURITY_RANDOMPASSWORD
+            value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: LICENSE_FILE
+            value: /var/nexus-repo-license/nexus-repo-license.lic
+
+      - equal:
+          path: spec.template.spec.containers[0].env[7]
+          value:
+            name: INSTALL4J_ADD_VM_PARAMS
+            value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=${LICENSE_FILE} \
+          -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
+          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}?foo=bar \
+          -Dnexus.datastore.nexus.username=${DB_USER} \
+          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+              - name: nexus-data
+                mountPath: /nexus-data
+              - name: logback-tasklogfile-override
+                mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+                subPath: logback-tasklogfile-appender-override.xml
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: logback-tasklogfile-override
+            configMap:
+              name: nxrm-ha-latest.test-release-logback-tasklogfile-override
+              items:
+                - key: logback-tasklogfile-appender-override.xml
+                  path: logback-tasklogfile-appender-override.xml
+
+  - it: should mount config volume when enabled
+    set:
+      config:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
+            - name: nxrm-ha-conf
+              mountPath: /sonatype-nexus-conf
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+              name: nxrm-ha-conf
+              configMap:
+                name: nxrm-ha-conf
+
+
+  - it: should mount properties volume when override enabled
+    set:
+      nexus:
+        properties:
+          override: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
+            - name: nxrm-ha-properties
+              mountPath: /nexus-data/etc/nexus.properties
+              subPath: nexus.properties
+
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: nxrm-ha-properties
+            configMap:
+              name: nxrm-ha-properties
+              items:
+                - key: nexus.properties
+                  path: nexus.properties
+
+  - it: should mount additional volume mounts when specified
+    set:
+      statefulset:
+        additionalVolumes:
+          - name: foo-volume
+            persistentVolumeClaim:
+              claimName: foo-claim
+          - name: bar-volume
+            persistentVolumeClaim:
+              claimName: bar-claim
+        additionalVolumeMounts:
+          - name: bar-mount
+            mountPath: /bar-mount
+          - name: foo-mount
+            mountPath: /foo-mount
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
+            - name: bar-mount
+              mountPath: /bar-mount
+            - name: foo-mount
+              mountPath: /foo-mount
+
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+              name: foo-volume
+              persistentVolumeClaim:
+                claimName: foo-claim
+      - equal:
+          path: spec.template.spec.volumes[1]
+          value:
+              name: bar-volume
+              persistentVolumeClaim:
+                claimName: bar-claim
+
+  - it: should include additional containers when specified
+    set:
+      statefulset:
+        additionalContainers:
+          - name: foo-container
+            image: fooimage:footag
+            args: [ /bin/sh, -c, 'tail -n+1 -F /foo.log' ]
+          - name: bar-container
+            image: barimage:bartag
+            args: [ /bin/sh, -c, 'tail -n+1 -F /bar.log' ]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[4]
+          value:
+            name: foo-container
+            image: fooimage:footag
+            args:
+            - /bin/sh
+            - -c
+            - 'tail -n+1 -F /foo.log'
+      - equal:
+          path: spec.template.spec.containers[5]
+          value:
+            name: bar-container
+            image: barimage:bartag
+            args:
+              - /bin/sh
+              - -c
+              - 'tail -n+1 -F /bar.log'
+
+  - it: should create request-log container
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: request-log
+
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[1].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[1].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[1].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+  - it: should create audit-log container
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: audit-log
+
+      - equal:
+          path: spec.template.spec.containers[2].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[2].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[2].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[1].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+  - it: should create tasks-log container
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[3].name
+          value: tasks-log
+
+      - equal:
+          path: spec.template.spec.containers[3].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[3].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[3].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[3].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data

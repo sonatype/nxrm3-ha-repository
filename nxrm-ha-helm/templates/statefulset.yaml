@@ -63,9 +63,9 @@ spec:
             {{ toYaml .Values.nexus.securityContext | nindent 12 }}
           lifecycle:
           {{- if .Values.statefulset.postStart.command }}
-          postStart:
-            exec:
-              command: {{ .Values.statefulset.postStart.command }}
+            postStart:
+              exec:
+                command: {{ .Values.statefulset.postStart.command }}
           {{- end }}
           ports:
             - name: nexus-ui
@@ -150,16 +150,10 @@ spec:
             - name: logback-tasklogfile-override
               mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
               subPath: logback-tasklogfile-appender-override.xml
-        - name: request-log
-          image: {{ .Values.statefulset.requestLogContainer.image.repository }}:{{ .Values.statefulset.requestLogContainer.image.tag }}
-          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log']
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
             {{- if .Values.config.enabled }}
-            - mountPath: {{ .Values.config.mountPath }}
-              name: {{ template "nexus.name" . }}-conf
-            {{- end }}              
+            - name: {{ template "nexus.name" . }}-conf
+              mountPath: {{ .Values.config.mountPath }}
+            {{- end }}
             {{- if .Values.nexus.properties.override }}
             - mountPath: /nexus-data/etc/nexus.properties
               name: {{ template "nexus.name" . }}-properties
@@ -168,6 +162,12 @@ spec:
             {{- if .Values.statefulset.additionalVolumeMounts}}
               {{ toYaml .Values.statefulset.additionalVolumeMounts | nindent 12 }}
             {{- end }}
+        - name: request-log
+          image: {{ .Values.statefulset.requestLogContainer.image.repository }}:{{ .Values.statefulset.requestLogContainer.image.tag }}
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log']
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /nexus-data
           resources:
             {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
         - name: audit-log
@@ -197,9 +197,9 @@ spec:
       {{- end }}
       {{- if .Values.nexus.properties.override }}
         - name: {{ template "nexus.name" . }}-properties
-        configMap:
-          name: {{ template "nexus.name" . }}-properties
-          items:
+          configMap:
+            name: {{ template "nexus.name" . }}-properties
+            items:
             - key: nexus.properties
               path: nexus.properties
       {{- end }}
