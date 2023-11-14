@@ -131,7 +131,7 @@ tests:
           value:
             name: logback-tasklogfile-override
             configMap:
-              name: nxrm-ha-latest.test-release-logback-tasklogfile-override
+              name: test-release-nxrm-ha-logback-tasklogfile-override
               items:
                   - key: logback-tasklogfile-appender-override.xml
                     path: logback-tasklogfile-appender-override.xml
@@ -655,7 +655,7 @@ tests:
           value:
             name: logback-tasklogfile-override
             configMap:
-              name: nxrm-ha-latest.test-release-logback-tasklogfile-override
+              name: test-release-nxrm-ha-logback-tasklogfile-override
               items:
                 - key: logback-tasklogfile-appender-override.xml
                   path: logback-tasklogfile-appender-override.xml

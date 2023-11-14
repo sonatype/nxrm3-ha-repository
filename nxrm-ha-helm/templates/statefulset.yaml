@@ -227,7 +227,7 @@ spec:
       {{ end }}
         - name: logback-tasklogfile-override
           configMap:
-            name: {{ .Chart.Name }}-{{ .Chart.Version }}.{{ .Release.Name }}-logback-tasklogfile-override
+            name: {{ template "nexus.fullname" . }}-logback-tasklogfile-override
             items:
               - key: logback-tasklogfile-appender-override.xml
                 path: logback-tasklogfile-appender-override.xml
