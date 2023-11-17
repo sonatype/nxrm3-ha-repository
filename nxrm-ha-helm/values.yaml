@@ -32,10 +32,10 @@ statefulset:
   name: nxrm-statefulset
   serviceName: nxrm-statefulset-service
   replicaCount: 3
+  additionalVolumes:
   additionalVolumeMounts:
   additionalContainers:
-  additionalVolumes:
-  # # Add annotations to statefulset to enhance deployment configurations
+  # # Add annotations to statefulset to enhance configurations
   annotations: {}
   podAnnotations: {}
   nodeSelector: {}
@@ -242,12 +242,10 @@ nexus:
     runAsUser: 200
   properties:
     override: false
-    name: nexus-properties-override
     data: null # specify a list of key and values to override default nexus.properties
   extraLabels: {}
   extraSelectorLabels: {}
   docker:
-    name: "nexus-docker"
     enabled: false
     type: NodePort
     protocol: TCP
@@ -257,7 +255,7 @@ nexus:
   #     secretName: registry-secret
   #     targetPort: 8081
 
-# Enable configmap and add data in configmap
+# Enable configmap and add arbitrary data in configmap
 config:
   enabled: false
   mountPath: /sonatype-nexus-conf
