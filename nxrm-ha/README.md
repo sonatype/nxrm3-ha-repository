@@ -53,7 +53,7 @@ HA supports all formats that PostgreSQL supports.
 * Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
    * If you're running on Cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for AWS, you might use `gp2`).
    * Alternatively, if you would like to create your own storage class, then do the following:
-      * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file.
+      * Specify values for the [storageclass.yaml](nxrm-ha%2Ftemplates%2Fstorageclass.yaml) file.
       * Enable it by setting `storageClass.enabled` to `true`.
 
 #### Secrets
@@ -89,7 +89,7 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
 * Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
    * If you're running on cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for Azure, you might use `managed-csi`).
    * Alternatively, if you would like to create your own storage class, then do the following:
-      * Specify values for the [storageclass.yaml](nxrm-ha-helm%2Ftemplates%2Fstorageclass.yaml) file.
+      * Specify values for the [storageclass.yaml](nxrm-ha%2Ftemplates%2Fstorageclass.yaml) file.
       * Enable it by setting `storageClass.enabled` to `true`.
 
 #### Secrets
@@ -120,14 +120,14 @@ The chart doesn't install any cloud-specific resources when `aws.enabled` and `a
 
 #### Secrets
 * Database credentials
-   * Set `secret.dbSecret.enabled` to `true` to enable [database-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fdatabase-secret.yaml) for storing database secrets.
-   * Specify values for [database-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fdatabase-secret.yaml).
+   * Set `secret.dbSecret.enabled` to `true` to enable [database-secret.yaml](nxrm-ha%2Ftemplates%2Fdatabase-secret.yaml) for storing database secrets.
+   * Specify values for [database-secret.yaml](nxrm-ha%2Ftemplates%2Fdatabase-secret.yaml).
 * Initial Nexus Repository Admin Password
-   * Set `secret.nexusAdminSecret.enabled` to `true` to enable [nexus-admin-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fnexus-admin-secret.yaml) for storing initial Nexus Repository admin password secret.
-   * Specify values for [nexus-admin-secret.yaml](nxrm-ha-helm%2Ftemplates%2Fnexus-admin-secret.yaml).
+   * Set `secret.nexusAdminSecret.enabled` to `true` to enable [nexus-admin-secret.yaml](nxrm-ha%2Ftemplates%2Fnexus-admin-secret.yaml) for storing initial Nexus Repository admin password secret.
+   * Specify values for [nexus-admin-secret.yaml](nxrm-ha%2Ftemplates%2Fnexus-admin-secret.yaml).
 * License
-   * Set the `secret.license.licenseSecret.enabled` to `true` to enable [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml) for storing your Nexus Repository Pro license.
-   * Specify values for [license-config-mapping.yaml](nxrm-ha-helm%2Ftemplates%2Flicense-config-mapping.yaml).
+   * Set the `secret.license.licenseSecret.enabled` to `true` to enable [license-config-mapping.yaml](nxrm-ha%2Ftemplates%2Flicense-config-mapping.yaml) for storing your Nexus Repository Pro license.
+   * Specify values for [license-config-mapping.yaml](nxrm-ha%2Ftemplates%2Flicense-config-mapping.yaml).
 
 
 
@@ -141,7 +141,7 @@ You can install this helm chart from the git repository or sonatype helm index.
 
 3. Install this chart using the following:
   
-```helm install nxrm nxrm3-ha-repository/nxrm-ha-helm -f values.yaml```
+```helm install nxrm nxrm3-ha-repository/nxrm-ha -f values.yaml```
   
 4. Get the Nexus Repository link using the following:
   
