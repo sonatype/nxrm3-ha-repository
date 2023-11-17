@@ -212,7 +212,7 @@ tests:
             foo/bar: baz
             baz/foo: bar
 
-      - isNotNull:
+      - isNull:
           path: spec.template.metadata.annotations.checksum/configmap-properties
 
       - equal:
@@ -700,6 +700,8 @@ tests:
             - name: nxrm-ha-properties
               mountPath: /nexus-data/etc/nexus.properties
               subPath: nexus.properties
+      - isNotNull:
+          path: spec.template.metadata.annotations.checksum/configmap-properties
 
       - equal:
           path: spec.template.spec.volumes[0]
