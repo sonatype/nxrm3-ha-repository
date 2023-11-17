@@ -9,6 +9,7 @@ chart:
   appVersion: "latest"
 tests:
   - it: should mount license secret when secret.license.enabled
+    template: statefulset.yaml
     set:
       secret:
         license:
@@ -34,6 +35,7 @@ tests:
               secretName: nexus-repo-license.lic
 
   - it: should mount db secret when secret.db.enabled is enabled
+    template: statefulset.yaml
     set:
       secret:
         secretProviderClass: "awsSecretProvider"
@@ -53,6 +55,7 @@ tests:
               secretName: nxrm-ha-dbsecret
 
   - it: should mount secret store volume when aws secret manager enabled
+    template: statefulset.yaml
     set:
       secret:
         secretProviderClass: "awsSecretProvider"
@@ -82,6 +85,7 @@ tests:
                 secretProviderClass: "awsSecretProvider"
 
   - it: should mount secret store volume when azure keyvault enabled
+    template: statefulset.yaml
     set:
       secret:
         secretProviderClass: "azureVaultProvider"
@@ -111,6 +115,7 @@ tests:
                 secretProviderClass: "azureVaultProvider"
 
   - it: should not mount secret store volume when aws secret manager and azure keyvault are not enabled
+    template: statefulset.yaml
     set:
       aws:
         secretmanager:
@@ -138,6 +143,7 @@ tests:
                     path: logback-tasklogfile-appender-override.xml
 
   - it: should set service account name when aws enabled
+    template: statefulset.yaml
     set:
       serviceAccount:
         enabled: true
@@ -151,6 +157,7 @@ tests:
           value: "nexus-repository-deployment-sa"
 
   - it: should create pod spec
+    template: statefulset.yaml
     set:
       statefulset:
         replicaCount: 2
@@ -235,6 +242,7 @@ tests:
           value: 120
 
   - it: should create init container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet
@@ -280,6 +288,7 @@ tests:
               memory: "256Mi"
 
   - it: should specify node selectors
+    template: statefulset.yaml
     set:
       statefulset:
         nodeSelector:
@@ -293,6 +302,7 @@ tests:
             disktype: ssd
 
   - it: should specify host aliases
+    template: statefulset.yaml
     set:
       statefulset:
         hostAliases:
@@ -320,6 +330,7 @@ tests:
                 - "bar.remote"
 
   - it: should create image pull secret when enabled
+    template: statefulset.yaml
     set:
       statefulset:
         imagePullSecrets:
@@ -334,6 +345,7 @@ tests:
 
 
   - it: should use volumeClaimTemplate when enabled
+    template: statefulset.yaml
     set:
       storageClass:
         name: "nexusrepo-storage"
@@ -361,6 +373,7 @@ tests:
               storage: 2Gi
 
   - it: should use emptyDir when volumeClaimTemplate when not enabled
+    template: statefulset.yaml
     set:
       storageClass:
         name: "nexusrepo-storage"
@@ -383,6 +396,7 @@ tests:
           value: "2Gi"
 
   - it: should create nxrm-app container with dynamic nexusdata volume
+    template: statefulset.yaml
     set:
       nexus:
         extraLabels:
@@ -662,6 +676,7 @@ tests:
                   path: logback-tasklogfile-appender-override.xml
 
   - it: should mount config volume when enabled
+    template: statefulset.yaml
     set:
       config:
         enabled: true
@@ -685,6 +700,7 @@ tests:
 
 
   - it: should mount properties volume when override enabled
+    template: statefulset.yaml
     set:
       nexus:
         properties:
@@ -715,6 +731,7 @@ tests:
                   path: nexus.properties
 
   - it: should mount additional volume mounts when specified
+    template: statefulset.yaml
     set:
       statefulset:
         additionalVolumes:
@@ -757,6 +774,7 @@ tests:
                 claimName: bar-claim
 
   - it: should include additional containers when specified
+    template: statefulset.yaml
     set:
       statefulset:
         additionalContainers:
@@ -787,6 +805,7 @@ tests:
               - 'tail -n+1 -F /bar.log'
 
   - it: should create request-log container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet
@@ -820,6 +839,7 @@ tests:
               mountPath: /nexus-data
 
   - it: should create audit-log container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet
@@ -853,6 +873,7 @@ tests:
               mountPath: /nexus-data
 
   - it: should create tasks-log container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet
