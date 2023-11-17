@@ -1,6 +1,7 @@
 suite: test statefulset
 templates:
   - statefulset.yaml
+  - configmap-properties.yaml
 release:
   name: "test-release"
 chart:
