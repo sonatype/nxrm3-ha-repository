@@ -28,7 +28,9 @@ spec:
   template:
     metadata:
       annotations:
+        {{- if .Values.nexus.properties.override }}
         checksum/configmap-properties: {{ include (print .Template.BasePath "/configmap-properties.yaml") $ | sha256sum }}
+        {{- end }}
         {{- if .Values.statefulset.podAnnotations }}
           {{ toYaml .Values.statefulset.podAnnotations | nindent 8}}
         {{- end }}
