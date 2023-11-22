@@ -8,6 +8,27 @@ chart:
   version: "latest"
   appVersion: "latest"
 tests:
+  - it: should set replicas to 1 when clustered is false
+    template: statefulset.yaml
+    set:
+      statefulset:
+        clustered: false
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: should set specified replicas when clustered is true
+    template: statefulset.yaml
+    set:
+      statefulset:
+        clustered: true
+        replicaCount: 5
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 5
+
   - it: should mount license secret when secret.license.enabled
     template: statefulset.yaml
     set:
@@ -372,7 +393,38 @@ tests:
             requests:
               storage: 2Gi
 
-  - it: should use emptyDir when volumeClaimTemplate when not enabled
+      - notEqual:
+          path: spec.template.spec.volumes[0].name
+          value: "emptyDir"
+
+      - isNull:
+          path: spec.template.spec.volumes[1]
+
+  - it: should use existing claim when volumeClaimTemplate not enabled and existing claim specified
+    template: statefulset.yaml
+    set:
+      storageClass:
+        name: "nexusrepo-storage"
+      pvc:
+        existingClaim: "foo-pvc"
+        volumeClaimTemplate:
+          enabled: false
+    asserts:
+      - isNull:
+          path: spec.volumeClaimTemplates
+
+      - equal:
+          path: spec.template.spec.volumes[1].name
+          value: nexus-data
+
+      - isNull:
+          path: spec.template.spec.volumes[1].emptyDir
+
+      - equal:
+          path: spec.template.spec.volumes[1].persistentVolumeClaim.claimName
+          value: "foo-pvc"
+
+  - it: should use emptyDir when volumeClaimTemplate when not enabled and no existing claim specified
     template: statefulset.yaml
     set:
       storageClass:

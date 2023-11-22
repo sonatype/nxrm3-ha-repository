@@ -15,7 +15,11 @@ metadata:
     {{ toYaml .Values.statefulset.annotations | nindent 4 }}
 {{- end }}
 spec:
+  {{- if .Values.statefulset.clustered }}
   replicas: {{.Values.statefulset.replicaCount}}
+  {{ else }}
+  replicas: 1
+  {{ end }}
   serviceName: "{{ .Values.statefulset.serviceName }}"
   selector:
     matchLabels:
@@ -233,11 +237,16 @@ spec:
             items:
               - key: logback-tasklogfile-appender-override.xml
                 path: logback-tasklogfile-appender-override.xml
-  {{- if  (not .Values.pvc.volumeClaimTemplate.enabled) }}
+  {{- if  and (not .Values.pvc.volumeClaimTemplate.enabled) (not .Values.pvc.existingClaim) }}
         - name: nexus-data
           emptyDir:
             sizeLimit: {{ .Values.pvc.storage }}
   {{- end }}
+  {{- if and (not .Values.pvc.volumeClaimTemplate.enabled) ( .Values.pvc.existingClaim ) }}
+        - name: nexus-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.existingClaim }}
+  {{ end }}
     {{- with .Values.tolerations }}
       tolerations:
         {{ toYaml . | nindent 8 }}

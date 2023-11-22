@@ -188,6 +188,7 @@ pvc:
   storage: 2Gi
   volumeClaimTemplate:
     enabled: false
+  existingClaim: null
 
 service:  #Nexus Repo NodePort Service
   annotations: {}
