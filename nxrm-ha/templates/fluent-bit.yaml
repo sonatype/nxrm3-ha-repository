@@ -79,7 +79,7 @@ data:
     [INPUT]
         Name                tail
         Tag                 nexus.nexus-log
-        Path                /var/log/containers/{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-" }}-{{ .Values.statefulset.name }}-*{{ .Values.namespaces.nexusNs.name }}_nxrm-app-*.log
+        Path                /var/log/containers/{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-" }}-{{ .Values.statefulset.name }}-*{{ .Values.namespaces.nexusNs }}_nxrm-app-*.log
         Parser              docker
         DB                  /var/fluent-bit/state/flb_container.db
         Mem_Buf_Limit       5MB
