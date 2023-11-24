@@ -79,7 +79,7 @@ data:
     [INPUT]
         Name                tail
         Tag                 nexus.nexus-log
-        Path                /var/log/containers/{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-" }}-{{ .Values.statefulset.name }}-*{{ .Values.namespaces.nexusNs }}_nxrm-app-*.log
+        Path                /var/log/containers/{{ template "nexus.fullname" . }}-*{{ .Values.namespaces.nexusNs.name }}_nxrm-app-*.log
         Parser              docker
         DB                  /var/fluent-bit/state/flb_container.db
         Mem_Buf_Limit       5MB
@@ -114,7 +114,7 @@ data:
     [INPUT]
         Name                tail
         Tag                 nexus.request-log
-        Path                /var/log/containers/{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-" }}-{{ .Values.statefulset.name }}-*{{ .Values.namespaces.nexusNs.name }}_request-log-*.log
+        Path                /var/log/containers/{{ template "nexus.fullname" . }}-*{{ .Values.namespaces.nexusNs.name }}_request-log-*.log
         Parser              docker
         DB                  /var/fluent-bit/state/flb_container.db
         Mem_Buf_Limit       5MB
@@ -149,7 +149,7 @@ data:
     [INPUT]
         Name                tail
         Tag                 nexus.audit-log
-        Path                /var/log/containers/{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-" }}-{{ .Values.statefulset.name }}-*{{ .Values.namespaces.nexusNs.name }}_audit-log-*.log
+        Path                /var/log/containers/{{ template "nexus.fullname" . }}-*{{ .Values.namespaces.nexusNs.name }}_audit-log-*.log
         Parser              docker
         DB                  /var/fluent-bit/state/flb_container.db
         Mem_Buf_Limit       5MB
@@ -184,7 +184,7 @@ data:
     [INPUT]
         Name                tail
         Tag                 nexus.tasks-log
-        Path                /var/log/containers/{{ .Chart.Name }}-{{ .Chart.Version  | replace "." "-" }}-{{ .Values.statefulset.name }}-*{{ .Values.namespaces.nexusNs.name }}_tasks-log-*.log
+        Path                /var/log/containers/{{ template "nexus.fullname" . }}-*{{ .Values.namespaces.nexusNs.name }}_tasks-log-*.log
         Parser              docker
         DB                  /var/fluent-bit/state/flb_container.db
         Mem_Buf_Limit       5MB
