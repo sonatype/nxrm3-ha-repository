@@ -2,6 +2,15 @@ suite: test namespaces
 templates:
   - namespaces.yaml
 tests:
+  - it: should not create any namespaces
+    set:
+      namespaces:
+        nexusNs:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
   - it: should create nexusrepo namespace
     asserts:
       - isKind:
@@ -14,9 +23,35 @@ tests:
     set:
       aws:
         enabled: true
-        fluentbit:
+      namespaces:
+        cloudwatchNs:
+          enabled: true
+        nexusNs:
+          enabled: false
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Namespace
+      - equal:
+          path: metadata.name
+          value: "amazon-cloudwatch"
+
+  - it: should create cloudwatch namespace and nexus namespaces
+    set:
+      aws:
+        enabled: true
+      namespaces:
+        cloudwatchNs:
           enabled: true
     asserts:
+      - documentIndex: 0
+        isKind:
+          of: Namespace
+      - documentIndex: 0
+        equal:
+          path: metadata.name
+          value: "nexusrepo"
       - documentIndex: 1
         isKind:
           of: Namespace
