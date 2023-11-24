@@ -1,0 +1,169 @@
+suite: test services
+templates:
+  - services.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+  appVersion: "latest"
+tests:
+  - it: should create nexus service
+    set:
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+        extraSelectorLabels:
+          foo/bar: baz
+          baz/foo: bar
+      service:
+        annotations:
+          jar: box
+          super: ted
+        nexus:
+          enabled: true
+    asserts:
+      - isKind:
+          of: Service
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: spec.type
+          value: "NodePort"
+
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
+
+      - equal:
+          path: spec.ports[0].name
+          value: "nexus-ui"
+
+      - equal:
+          path: spec.ports[0].protocol
+          value: "TCP"
+
+      - equal:
+          path: spec.ports[0].port
+          value: 80
+
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8081
+
+  - it: should create docker service
+    set:
+      service:
+        nexus:
+          enabled: false
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              secretName: registry-secret
+              targetPort: 8081
+        extraSelectorLabels:
+          foo/bar: baz
+          baz/foo: bar
+    asserts:
+      - isKind:
+          of: Service
+        documentIndex: 0
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha-docker-5000"
+        documentIndex: 0
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+        documentIndex: 0
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+        documentIndex: 0
+
+      - equal:
+          path: spec.type
+          value: "NodePort"
+        documentIndex: 0
+
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
+        documentIndex: 0
+
+      - equal:
+          path: spec.ports[0].protocol
+          value: "TCP"
+        documentIndex: 0
+
+      - equal:
+          path: spec.ports[0].port
+          value: 5000
+        documentIndex: 0
+
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8081
+        documentIndex: 0
+
+      - equal:
+          path: spec.ports[0].name
+          value: "docker-5000"
+        documentIndex: 0

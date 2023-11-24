@@ -1,12 +1,36 @@
 suite: test statefulset
 templates:
   - statefulset.yaml
+  - configmap-properties.yaml
 release:
   name: "test-release"
 chart:
   version: "latest"
+  appVersion: "latest"
 tests:
+  - it: should set replicas to 1 when clustered is false
+    template: statefulset.yaml
+    set:
+      statefulset:
+        clustered: false
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+
+  - it: should set specified replicas when clustered is true
+    template: statefulset.yaml
+    set:
+      statefulset:
+        clustered: true
+        replicaCount: 5
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 5
+
   - it: should mount license secret when secret.license.enabled
+    template: statefulset.yaml
     set:
       secret:
         license:
@@ -32,12 +56,12 @@ tests:
               secretName: nexus-repo-license.lic
 
   - it: should mount db secret when secret.db.enabled is enabled
+    template: statefulset.yaml
     set:
       secret:
         secretProviderClass: "awsSecretProvider"
         dbSecret:
           enabled: true
-          name: nxrm-db-secret
     asserts:
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[0]
@@ -49,9 +73,10 @@ tests:
           value:
             name: nxrm-secrets
             secret:
-              secretName: nxrm-db-secret
+              secretName: nxrm-ha-dbsecret
 
   - it: should mount secret store volume when aws secret manager enabled
+    template: statefulset.yaml
     set:
       secret:
         secretProviderClass: "awsSecretProvider"
@@ -81,6 +106,7 @@ tests:
                 secretProviderClass: "awsSecretProvider"
 
   - it: should mount secret store volume when azure keyvault enabled
+    template: statefulset.yaml
     set:
       secret:
         secretProviderClass: "azureVaultProvider"
@@ -110,6 +136,7 @@ tests:
                 secretProviderClass: "azureVaultProvider"
 
   - it: should not mount secret store volume when aws secret manager and azure keyvault are not enabled
+    template: statefulset.yaml
     set:
       aws:
         secretmanager:
@@ -131,13 +158,16 @@ tests:
           value:
             name: logback-tasklogfile-override
             configMap:
-              name: nxrm-ha-latest.test-release-logback-tasklogfile-override
+              name: test-release-nxrm-ha-logback-tasklogfile-override
               items:
                   - key: logback-tasklogfile-appender-override.xml
                     path: logback-tasklogfile-appender-override.xml
 
   - it: should set service account name when aws enabled
+    template: statefulset.yaml
     set:
+      serviceAccount:
+        enabled: true
       aws:
         enabled: true
         secretmanager:
@@ -148,23 +178,52 @@ tests:
           value: "nexus-repository-deployment-sa"
 
   - it: should create pod spec
+    template: statefulset.yaml
     set:
       statefulset:
         replicaCount: 2
+        podAnnotations:
+          apples: pear
+          mango: orange
+        annotations:
+          jar: box
+          super: ted
+          bar: baz
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+        extraSelectorLabels:
+          foo/bar: baz
+          baz/foo: bar
     asserts:
       - isKind:
           of: StatefulSet
       - equal:
           path: metadata.name
-          value: "nxrm-ha-latest-nxrm-statefulset"
+          value: "test-release-nxrm-ha"
 
       - equal:
           path: metadata.namespace
           value: "nexusrepo"
 
       - equal:
-          path: metadata.labels.app
-          value: "nxrm"
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+            bar: baz
 
       - equal:
           path: spec.replicas
@@ -175,32 +234,36 @@ tests:
           value: "nxrm-statefulset-service"
 
       - equal:
-          path: spec.selector.matchLabels.app
-          value: "nxrm"
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
+
+      - isNull:
+          path: spec.template.metadata.annotations.checksum/configmap-properties
 
       - equal:
-          path: spec.template.metadata.labels.app
-          value: "nxrm"
+          path: spec.template.metadata.annotations.apples
+          value: pear
+
+      - equal:
+          path: spec.template.metadata.annotations.mango
+          value: orange
+
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
 
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
           value: 120
 
-  - it: should create image pull secret when enabled
-    set:
-      statefulset:
-        imagePullSecrets:
-          name: supersecret
-    asserts:
-      - isKind:
-          of: StatefulSet
-      - equal:
-          path: spec.template.spec.imagePullSecrets
-          value:
-            - name: supersecret
-
-
   - it: should create init container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet
@@ -245,7 +308,65 @@ tests:
               cpu: "0.1"
               memory: "256Mi"
 
+  - it: should specify node selectors
+    template: statefulset.yaml
+    set:
+      statefulset:
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            disktype: ssd
+
+  - it: should specify host aliases
+    template: statefulset.yaml
+    set:
+      statefulset:
+        hostAliases:
+          - ip: "127.0.0.1"
+            hostnames:
+              - "foo.local"
+              - "bar.local"
+          - ip: "10.1.2.3"
+            hostnames:
+              - "foo.remote"
+              - "bar.remote"
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.hostAliases
+          value:
+            - ip: "127.0.0.1"
+              hostnames:
+                - "foo.local"
+                - "bar.local"
+            - ip: "10.1.2.3"
+              hostnames:
+                - "foo.remote"
+                - "bar.remote"
+
+  - it: should create image pull secret when enabled
+    template: statefulset.yaml
+    set:
+      statefulset:
+        imagePullSecrets:
+          secret: supersecret
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: nxrm-ha-imagepullsecret
+
+
   - it: should use volumeClaimTemplate when enabled
+    template: statefulset.yaml
     set:
       storageClass:
         name: "nexusrepo-storage"
@@ -272,7 +393,39 @@ tests:
             requests:
               storage: 2Gi
 
-  - it: should use emptyDir when volumeClaimTemplate when not enabled
+      - notEqual:
+          path: spec.template.spec.volumes[0].name
+          value: "emptyDir"
+
+      - isNull:
+          path: spec.template.spec.volumes[1]
+
+  - it: should use existing claim when volumeClaimTemplate not enabled and existing claim specified
+    template: statefulset.yaml
+    set:
+      storageClass:
+        name: "nexusrepo-storage"
+      pvc:
+        existingClaim: "foo-pvc"
+        volumeClaimTemplate:
+          enabled: false
+    asserts:
+      - isNull:
+          path: spec.volumeClaimTemplates
+
+      - equal:
+          path: spec.template.spec.volumes[1].name
+          value: nexus-data
+
+      - isNull:
+          path: spec.template.spec.volumes[1].emptyDir
+
+      - equal:
+          path: spec.template.spec.volumes[1].persistentVolumeClaim.claimName
+          value: "foo-pvc"
+
+  - it: should use emptyDir when volumeClaimTemplate when not enabled and no existing claim specified
+    template: statefulset.yaml
     set:
       storageClass:
         name: "nexusrepo-storage"
@@ -294,14 +447,46 @@ tests:
           path: spec.template.spec.volumes[1].emptyDir.sizeLimit
           value: "2Gi"
 
+  - it: should set nexus datastore enabled to true when clustered is false
+    template: statefulset.yaml
+    set:
+      statefulset:
+        clustered: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[7]
+          value:
+            name: INSTALL4J_ADD_VM_PARAMS
+            value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=${LICENSE_FILE} \
+          -Dnexus.datastore.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
+          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:5432/${DB_NAME} \
+          -Dnexus.datastore.nexus.username=${DB_USER} \
+          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
 
   - it: should create nxrm-app container with dynamic nexusdata volume
+    template: statefulset.yaml
     set:
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+        extraSelectorLabels:
+          foo/bar: baz
+          baz/foo: bar
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              secretName: registry-secret
+              targetPort: 8081
       storageClass:
         name: "nexusrepo-storage"
       statefulset:
+        postStart:
+          command: '["/bin/sh", "-c", "ls"]'
         imagePullSecrets:
-          name: supersecret
+          secret: supersecret
         replicaCount: 2
         container:
           env:
@@ -311,15 +496,22 @@ tests:
           of: StatefulSet
       - equal:
           path: metadata.name
-          value: "nxrm-ha-latest-nxrm-statefulset"
+          value: "test-release-nxrm-ha"
 
       - equal:
           path: metadata.namespace
           value: "nexusrepo"
 
       - equal:
-          path: metadata.labels.app
-          value: "nxrm"
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
 
       - equal:
           path: spec.replicas
@@ -330,12 +522,18 @@ tests:
           value: "nxrm-statefulset-service"
 
       - equal:
-          path: spec.selector.matchLabels.app
-          value: "nxrm"
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
 
       - equal:
-          path: spec.template.metadata.labels.app
-          value: "nxrm"
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
 
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
@@ -344,7 +542,7 @@ tests:
       - equal:
           path: spec.template.spec.imagePullSecrets
           value:
-            - name: supersecret
+            - name: nxrm-ha-imagepullsecret
 
       - equal:
           path: spec.template.spec.initContainers[0].name
@@ -402,10 +600,25 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].imagePullPolicy
           value: IfNotPresent
+
       - equal:
-          path: spec.template.spec.containers[0].ports
+          path: spec.template.spec.containers[0].lifecycle.postStart.exec.command
           value:
-            - containerPort: 8081
+            - /bin/sh
+            - -c
+            - ls
+
+      - equal:
+          path: spec.template.spec.containers[0].ports[0]
+          value:
+              containerPort: 8081
+              name: nexus-ui
+
+      - equal:
+          path: spec.template.spec.containers[0].ports[1]
+          value:
+            containerPort: 5000
+            name: docker-5000
 
       - equal:
           path: spec.template.spec.containers[0].resources
@@ -465,7 +678,7 @@ tests:
             name: DB_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: nxrm-db-secret
+                name: nxrm-ha-dbsecret
                 key: db-password
       - equal:
           path: spec.template.spec.containers[0].env[2]
@@ -473,7 +686,7 @@ tests:
             name: DB_USER
             valueFrom:
               secretKeyRef:
-                name: nxrm-db-secret
+                name: nxrm-ha-dbsecret
                 key: db-user
       - equal:
           path: spec.template.spec.containers[0].env[3]
@@ -481,7 +694,7 @@ tests:
             name: DB_HOST
             valueFrom:
               secretKeyRef:
-                name: nxrm-db-secret
+                name: nxrm-ha-dbsecret
                 key: db-host
       - equal:
           path: spec.template.spec.containers[0].env[4]
@@ -489,7 +702,7 @@ tests:
             name: NEXUS_SECURITY_INITIAL_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: nexusadminpassword-secret
+                name: nxrm-ha-adminsecret
                 key: nexus-admin-password
       - equal:
           path: spec.template.spec.containers[0].env[5]
@@ -525,12 +738,142 @@ tests:
           value:
             name: logback-tasklogfile-override
             configMap:
-              name: nxrm-ha-latest.test-release-logback-tasklogfile-override
+              name: test-release-nxrm-ha-logback-tasklogfile-override
               items:
                 - key: logback-tasklogfile-appender-override.xml
                   path: logback-tasklogfile-appender-override.xml
 
+  - it: should mount config volume when enabled
+    template: statefulset.yaml
+    set:
+      config:
+        enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
+            - name: nxrm-ha-conf
+              mountPath: /sonatype-nexus-conf
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+              name: nxrm-ha-conf
+              configMap:
+                name: nxrm-ha-conf
+
+
+  - it: should mount properties volume when override enabled
+    template: statefulset.yaml
+    set:
+      nexus:
+        properties:
+          override: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
+            - name: nxrm-ha-properties
+              mountPath: /nexus-data/etc/nexus.properties
+              subPath: nexus.properties
+      - isNotNull:
+          path: spec.template.metadata.annotations.checksum/configmap-properties
+
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: nxrm-ha-properties
+            configMap:
+              name: nxrm-ha-properties
+              items:
+                - key: nexus.properties
+                  path: nexus.properties
+
+  - it: should mount additional volume mounts when specified
+    template: statefulset.yaml
+    set:
+      statefulset:
+        additionalVolumes:
+          - name: foo-volume
+            persistentVolumeClaim:
+              claimName: foo-claim
+          - name: bar-volume
+            persistentVolumeClaim:
+              claimName: bar-claim
+        additionalVolumeMounts:
+          - name: bar-mount
+            mountPath: /bar-mount
+          - name: foo-mount
+            mountPath: /foo-mount
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
+            - name: bar-mount
+              mountPath: /bar-mount
+            - name: foo-mount
+              mountPath: /foo-mount
+
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+              name: foo-volume
+              persistentVolumeClaim:
+                claimName: foo-claim
+      - equal:
+          path: spec.template.spec.volumes[1]
+          value:
+              name: bar-volume
+              persistentVolumeClaim:
+                claimName: bar-claim
+
+  - it: should include additional containers when specified
+    template: statefulset.yaml
+    set:
+      statefulset:
+        additionalContainers:
+          - name: foo-container
+            image: fooimage:footag
+            args: [ /bin/sh, -c, 'tail -n+1 -F /foo.log' ]
+          - name: bar-container
+            image: barimage:bartag
+            args: [ /bin/sh, -c, 'tail -n+1 -F /bar.log' ]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[4]
+          value:
+            name: foo-container
+            image: fooimage:footag
+            args:
+            - /bin/sh
+            - -c
+            - 'tail -n+1 -F /foo.log'
+      - equal:
+          path: spec.template.spec.containers[5]
+          value:
+            name: bar-container
+            image: barimage:bartag
+            args:
+              - /bin/sh
+              - -c
+              - 'tail -n+1 -F /bar.log'
+
   - it: should create request-log container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet
@@ -564,6 +907,7 @@ tests:
               mountPath: /nexus-data
 
   - it: should create audit-log container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet
@@ -597,6 +941,7 @@ tests:
               mountPath: /nexus-data
 
   - it: should create tasks-log container
+    template: statefulset.yaml
     asserts:
       - isKind:
           of: StatefulSet

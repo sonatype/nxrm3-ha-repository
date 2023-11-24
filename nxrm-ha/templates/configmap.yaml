@@ -1,0 +1,16 @@
+{{- if .Values.config.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "nexus.name" . }}-conf
+  namespace: {{ .Values.namespaces.nexusNs }}
+  labels:
+{{ include "nexus.labels" . | nindent 4 }}
+    {{- if .Values.nexus.extraLabels }}
+      {{- with .Values.nexus.extraLabels }}
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+    {{- end }}
+data:
+{{ toYaml .Values.config.data | nindent 2 }}
+{{- end }}

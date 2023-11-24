@@ -1,0 +1,68 @@
+{{- if .Values.service.nexus.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nexus.fullname" . }}
+  namespace: {{ .Values.namespaces.nexusNs }}
+{{- if .Values.service.annotations }}
+  annotations:
+    {{ toYaml .Values.service.annotations | nindent 4 }}
+{{- end }}
+  labels:
+  {{- include "nexus.labels" . | nindent 4 }}
+  {{- if .Values.nexus.extraLabels }}
+    {{- with .Values.nexus.extraLabels }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.nexus.type }}
+  selector:
+    {{- include "nexus.selectorLabels" . | nindent 4 }}
+    {{- if .Values.nexus.extraSelectorLabels }}
+      {{- with .Values.nexus.extraSelectorLabels }}
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+    {{- end }}
+  ports:
+    - name: nexus-ui
+      protocol: {{ .Values.service.nexus.protocol }}
+      port: {{ .Values.service.nexus.port }}
+      targetPort: {{ .Values.service.nexus.targetPort }}
+{{- end }}
+---
+{{ if .Values.nexus.docker.enabled -}}
+{{ range $registry := .Values.nexus.docker.registries }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nexus.fullname" $ | trunc 49 }}-docker-{{ $registry.port }}
+  namespace: {{ $.Values.namespaces.nexusNs }}
+  {{- if $.Values.service.annotations }}
+  annotations:
+    {{ toYaml $.Values.service.annotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "nexus.labels" $ | nindent 4 }}
+    {{- if $.Values.nexus.extraLabels }}
+      {{- with $.Values.nexus.extraLabels }}
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+    {{- end }}
+spec:
+  type: {{ $.Values.nexus.docker.type }}
+  selector:
+    {{- include "nexus.selectorLabels" $ | nindent 4 }}
+    {{- if $.Values.nexus.extraSelectorLabels }}
+      {{- with $.Values.nexus.extraSelectorLabels }}
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+    {{- end }}
+  ports:
+    - name: docker-{{ $registry.port }}
+      protocol: {{ $.Values.nexus.docker.protocol }}
+      port: {{ $registry.port }}
+      targetPort: {{ $registry.targetPort }}
+---
+{{ end }}
+{{- end }}

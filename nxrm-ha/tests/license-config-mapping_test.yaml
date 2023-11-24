@@ -5,6 +5,7 @@ release:
   name: "test-release"
 chart:
   version: "latest"
+  appVersion: "latest"
 tests:
   - it: should create license secret
     set:
@@ -12,12 +13,31 @@ tests:
         license:
           licenseSecret:
             enabled: true
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
     asserts:
       - isKind:
           of: Secret
       - equal:
           path: metadata.name
           value: "nexus-repo-license.lic"
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
       - equal:
           path: data
           value:

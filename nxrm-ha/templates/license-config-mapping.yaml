@@ -4,6 +4,13 @@ kind: Secret
 metadata:
   name: {{ .Values.secret.license.name }}
   namespace: {{ .Values.namespaces.nexusNs }}
+  labels:
+{{ include "nexus.labels" . | nindent 4 }}
+  {{- if .Values.nexus.extraLabels }}
+    {{- with .Values.nexus.extraLabels }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
 type: Opaque
 data:
   {{ .Values.secret.license.name }}: |-

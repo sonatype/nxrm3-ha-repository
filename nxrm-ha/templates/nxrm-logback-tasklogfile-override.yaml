@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Chart.Name }}-{{ .Chart.Version }}.{{ .Release.Name }}-logback-tasklogfile-override
+  name: {{ template "nexus.fullname" . }}-logback-tasklogfile-override
   namespace: {{ .Values.namespaces.nexusNs }}
 data:
   logback-tasklogfile-appender-override.xml: |

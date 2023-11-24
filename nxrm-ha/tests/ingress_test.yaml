@@ -1,0 +1,544 @@
+suite: test ingress
+templates:
+  - ingress.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+  appVersion: latest
+tests:
+  - it: should create nexus ingress with no rules
+    set:
+      ingress:
+        enabled: true
+        host: null
+        dockersubdomain: false
+        defaultRule: false
+        ingressClassName: nginx
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+      - isNull:
+          path: spec.rules
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+  - it: should create nexus ingress with default HTTP rule
+    set:
+      ingress:
+        enabled: true
+        host: null
+        dockersubdomain: false
+        defaultRule: true
+        ingressClassName: nginx
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+      - isNotNull:
+          path: spec.rules
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+  - it: should create nexus ingress with default HTTP rule which has no host
+    set:
+      ingress:
+        enabled: true
+        host: null
+        dockersubdomain: false
+        defaultRule: true
+        ingressClassName: nginx
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+      - equal:
+          path: spec.rules
+          value:
+            - http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha"
+                        port:
+                          number: 80
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+  - it: nexus ingress should have a HTTP rule which has the host set
+    set:
+      ingress:
+        enabled: true
+        host: example.com
+        dockersubdomain: false
+        defaultRule: true
+        ingressClassName: nginx
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+
+      - equal:
+          path: spec.rules
+          value:
+            - host: "example.com"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha"
+                        port:
+                          number: 80
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+  - it: nexus ingress should have additional http rules
+    set:
+      ingress:
+        enabled: true
+        host: "example.com"
+        additionalRules:
+          - host: "foo.example.com"
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: "test-release-nxrm-ha"
+                      port:
+                        number: 80
+
+          - host: "bar.example.com"
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: "test-release-nxrm-ha"
+                      port:
+                        number: 80
+        defaultRule: true
+        ingressClassName: nginx
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+
+      - equal:
+          path: spec.rules[0]
+          value:
+              host: "example.com"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha"
+                        port:
+                          number: 80
+      - equal:
+          path: spec.rules[1]
+          value:
+              host: "foo.example.com"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha"
+                        port:
+                          number: 80
+      - equal:
+          path: spec.rules[2]
+          value:
+              host: "bar.example.com"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha"
+                        port:
+                          number: 80
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+  - it: nexus ingress should have a default and docker subdomain routing rules
+    set:
+      ingress:
+        enabled: true
+        host: example.com
+        dockersubdomain: true
+        defaultRule: true
+        ingressClassName: nginx
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        extraLabels:
+          foo: bar
+          baz: bay
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+
+      - equal:
+          path: spec.rules
+          value:
+            - host: "example.com"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha"
+                        port:
+                          number: 80
+            - host: "*.example.com"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha"
+                        port:
+                          number: 80
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+  - it: should specify tls hosts
+    set:
+      ingress:
+        enabled: true
+        host: null
+        dockersubdomain: false
+        defaultRule: false
+        ingressClassName: nginx
+        tls:
+          - secretName: "tlsSecretName1"
+            hosts:
+              - repo.foo1
+              - repo.bar1
+          - secretName: "tlsSecretName2"
+            hosts:
+              - repo.foo2
+              - repo.bar2
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha"
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+
+      - equal:
+          path: spec.tls[0].hosts
+          value:
+            - repo.foo1
+            - repo.bar1
+
+      - equal:
+          path: spec.tls[0].secretName
+          value: tlsSecretName1
+
+
+      - equal:
+          path: spec.tls[1].hosts
+          value:
+            - repo.foo2
+            - repo.bar2
+
+      - equal:
+          path: spec.tls[1].secretName
+          value: tlsSecretName2
+
+  - it: should create docker ingress with a HTTP rule which has its host set
+    set:
+      ingress:
+        ingressClassName: nginx
+        annotations:
+          jar: box
+          super: ted
+      nexus:
+        docker:
+          enabled: true
+          registries:
+           - host: chart.local
+             port: 5000
+             secretName: registry-secret
+             targetPort: 8081
+        extraLabels:
+          foo: bar
+          baz: bay
+
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha-docker-5000"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+
+      - equal:
+          path: spec.rules
+          value:
+            - host: "chart.local"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha-docker-5000"
+                        port:
+                          number: 5000
+      - equal:
+          path: spec.tls[0].hosts
+          value:
+            - chart.local
+
+      - equal:
+          path: spec.tls[0].secretName
+          value: registry-secret

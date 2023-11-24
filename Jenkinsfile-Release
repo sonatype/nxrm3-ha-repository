@@ -37,9 +37,9 @@ dockerizedBuildPipeline(
   buildAndTest: {
     sonatypeZionGitConfig()
     runSafely "git checkout ${gitBranch(env)}"
-    runSafely "./upgrade.sh ./nxrm-ha-helm ${chartVersion} ${params.appVersion}"
+    runSafely "./upgrade.sh ./nxrm-ha ${chartVersion} ${params.appVersion}"
     runSafely './build.sh'
-    runSafely 'git add nxrm-ha-helm'
+    runSafely 'git add nxrm-ha'
   },
   skipVulnerabilityScan: true,
   archiveArtifacts: 'docs/*',

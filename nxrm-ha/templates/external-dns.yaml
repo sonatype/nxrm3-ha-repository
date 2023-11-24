@@ -29,7 +29,7 @@ roleRef:
   name: external-dns
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.aws.serviceAccount.externaldns.name }}
+    name: {{ include "nexus.serviceAccountName" . }}
     namespace: {{ .Values.namespaces.externaldnsNs }}
 ---
 apiVersion: apps/v1
@@ -50,7 +50,7 @@ spec:
       labels:
         app.kubernetes.io/name: external-dns
     spec:
-      serviceAccountName: external-dns
+      serviceAccountName: {{ include "nexus.serviceAccountName" . }}
       containers:
         - name: external-dns
           image: k8s.gcr.io/external-dns/external-dns:v0.11.0

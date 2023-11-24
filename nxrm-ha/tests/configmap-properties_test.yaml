@@ -1,0 +1,52 @@
+suite: test nexus properties override
+templates:
+  - configmap-properties.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+  appVersion: "latest"
+tests:
+  - it: should create nexus.properties file
+    set:
+      nexus:
+        properties:
+          override: true
+          data:
+            "hello": "world"
+            "super": "ted"
+        extraLabels:
+          foo: bar
+          baz: bay
+        extraSelectorLabels:
+          foo/bar: baz
+          baz/foo: bar
+    asserts:
+      - isKind:
+          of: ConfigMap
+
+      - equal:
+          path: metadata.name
+          value: "nxrm-ha-properties"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: data
+          value:
+            nexus.properties: |-
+              hello=world
+              super=ted
