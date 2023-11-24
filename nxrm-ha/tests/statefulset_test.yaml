@@ -447,6 +447,22 @@ tests:
           path: spec.template.spec.volumes[1].emptyDir.sizeLimit
           value: "2Gi"
 
+  - it: should set nexus datastore enabled to true when clustered is false
+    template: statefulset.yaml
+    set:
+      statefulset:
+        clustered: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[7]
+          value:
+            name: INSTALL4J_ADD_VM_PARAMS
+            value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=${LICENSE_FILE} \
+          -Dnexus.datastore.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
+          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:5432/${DB_NAME} \
+          -Dnexus.datastore.nexus.username=${DB_USER} \
+          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+
   - it: should create nxrm-app container with dynamic nexusdata volume
     template: statefulset.yaml
     set:
