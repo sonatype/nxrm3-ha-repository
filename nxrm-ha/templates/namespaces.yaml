@@ -1,14 +1,16 @@
+{{- if .Values.namespaces.nexusNs.enabled }}
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .Values.namespaces.nexusNs }}
+  name: {{ .Values.namespaces.nexusNs.name }}
+{{- end }}
 ---
 {{- if .Values.aws.enabled }}
-{{- if .Values.aws.fluentbit.enabled }}
+{{- if .Values.namespaces.cloudwatchNs.enabled }}
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .Values.namespaces.cloudwatchNs }}
+  name: {{ .Values.namespaces.cloudwatchNs.name }}
 {{- end }}
 ---
 {{- if .Values.aws.externaldns.enabled }}
@@ -17,5 +19,5 @@ kind: Namespace
 metadata:
   name: {{ .Values.namespaces.externaldnsNs }}
 {{- end }}
-{{- end }}
 ---
+{{- end }}

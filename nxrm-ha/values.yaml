@@ -1,7 +1,11 @@
 # Declare variables to be passed into your templates.
 namespaces:
-  nexusNs: nexusrepo
-  cloudwatchNs: amazon-cloudwatch
+  nexusNs:
+    enabled: true
+    name: "nexusrepo"
+  cloudwatchNs:
+    enabled: false
+    name: amazon-cloudwatch
   externaldnsNs: nexus-externaldns
 serviceAccount:
   enabled: false

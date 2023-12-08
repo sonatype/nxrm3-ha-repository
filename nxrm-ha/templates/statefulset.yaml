@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ template "nexus.fullname" . }}
-  namespace: {{ .Values.namespaces.nexusNs }}
+  namespace: {{ .Values.namespaces.nexusNs.name }}
   labels:
 {{ include "nexus.labels" . | nindent 4 }}
   {{- if .Values.nexus.extraLabels }}
