@@ -224,6 +224,7 @@ secret:
     name: nexus-repo-license.lic
     licenseSecret:
       enabled: false
+      file: # Specify the license file name with --set-file license.licenseSecret.file="file_name" helm option
       fileContentsBase64: your_license_file_contents_in_base_64
       mountPath: /var/nexus-repo-license
   azure:

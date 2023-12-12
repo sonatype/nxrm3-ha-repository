@@ -158,6 +158,30 @@ You can install this helm chart from the git repository or sonatype helm index.
 ```helm install nxrm sonatype/nxrm-ha -f values.yaml```
 4. Get the Nexus Repository link using the following:
 ```kubectl get ingresses -n nexusrepo```
+
+### Example helm install with options
+
+Replace below commands with your actual values
+
+#### OnPrem Deployments
+
+```
+helm install nxha1 \
+--set storageClass.name=nfs \
+--set secret.license.licenseSecret.enabled=true \
+--set-file secret.license.licenseSecret.file=./nx-license-file.lic \
+--set pvc.volumeClaimTemplate.enabled=true \
+--set secret.dbSecret.enabled=true \
+--set secret.db.host=postgres-host.mydomain \
+--set secret.db.user=nexus \
+--set secret.db.password=nexus123 \
+--set secret.nexusAdminSecret.enabled=true \
+--set secret.nexusAdminSecret.adminPassword="admin123" \
+--set service.nexus.enabled=true \
+sonatype/nxrm-ha
+```
+
+
 ---
 
 ## Health Check
@@ -308,6 +332,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `secret.nexusAdmin.alias`                                   | Applicable to AWS Secret Manager only. An alias to use for the initial Nexus Repository admin password secret retrieved from AWS Secret manager.                                                                                                                                                                                                                                 | `admin-nxrm-password-alias`                                                                                         |
 | `secret.license.name`                                       | The name for [license-config-mapping.yaml](templates%2Flicense-config-mapping.yaml) for storing Nexus Repository license. This is an alternative way of specifying your Nexus Repository Pro license. Use this option when not using Azure Key Vault or AWS Secret Manager                                                                                                       | nexus-repo-license.lic                                                                                              |
 | `secret.license.licenseSecret.enabled`                      | Whether or not to install [license-config-mapping.yaml](templates%2Flicense-config-mapping.yaml)                                                                                                                                                                                                                                                                                 | `false`                                                                                                             |
+| `secret.license.licenseSecret.file`                        | Name of the nexus file with path. Set this if you're not using AWS Secret Manager or Azure Key Vault to store your Nexus Repository Pro license.                                                                                                                                                                                                     | your_license_file_with_full_path                                                                               |
 | `secret.license.licenseSecret.fileContentsBase64`           | A base64 representation of your Nexus Repository Pro license. Set this if you're not using AWS Secret Manager or Azure Key Vault to store your Nexus Repository Pro license.                                                                                                                                                                                                     | your_license_file_contents_in_base_64                                                                               |
 | `secret.license.licenseSecret.mountPath`                    | The path where your Nexus Repository Pro license is mounted in the Nexus Repository container                                                                                                                                                                                                                                                                                    | /var/nexus-repo-license                                                                                             |
 | `secret.azure.userAssignedIdentityID`                       | A managed identity or service principal that has `secrets management` access to the key vault. Only applicable if this chart is installed on Azure and you've stored database credentials, Nexus Repository initial admin password and your Nexus Repository Pro license in Azure Key Vault.                                                                                     | userAssignedIdentityID                                                                                              |
