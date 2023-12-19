@@ -12,7 +12,12 @@ metadata:
     {{- end }}
   {{- end }}
 type: Opaque
+{{- if .Values.secret.license.licenseSecret.file }}
+data:
+  {{ .Values.secret.license.name }}: {{ .Values.secret.license.licenseSecret.file | b64enc }}
+{{ else if .Values.secret.license.licenseSecret.fileContentsBase64 }}  
 data:
   {{ .Values.secret.license.name }}: |-
     {{ .Values.secret.license.licenseSecret.fileContentsBase64 }}
+{{- end }}
 {{- end }}
