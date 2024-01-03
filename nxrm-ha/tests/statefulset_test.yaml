@@ -257,6 +257,8 @@ tests:
           value:
             app.kubernetes.io/instance: test-release
             app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
 
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
@@ -534,6 +536,8 @@ tests:
           value:
             app.kubernetes.io/instance: test-release
             app.kubernetes.io/name: nxrm-ha
+            foo/bar: baz
+            baz/foo: bar
 
       - equal:
           path: spec.template.spec.terminationGracePeriodSeconds
