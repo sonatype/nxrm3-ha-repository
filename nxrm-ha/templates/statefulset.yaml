@@ -149,6 +149,9 @@ spec:
               -Dnexus.datastore.nexus.username=${DB_USER} \
               -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
           {{ end }}
+          {{- if .Values.statefulset.container.additionalEnv }}
+            {{ toYaml .Values.statefulset.container.additionalEnv | nindent 12 }}
+          {{- end }}
           volumeMounts:
           {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
             - name: nxrm-secrets

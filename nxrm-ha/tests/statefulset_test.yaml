@@ -447,6 +447,35 @@ tests:
           path: spec.template.spec.volumes[1].emptyDir.sizeLimit
           value: "2Gi"
 
+  - it: should set additional environment variable when specified
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          additionalEnv:
+            - name: tiger
+              value: lion
+            - name: abc
+              value: xyz
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[8]
+          value:
+              name: tiger
+              value: lion
+      - equal:
+          path: spec.template.spec.containers[0].env[9]
+          value:
+            name: abc
+            value: xyz
+
+
+  - it: should not set additional environment variable when not specified
+    template: statefulset.yaml
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].env[8]
+
   - it: should set nexus datastore enabled to true when clustered is false
     template: statefulset.yaml
     set:
