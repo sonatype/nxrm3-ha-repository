@@ -40,6 +40,11 @@ spec:
         {{- end }}
       labels:
         {{- include "nexus.selectorLabels" . | nindent 8 }}
+        {{- if .Values.nexus.extraSelectorLabels }}
+          {{- with .Values.nexus.extraSelectorLabels }}
+            {{ toYaml . | nindent 8 }}
+          {{- end }}
+        {{- end }}
     spec:
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ include "nexus.serviceAccountName" . }}
