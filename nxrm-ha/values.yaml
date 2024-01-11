@@ -106,6 +106,8 @@ statefulset:
       nexusDBPort: 5432
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
+
+    additionalEnv: null
   requestLogContainer:
     image:
       repository: busybox
