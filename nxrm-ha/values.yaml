@@ -59,33 +59,7 @@ statefulset:
 
   # # Add init containers. e.g. to be used to give specific permissions for nexus-data.
   # # Add your own init containers as needed
-  initContainers:
-    # chown nexus-data to 'nexus' user and init log directories/files for a new pod
-    # otherwise the side car containers will crash a couple of times and backoff whilst waiting
-    # for nxrm-app to start and this increases the total start up time.
-    - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
-      image: busybox:1.33.1
-      command: [/bin/sh]
-      args:
-        - -c
-        - >-
-          mkdir -p /nexus-data/etc/logback &&
-          mkdir -p /nexus-data/log/tasks &&
-          mkdir -p /nexus-data/log/audit &&
-          touch -a /nexus-data/log/tasks/allTasks.log &&
-          touch -a /nexus-data/log/audit/audit.log &&
-          touch -a /nexus-data/log/request.log &&
-          chown -R '200:200' /nexus-data
-      volumeMounts:
-        - name: nexus-data
-          mountPath: /nexus-data
-      resources:
-        limits:
-          cpu: "0.2"
-          memory: "512Mi"
-        requests:
-          cpu: "0.1"
-          memory: "256Mi"
+  initContainers: null
   container:
     image:
       repository: sonatype/nexus3
@@ -108,39 +82,6 @@ statefulset:
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
 
     additionalEnv: null
-  requestLogContainer:
-    image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
-      limits:
-        cpu: "0.2"
-        memory: "512Mi"
-      requests:
-        cpu: "0.1"
-        memory: "256Mi"
-  auditLogContainer:
-    image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
-      limits:
-        cpu: "0.2"
-        memory: "512Mi"
-      requests:
-        cpu: "0.1"
-        memory: "256Mi"
-  taskLogContainer:
-    image:
-      repository: busybox
-      tag: 1.33.1
-    resources:
-      limits:
-        cpu: "0.2"
-        memory: "512Mi"
-      requests:
-        cpu: "0.1"
-        memory: "256Mi"
   startupProbe: # Allow up to 30 minutes for the container to finish any pending DB migration. Once the startup probe succeeds the liveness- and readiness probes get activated (no need for initialDelaySeconds).
     initialDelaySeconds: 0
     periodSeconds: 10
@@ -190,15 +131,16 @@ ingress:
 storageClass:
   enabled: false # For built-in storage class, set storageClass.enabled to false
   name: nexus-storage # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. managed-csi for AKS
-  provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use managed-csi. For AWS EKS: ebs.csi.aws.com. In case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
+  provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use file.csi.azure.com . For AWS EKS: efs.csi.aws.com.
   volumeBindingMode: "WaitForFirstConsumer"
   reclaimPolicy: Retain
 #  parameters:
-#    type: type
-#    fsType: "fsType" # e.g. ext4
-#    iopsPerGB: "10"
+#    provisioningMode: efs-ap
+#    fileSystemId: "fs-abc123"
+#    directoryPerms: "700"
 pvc:
-  accessModes: ReadWriteOnce
+  name: efs-claim
+  accessModes: ReadWriteMany
   storage: 2Gi
   volumeClaimTemplate:
     enabled: false
