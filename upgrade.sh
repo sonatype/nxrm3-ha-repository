@@ -31,7 +31,7 @@ cat "$DIR/Chart.yaml" \
 mv "$OUTPUT_FILE" "$DIR/Chart.yaml"
 
 cat "$DIR/values.yaml" \
-  | sed -E "s/^  tag: .+$/  tag: $APP_VERSION/" \
+  | sed -E "s/^      nexusTag: .+$/      nexusTag: $APP_VERSION/" \
   > "$OUTPUT_FILE"
 
 mv "$OUTPUT_FILE" "$DIR/values.yaml"
