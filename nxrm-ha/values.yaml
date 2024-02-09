@@ -268,4 +268,4 @@ nexus:
 config:
   enabled: false
   mountPath: /sonatype-nexus-conf
-  data: []
+  data: {}
