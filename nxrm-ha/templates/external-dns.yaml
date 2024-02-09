@@ -28,13 +28,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ include "nexus.serviceAccountName" . }}
-    namespace: {{ .Values.namespaces.externaldnsNs }}
+    namespace: {{ .Values.namespaces.externaldnsNs | quote }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-dns
-  namespace: {{ .Values.namespaces.externaldnsNs }}
+  namespace: {{ .Values.namespaces.externaldnsNs | quote }}
   labels:
     app.kubernetes.io/name: external-dns
 spec:
