@@ -346,7 +346,7 @@ tests:
             requests:
               storage: 2Gi
 
-      - isNull:
+      - isEmpty:
           path: spec.template.spec.volumes
 
 

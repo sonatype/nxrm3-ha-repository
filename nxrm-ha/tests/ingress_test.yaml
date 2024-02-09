@@ -39,7 +39,7 @@ tests:
           path: spec.ingressClassName
           value:
             nginx
-      - isNull:
+      - isEmpty:
           path: spec.rules
 
       - equal:
