@@ -141,16 +141,24 @@ statefulset:
       requests:
         cpu: "0.1"
         memory: "256Mi"
+  startupProbe: # Allow up to 30 minutes for the container to finish any pending DB migration. Once the startup probe succeeds the liveness- and readiness probes get activated (no need for initialDelaySeconds).
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 180
+    path: /
   livenessProbe:
-    failureThreshold: 6
-    initialDelaySeconds: 120
-    path: /
+    initialDelaySeconds: 0
     periodSeconds: 60
+    timeoutSeconds: 1
+    failureThreshold: 6
+    path: /
   readinessProbe:
-    failureThreshold: 6
-    initialDelaySeconds: 120
-    path: /
+    initialDelaySeconds: 0
     periodSeconds: 60
+    timeoutSeconds: 1
+    failureThreshold: 6
+    path: /
   imagePullSecrets: {}
 ingress:
   name: "nexus-ingress"

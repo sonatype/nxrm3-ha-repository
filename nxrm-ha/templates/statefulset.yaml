@@ -89,26 +89,30 @@ spec:
             {{- end }}
           resources:
             {{ toYaml .Values.statefulset.container.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.statefulset.startupProbe.path }}
+              port: {{ .Values.statefulset.container.containerPort }}
+            initialDelaySeconds: {{ .Values.statefulset.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.statefulset.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.statefulset.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.statefulset.startupProbe.failureThreshold }}
           livenessProbe:
             httpGet:
               path: {{ .Values.statefulset.livenessProbe.path }}
               port: {{ .Values.statefulset.container.containerPort }}
             initialDelaySeconds: {{ .Values.statefulset.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.statefulset.livenessProbe.periodSeconds }}
-            failureThreshold: {{ .Values.statefulset.livenessProbe.failureThreshold }}
-            {{- if .Values.statefulset.livenessProbe.timeoutSeconds }}
             timeoutSeconds: {{ .Values.statefulset.livenessProbe.timeoutSeconds }}
-            {{- end }}
+            failureThreshold: {{ .Values.statefulset.livenessProbe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: {{ .Values.statefulset.readinessProbe.path }}
               port: {{ .Values.statefulset.container.containerPort }}
             initialDelaySeconds: {{ .Values.statefulset.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.statefulset.readinessProbe.periodSeconds }}
-            failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
-            {{- if .Values.statefulset.readinessProbe.timeoutSeconds }}
             timeoutSeconds: {{ .Values.statefulset.readinessProbe.timeoutSeconds }}
-            {{- end }}
+            failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
           env:
             - name: DB_NAME
               value: "{{ .Values.statefulset.container.env.nexusDBName }}"
