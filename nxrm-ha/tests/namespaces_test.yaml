@@ -1,6 +1,9 @@
 suite: test namespaces
 templates:
   - namespaces.yaml
+release:
+  name: "test-release"
+  namespace: "test-namespace"
 tests:
   - it: should not create any namespaces
     set:
@@ -74,3 +77,15 @@ tests:
         equal:
           path: metadata.name
           value: "nexus-externaldns"
+
+  - it: should create release based namespace if nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+    asserts:
+      - isKind:
+          of: Namespace
+      - equal:
+          path: metadata.name
+          value: "test-namespace"

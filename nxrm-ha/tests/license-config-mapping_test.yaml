@@ -3,6 +3,7 @@ templates:
   - license-config-mapping.yaml
 release:
   name: "test-release"
+  namespace: "test-namespace"
 chart:
   version: "latest"
   appVersion: "latest"
@@ -43,3 +44,17 @@ tests:
           value:
             nexus-repo-license.lic: |-
               your_license_file_contents_in_base_64
+
+  - it: should create license secret in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      secret:
+        license:
+          licenseSecret:
+            enabled: true
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"
