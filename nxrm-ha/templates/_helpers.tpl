@@ -61,3 +61,11 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Create the default FQDN for the nexus headless service
+We truncate at 63 chars because of the DNS naming spec.
+*/}}
+{{- define "nexus.service.headless" -}}
+{{- printf "%s-hl" (include "nexus.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

@@ -231,7 +231,7 @@ tests:
 
       - equal:
           path: spec.serviceName
-          value: "nxrm-statefulset-service"
+          value: "test-release-nxrm-ha-hl"
 
       - equal:
           path: spec.selector.matchLabels
@@ -550,7 +550,7 @@ tests:
 
       - equal:
           path: spec.serviceName
-          value: "nxrm-statefulset-service"
+          value: "test-release-nxrm-ha-hl"
 
       - equal:
           path: spec.selector.matchLabels
