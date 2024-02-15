@@ -68,7 +68,7 @@ spec:
       {{- end }}
       containers:
         - name: nxrm-app
-          image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.tag }}
+          image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.nexusTag }}
           imagePullPolicy: {{ .Values.statefulset.container.pullPolicy }}
           securityContext:
             {{ toYaml .Values.nexus.securityContext | nindent 12 }}
