@@ -472,9 +472,6 @@ tests:
     set:
       ingress:
         ingressClassName: nginx
-        annotations:
-          jar: box
-          super: ted
       nexus:
         docker:
           enabled: true
@@ -483,6 +480,9 @@ tests:
              port: 5000
              secretName: registry-secret
              targetPort: 8081
+             annotations:
+               jar: box
+               super: ted
         extraLabels:
           foo: bar
           baz: bay
