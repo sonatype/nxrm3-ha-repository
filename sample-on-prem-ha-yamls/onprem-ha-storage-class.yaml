@@ -18,10 +18,9 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: "nxrm-nexus-efs-storage"
-provisioner: efs.csi.aws.com
+  name: "nxrm-nexus-shared"
+provisioner: provisioner
+mountOptions:
+  - options
 parameters:
-  provisioningMode: efs-ap
-  fileSystemId: "fs-abc123"
-  directoryPerms: "700"
-volumeBindingMode: WaitForFirstConsumer
+  key: value

@@ -131,7 +131,7 @@ ingress:
 storageClass:
   enabled: false # For built-in storage class, set storageClass.enabled to false
   name: nexus-storage # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. managed-csi for AKS
-  provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use file.csi.azure.com . For AWS EKS: efs.csi.aws.com.
+  provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use file.csi.azure.com (or "kubernetes.io/azure-file" if aks version is less than 1.21). For AWS EKS: efs.csi.aws.com.
   volumeBindingMode: "WaitForFirstConsumer"
   reclaimPolicy: Retain
 #  parameters:
