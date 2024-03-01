@@ -177,11 +177,11 @@ spec:
             {{ toYaml .Values.statefulset.container.additionalEnv | nindent 12 }}
           {{- end }}
           volumeMounts:
-          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
+          {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled .Values.externalsecrets.enabled }}
             - name: nxrm-secrets
               mountPath: /nxrm-secrets
           {{- end }}
-          {{- if .Values.secret.license.licenseSecret.enabled }}
+          {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled }}
             - name: license-volume
               mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
               readOnly: true
@@ -258,7 +258,7 @@ spec:
       {{- if .Values.statefulset.additionalVolumes }}
         {{ toYaml .Values.statefulset.additionalVolumes | nindent 8 }}
       {{- end }}
-      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled }}
+      {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled .Values.secret.dbSecret.enabled .Values.externalsecrets.enabled }}
         - name: nxrm-secrets
         {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled }}
           csi:
@@ -272,7 +272,7 @@ spec:
             secretName: {{ template "nexus.name" . }}-dbsecret
         {{ end }}
       {{ end }}
-      {{- if .Values.secret.license.licenseSecret.enabled }}
+      {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled }}
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}
