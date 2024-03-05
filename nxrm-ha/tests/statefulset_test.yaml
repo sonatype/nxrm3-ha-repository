@@ -624,7 +624,7 @@ tests:
 
       - matchRegex:
           path: spec.template.spec.containers[0].image
-          pattern: "^sonatype/nexus3:latest"
+          pattern: "^sonatype/nexus3:\\d\\.\\d{2}\\.\\d|latest"
 
       - equal:
           path: spec.template.spec.containers[0].securityContext.runAsUser
