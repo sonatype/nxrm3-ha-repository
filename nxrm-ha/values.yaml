@@ -243,15 +243,15 @@ externalsecrets:
     database:
       refreshInterval: 1h
       providerSecretName: dbSecretName # The name of the AWS SecretsManager/Azure KeyVault etc secret
-      dbUserKey: username #  the user name key in the AWS SecretsManager/Azure KeyVault etc secret
-      dbPasswordKey: password # the password key in the AWS SecretsManager/Azure KeyVault etc secret
-      dbHostKey: host # the host key in the AWS SecretsManager/Azure KeyVault etc secret
+      dbUserKey: username #  the name of the key in the secret which contains your database username.
+      dbPasswordKey: password # the name of the key in the secret which contains your database password.
+      dbHostKey: host # the name of the key in the secret which contains your database host.
     admin:
       refreshInterval: 1h
       providerSecretName: adminSecretName # The name of the AWS SecretsManager/Azure KeyVault etc secret
-      adminPasswordKey: "nexusAdminPassword" # the admin password key in the AWS SecretsManager/Azure KeyVault etc secret
+      adminPasswordKey: "nexusAdminPassword" # the name of the key in the secret which contains your nexus repository admin password
     license:
-      providerSecretName: nexus-repo-license.lic # The key for license secret in the remote secret store (i.e. the key in AWS SecretsManager/Azure KeyVault etc)
+      providerSecretName: nexus-repo-license.lic # The name of the AWS SecretsManager/Azure KeyVault etc secret which contains your Nexus Repository license
       refreshInterval: 1h
 secret:
   secretProviderClass: "secretProviderClass"
