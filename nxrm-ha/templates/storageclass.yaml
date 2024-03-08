@@ -12,6 +12,15 @@ metadata:
   {{- end }}
 provisioner: {{ .Values.storageClass.provisioner }}
 reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
+{{- if .Values.storageClass.allowVolumeExpansion }}
+allowVolumeExpansion: {{ .Values.storageClass.allowVolumeExpansion }}
+{{- end}}
+{{- if .Values.storageClass.mountOptions }}
+mountOptions:
+{{- with .Values.storageClass.mountOptions }}
+  {{- toYaml . | nindent 2}}
+{{- end }}
+{{- end }}
 {{- if .Values.storageClass.parameters }}
 parameters:
 {{- with .Values.storageClass.parameters }}
