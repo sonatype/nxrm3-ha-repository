@@ -3,9 +3,9 @@ kind: Service
 metadata:
   name: {{ include "nexus.service.headless" . }}
   namespace: {{ default .Release.Namespace .Values.namespaces.nexusNs.name | quote }}
-{{- if .Values.service.annotations }}
+{{- if or .Values.service.annotations .Values.service.headless.annotations }}
   annotations:
-    {{ toYaml .Values.service.annotations | nindent 4 }}
+    {{- include "nexus.service.headless.annotations" . | nindent 4 }}
 {{- end }}
   labels:
   {{- include "nexus.labels" . | nindent 4 }}
@@ -16,8 +16,7 @@ metadata:
   {{- end }}
 spec:
   clusterIP: None
-  # We want all pods in the StatefulSet to have their addresses published even before they're ready.
-  publishNotReadyAddresses: true
+  publishNotReadyAddresses: {{ .Values.service.headless.publishNotReadyAddresses }}
   selector:
     {{- include "nexus.selectorLabels" . | nindent 4 }}
     {{- if .Values.nexus.extraSelectorLabels }}

@@ -20,6 +20,9 @@ tests:
         annotations:
           a1: annotation1
           a2: annotation2
+        headless:
+          annotations:
+            a3: annotation3
     asserts:
       - isKind:
           of: Service
@@ -37,6 +40,7 @@ tests:
           value:
             a1: annotation1
             a2: annotation2
+            a3: annotation3
 
       - equal:
           path: metadata.labels
@@ -57,6 +61,10 @@ tests:
           value: "None"
 
       - equal:
+          path: spec.publishNotReadyAddresses
+          value: true
+
+      - equal:
           path: spec.selector
           value:
             app.kubernetes.io/instance: test-release
@@ -75,3 +83,43 @@ tests:
       - equal:
           path: spec.ports[0].targetPort
           value: "nexus-ui"
+  - it: should create headless service with additional headless annotations
+    set:
+      service:
+        annotations:
+          a1: annotation1
+          a2: annotation2
+        headless:
+          annotations:
+            a3: annotation3
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a1: annotation1
+            a2: annotation2
+            a3: annotation3
+  - it: should create headless service with common annotation overwrite
+    set:
+      service:
+        annotations:
+          a1: annotation1
+          a2: annotation2
+        headless:
+          annotations:
+            a1: annotation-overwrite
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a1: annotation-overwrite
+            a2: annotation2
+  - it: should create headless service with publishNotReadyAddresses set to false
+    set:
+      service:
+        headless:
+          publishNotReadyAddresses: false
+    asserts:
+      - equal:
+          path: spec.publishNotReadyAddresses
+          value: false
