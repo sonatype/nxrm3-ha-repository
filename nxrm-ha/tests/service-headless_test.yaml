@@ -49,9 +49,8 @@ tests:
             l1: label1
             l2: label2
 
-      - equal:
+      - isNull:
           path: spec.type
-          value: "ClusterIP"
 
       - equal:
           path: spec.clusterIP
