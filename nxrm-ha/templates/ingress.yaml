@@ -79,7 +79,7 @@ metadata:
         {{ toYaml . | nindent 4 }}
       {{- end }}
     {{- end }}
-  {{- with $.Values.ingress.annotations }}
+  {{- with $registry.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}

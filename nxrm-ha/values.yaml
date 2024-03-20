@@ -263,6 +263,7 @@ nexus:
   #     port: 5000
   #     secretName: registry-secret
   #     targetPort: 8081
+  #     annotations: {}
 
 # Enable configmap and add arbitrary data in configmap
 config:
