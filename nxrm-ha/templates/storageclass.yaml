@@ -3,7 +3,6 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "{{ .Values.storageClass.name }}"
-  namespace: {{ .Values.namespaces.nexusNs.name }}
   labels:
 {{ include "nexus.labels" . | nindent 4 }}
   {{- if .Values.nexus.extraLabels }}
@@ -12,8 +11,16 @@ metadata:
     {{- end }}
   {{- end }}
 provisioner: {{ .Values.storageClass.provisioner }}
-volumeBindingMode: {{ .Values.storageClass.volumeBindingMode }}
 reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
+{{- if .Values.storageClass.allowVolumeExpansion }}
+allowVolumeExpansion: {{ .Values.storageClass.allowVolumeExpansion }}
+{{- end}}
+{{- if .Values.storageClass.mountOptions }}
+mountOptions:
+{{- with .Values.storageClass.mountOptions }}
+  {{- toYaml . | nindent 2}}
+{{- end }}
+{{- end }}
 {{- if .Values.storageClass.parameters }}
 parameters:
 {{- with .Values.storageClass.parameters }}
