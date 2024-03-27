@@ -665,6 +665,28 @@ tests:
               memory: "8Gi"
 
       - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet
+          value:
+            path: /
+            port: 8081
+
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.initialDelaySeconds
+          value: 0
+
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.periodSeconds
+          value: 10
+
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.timeoutSeconds
+          value: 1
+
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 180
+
+      - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet
           value:
             path: /
@@ -672,11 +694,15 @@ tests:
 
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
-          value: 120
+          value: 0
 
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.periodSeconds
           value: 60
+
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.timeoutSeconds
+          value: 1
 
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.failureThreshold
@@ -690,11 +716,15 @@ tests:
 
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
-          value: 120
+          value: 0
 
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.periodSeconds
           value: 60
+
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.timeoutSeconds
+          value: 1
 
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.failureThreshold
