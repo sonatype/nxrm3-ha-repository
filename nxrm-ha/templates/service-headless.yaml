@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nexus.service.headless" . }}
+  namespace: {{ default .Release.Namespace .Values.namespaces.nexusNs.name | quote }}
+{{- if or .Values.service.annotations .Values.service.headless.annotations }}
+  annotations:
+    {{- include "nexus.service.headless.annotations" . | nindent 4 }}
+{{- end }}
+  labels:
+  {{- include "nexus.labels" . | nindent 4 }}
+  {{- if .Values.nexus.extraLabels }}
+    {{- with .Values.nexus.extraLabels }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: {{ .Values.service.headless.publishNotReadyAddresses }}
+  selector:
+    {{- include "nexus.selectorLabels" . | nindent 4 }}
+    {{- if .Values.nexus.extraSelectorLabels }}
+      {{- with .Values.nexus.extraSelectorLabels }}
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+    {{- end }}
+  ports:
+    - name: nexus-ui
+      port: {{ .Values.statefulset.container.containerPort }}
+      targetPort: nexus-ui

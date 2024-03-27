@@ -20,7 +20,7 @@ spec:
   {{ else }}
   replicas: 1
   {{ end }}
-  serviceName: "{{ .Values.statefulset.serviceName }}"
+  serviceName: {{ include "nexus.service.headless" . }}
   selector:
     matchLabels:
       {{- include "nexus.selectorLabels" . | nindent 6 }}
