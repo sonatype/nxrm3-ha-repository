@@ -99,6 +99,18 @@ tests:
             a1: annotation1
             a2: annotation2
             a3: annotation3
+  - it: should create headless service without additional headless annotation
+    set:
+      service:
+        annotations:
+          a1: annotation1
+          a2: annotation2
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a1: annotation1
+            a2: annotation2
   - it: should create headless service with common annotation overwrite
     set:
       service:
