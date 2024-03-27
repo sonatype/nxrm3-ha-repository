@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ .Values.secret.license.name }}
-  namespace: {{ .Values.namespaces.nexusNs.name }}
+  namespace: {{ default .Release.Namespace .Values.namespaces.nexusNs.name | quote }}
   labels:
 {{ include "nexus.labels" . | nindent 4 }}
   {{- if .Values.nexus.extraLabels }}

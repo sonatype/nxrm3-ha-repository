@@ -3,6 +3,7 @@ templates:
   - configmap.yaml
 release:
   name: "test-release"
+  namespace: "test-namespace"
 chart:
   version: "latest"
   appVersion: "latest"
@@ -51,3 +52,17 @@ tests:
             whale: true
             fish: 1
             super: "man"
+
+  - it: should create nexus config map in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      config:
+        enabled: true
+        data:
+          super: "man"
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"

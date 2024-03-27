@@ -3,6 +3,7 @@ templates:
   - services.yaml
 release:
   name: "test-release"
+  namespace: "test-namespace"
 chart:
   version: "latest"
   appVersion: "latest"
@@ -167,3 +168,37 @@ tests:
           path: spec.ports[0].name
           value: "docker-5000"
         documentIndex: 0
+
+  - it: should create nexus service in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      service:
+        nexus:
+          enabled: true
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"
+
+  - it: should create docker service in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      service:
+        nexus:
+          enabled: false
+      nexus:
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              secretName: registry-secret
+              targetPort: 8081
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"

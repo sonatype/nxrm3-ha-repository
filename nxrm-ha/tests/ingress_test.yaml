@@ -3,6 +3,7 @@ templates:
   - ingress.yaml
 release:
   name: "test-release"
+  namespace: "test-namespace"
 chart:
   version: "latest"
   appVersion: latest
@@ -39,7 +40,7 @@ tests:
           path: spec.ingressClassName
           value:
             nginx
-      - isNull:
+      - isEmpty:
           path: spec.rules
 
       - equal:
@@ -542,3 +543,33 @@ tests:
       - equal:
           path: spec.tls[0].secretName
           value: registry-secret
+
+  - it: should create nexus ingress in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      ingress:
+        enabled: true
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"
+
+  - it: should create docker ingress in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      nexus:
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              secretName: registry-secret
+              targetPort: 8081
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"

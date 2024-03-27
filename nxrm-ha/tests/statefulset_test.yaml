@@ -4,6 +4,7 @@ templates:
   - configmap-properties.yaml
 release:
   name: "test-release"
+  namespace: "test-namespace"
 chart:
   version: "latest"
   appVersion: "latest"
@@ -1036,3 +1037,14 @@ tests:
           value:
             - name: nexus-data
               mountPath: /nexus-data
+
+  - it: should create in release namespace when namespaces.nexusNs.name is empty
+    template: statefulset.yaml
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"
