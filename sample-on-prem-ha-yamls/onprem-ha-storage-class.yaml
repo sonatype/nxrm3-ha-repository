@@ -15,12 +15,16 @@
 # Note: This YAML file is just an example and cannot be used as-is. 
 # You must fill it out with the appropriate information for your deployment to be able to use it.
 
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: "nxrm-nexus-shared"
-provisioner: provisioner
-mountOptions:
-  - options
-parameters:
-  key: value
+# Install the https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner and enable the default storage class: 'nfs-client'
+
+#
+#apiVersion: storage.k8s.io/v1
+#kind: StorageClass
+#metadata:
+#  name: "nxrm-nexus-log-storage"
+#provisioner: provisioner
+#mountOptions:
+#  - options
+#parameters:
+#  key: value
+

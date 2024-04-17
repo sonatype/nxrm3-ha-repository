@@ -68,10 +68,10 @@ spec:
           # See help documentation, these are minimum system requirements
           resources:
             limits:
-              cpu: 4 #This is an example. Update as needed
-              memory: "8Gi" #This is an example. Update as needed
+              cpu: "16" #This is an example. Update as needed
+              memory: "16Gi" #This is an example. Update as needed
             requests:
-              cpu: 4 #This is an example. Update as needed
+              cpu: "8" #This is an example. Update as needed
               memory: "8Gi" #This is an example. Update as needed
           securityContext:
             runAsUser: 200
@@ -127,7 +127,7 @@ spec:
         name: nexus-data
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "nxrm-nexus-storage"
+        storageClassName: "nxrm-nexus-log-storage"
         resources:
           requests:
-            storage: 20Gi
+            storage: 4Gi
