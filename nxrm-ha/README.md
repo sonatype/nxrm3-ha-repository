@@ -23,21 +23,17 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 
 ### Storage
 The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
-you configure dynamic provisioning of persistent storage or attach dedicated local disks based on your deployment environment as explained below.
+you configure dynamic provisioning of persistent storage bound to a shared location such as EFS/Azure File/NFS which is accessible to all actives nodes in your Kubernetes cluster. 
 
 #### Cloud deployments (AWS/Azure)
-* Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment. Please refer to AWS EKS/Azure AKS documentation for details on configuring CSI drivers.
+* Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
+  * For AWS, see our [high-availability-deployment-in-amazon-web-service](https://help.sonatype.com/en/option-3---high-availability-deployment-in-amazon-web-services--aws-.html)
+  * For Azure, see our [high-availability-deployment-in-azure documentation](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
 
 #### On-premises deployments
-1. Attach separate disks (i.e., separate from the root disk) to your worker nodes.
-2. Install the Local Persistence Volume Static Provisioner. Please refer to [Local Persistence Volume Static Provisioner](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner) documentation.
-3. Use the Local Persistence Volume Static Provisioner to automatically create persistent volumes for your chosen storage class name as [documented](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner)
+1. Set up an NFS server and make it accessible to all worker nodes in your Kubernetes cluster.
+2. See our [On-Premises High Availability Deployment Using Kubernetes](https://help.sonatype.com/en/option-2---on-premises-high-availability-deployment-using-kubernetes.html) for more information
 
-#### Configuring for dynamic persistent volume provisioning
-* Set the `storageClass.name` parameter to a storage class name. This could be one of the default storage classes automatically created in your managed Kubernetes cluster on your chosen cloud (e.g., if you're using AWS EKS) or one that you would like to create:
-   * If you would like to create a dedicated storage class (i.e., you don't want to use the default), then in addition to specifying a value for `storageClass.name`, you must also set `storageClass.enabled` parameter to `true`.
-   * Set the `pvc.volumeClaimTemplate.enabled` parameter to `true`.
-   * Set the `storageClass.provisioner` (e.g., for AWS EBS, you would use `ebs.csi.aws.com`).
 
 ## Format Limitations
 HA supports all formats that PostgreSQL supports.
@@ -48,13 +44,16 @@ HA supports all formats that PostgreSQL supports.
 ### AWS
 * Set `aws.enabled` to `true`.
 
-#### Storage:
-* Set `pvc.volumeClaimTemplate.enabled` to `true`.
-* Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
-   * If you're running on Cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for AWS, you might use `gp2`).
-   * Alternatively, if you would like to create your own storage class, then do the following:
-      * Specify values for the [storageclass.yaml](nxrm-ha%2Ftemplates%2Fstorageclass.yaml) file.
-      * Enable it by setting `storageClass.enabled` to `true`.
+#### Configuration for dynamic persistent volume provisioning
+* Set `storageClass.enabled` to `true`
+* Set `storageClass.provisioner` to `efs.csi.aws.com`
+* Set `storageClass.parameters` to
+    ```
+       provisioningMode: efs-ap 
+       fileSystemId: "<your efs file system id>"
+       directoryPerms: "700"
+    ```
+* Set `pvc.volumeClaimTemplate.enabled` to `true`
 
 #### Secrets
 AWS Secret Manager is disabled by default. If you would like to store your database secrets and license in AWS Secrets Manager, do as follows:
@@ -84,13 +83,34 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
 ### Azure
 * Set `azure.enabled` to `true`.
 
-#### Storage:
-* Set `pvc.volumeClaimTemplate.enabled` to `true`.
-* Set `storageClass.name` to the name of the storage class to use for dynamic volume provisioning.
-   * If you're running on cloud and would like to use an in-built storage class, set this to the name of that storage class (e.g., for Azure, you might use `managed-csi`).
-   * Alternatively, if you would like to create your own storage class, then do the following:
-      * Specify values for the [storageclass.yaml](nxrm-ha%2Ftemplates%2Fstorageclass.yaml) file.
-      * Enable it by setting `storageClass.enabled` to `true`.
+#### Configuration for dynamic persistent volume provisioning
+You can either use one of the built-in storage classes for Azure File or create your own storage class.
+
+##### Using built-in storage class
+* Ensure you have enabled the built-in storage classes on your AKS cluster. For more info, see Azure file dynamic provisioning section of [high-availability-deployment-in-azure documentation](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
+* Set `storageClass.enabled` to `false`
+* Set `storageClass.name` to one of the in-built storage classes for Azure file such as azurefile-csi-premium, azurefile-premium, azurefile or azurefile-csi
+* Set `storageClass.provisioner` to `file.csi.azure.com`
+* Set the `pvc.volumeClaimTemplate.enabled` parameter to `true`.
+
+##### Creating your own storage class
+If you would like to create your own storage class instead of using the built-in ones, do as follows:
+
+* Set `storageClass.enabled` to `true`
+* Set `storageClass.name` to `nexus-log-storage`
+* Set `storageClass.provisioner` to `file.csi.azure.com`
+* Set `storageClass.mountOptions` to
+    ```
+   - dir_mode=0777
+   - file_mode=0777
+   - uid=0
+   - gid=0
+   - mfsymlinks
+   - cache=strict # https://linux.die.net/man/8/mount.cifs
+   - nosharesock 
+    ```
+* Set `storageClass.parameters.skuName` to `Premium_LRS`
+* Set `pvc.volumeClaimTemplate.enabled` to `true`
 
 #### Secrets
 Azure Key Vault is disabled by default. If you would like to store your database secrets and license in Azure Key Vault, do as follows:
@@ -114,9 +134,24 @@ Azure Key Vault is disabled by default. If you would like to store your database
 ### On-premises
 The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
 
-#### Storage:
-* Attach dedicated disks to your Kubernetes worker nodes.
-* Install the Local Persistence Volume Static Provisioner and configure it to automatically create persistent volumes for your chosen storage class name as documented [here](https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner).
+#### Configuration for dynamic persistent volume provisioning
+* You must already have an NFS Server and it must be accessible to all worker nodes in your Kubernetes cluster.
+* Install the [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) [helm chart](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner?tab=readme-ov-file#with-helm).
+  * At the time of writing the helm installation command is below.
+  ```
+  helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+  helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --set nfs.server=x.x.x.x --set nfs.path=/exported/path --set storageClass.create=true
+  ``` 
+  * In the above command, `--set storageClass.create=true` was added to enable the creation of the default nfs storage class bundled with the helm chart.
+  * Confirm that the pod for the nfs-subdir-external-provisioner is running:
+    * At the time of writing, the pod had a 'app=nfs-subdir-external-provisioner' label. Thus, you could find out using: `kubectl get pods -A -l app=nfs-subdir-external-provisioner`
+  * Confirm that the default storage class was created:
+    * At the time of writing the default storage class was 'nfs-client'. Thus, you could confirm using `kubectl get sc nfs-client`
+* For nxrm-ha helm chart:
+  * Set `storageClass.enabled` to `false`
+  * Set `storageClass.name` to `nfs-client`
+  * Set `pvc.volumeClaimTemplate.enabled` to `true`
+
 
 #### Secrets
 * Database credentials
