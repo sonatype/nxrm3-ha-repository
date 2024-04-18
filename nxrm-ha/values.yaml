@@ -150,7 +150,7 @@ storageClass:
 #    fileSystemId: "fs-abc123" # Your EFS file system id
 #    directoryPerms: "700" # e.g. for AWS
 #
-#    # e.g. for Azure
+#    # e.g., for Azure
 #    skuName: Standard_LRS # Azure recommends using Premium_LRS for better performance
 pvc:
   name: nexus-logs-claim
