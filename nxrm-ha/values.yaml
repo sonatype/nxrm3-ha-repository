@@ -144,7 +144,7 @@ storageClass:
 #    - mfsymlinks
 #    - cache=strict # https://linux.die.net/man/8/mount.cifs
 #    - nosharesock
-  # Mount options e.g. for AWS
+  # Mount options (e.g., for AWS)
   parameters:
 #    provisioningMode: efs-ap # e.g. for AWS
 #    fileSystemId: "fs-abc123" # Your EFS file system id
