@@ -144,7 +144,7 @@ The chart doesn't install any cloud-specific resources when `aws.enabled` and `a
   ``` 
   * We have added `--set storageClass.create=true` to the above command in order to create the default nfs storage class bundled with the helm chart.
   * Confirm that the pod for the nfs-subdir-external-provisioner is running:
-    * At the time of writing, the pod had a 'app=nfs-subdir-external-provisioner' label. Thus, you could find out using: `kubectl get pods -A -l app=nfs-subdir-external-provisioner`
+    * At the time of writing, the pod had a 'app=nfs-subdir-external-provisioner' label. Thus, you can confirm it is running using the following: `kubectl get pods -A -l app=nfs-subdir-external-provisioner`
   * Confirm that the default storage class was created:
     * At the time of writing the default storage class was 'nfs-client'. Thus, you could confirm using `kubectl get sc nfs-client`
 * For nxrm-ha helm chart, do the following:
