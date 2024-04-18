@@ -89,7 +89,7 @@ You can either use one of the built-in storage classes for Azure File or create 
 ##### Using built-in storage class
 * Ensure you have enabled the built-in storage classes on your AKS cluster. For more information, see the Azure file dynamic provisioning section of [our documentation on high availability deployments in Azure](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
 * Set `storageClass.enabled` to `false`
-* Set `storageClass.name` to one of the in-built storage classes for Azure file such as azurefile-csi-premium, azurefile-premium, azurefile or azurefile-csi
+* Set `storageClass.name` to one of the in-built storage classes for Azure file, such as azurefile-csi-premium, azurefile-premium, azurefile, or azurefile-csi
 * Set `storageClass.provisioner` to `file.csi.azure.com`
 * Set the `pvc.volumeClaimTemplate.enabled` parameter to `true`.
 
