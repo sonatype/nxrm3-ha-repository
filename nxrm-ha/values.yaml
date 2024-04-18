@@ -130,7 +130,7 @@ ingress:
 #    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
 storageClass:
   enabled: false
-  name: nexus-log-storage #For Azure AKS built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. azurefile-csi, azurefile-csi-premium
+  name: nexus-log-storage #For Azure AKS built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here (e.g., azurefile-csi, azurefile-csi-premium)
   provisioner: provisionerName # For AWS EKS, use 'efs.csi.aws.com'. For AKS, use 'file.csi.azure.com' (or 'kubernetes.io/azure-file' if your AKS version is less than 1.21).
   volumeBindingMode: "WaitForFirstConsumer"
   reclaimPolicy: Delete
