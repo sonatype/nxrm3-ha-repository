@@ -27,8 +27,8 @@ you configure dynamic provisioning of persistent storage bound to a shared locat
 
 #### Cloud deployments (AWS/Azure)
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
-  * For AWS, see our [high-availability-deployment-in-amazon-web-service](https://help.sonatype.com/en/option-3---high-availability-deployment-in-amazon-web-services--aws-.html)
-  * For Azure, see our [high-availability-deployment-in-azure documentation](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
+  * For AWS, see our [documentation on high availability deployments in AWS](https://help.sonatype.com/en/option-3---high-availability-deployment-in-amazon-web-services--aws-.html)
+  * For Azure, see our [documentation on high availability deployments in Azure](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
 
 #### On-premises deployments
 1. Set up an NFS server and make it accessible to all worker nodes in your Kubernetes cluster.
