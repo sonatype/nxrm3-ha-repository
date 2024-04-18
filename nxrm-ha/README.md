@@ -136,7 +136,7 @@ The chart doesn't install any cloud-specific resources when `aws.enabled` and `a
 
 #### Configuration for dynamic persistent volume provisioning
 * You must already have an NFS Server, and it must be accessible to all worker nodes in your Kubernetes cluster.
-* Install the [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) [helm chart](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner?tab=readme-ov-file#with-helm).
+* Install the [NFS subdir external provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) using the [helm chart](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner?tab=readme-ov-file#with-helm).
   * At the time of writing the helm installation command is as shown below.
   ```
   helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
