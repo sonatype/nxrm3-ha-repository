@@ -135,7 +135,7 @@ Azure Key Vault is disabled by default. If you would like to store your database
 The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
 
 #### Configuration for dynamic persistent volume provisioning
-* You must already have an NFS Server and it must be accessible to all worker nodes in your Kubernetes cluster.
+* You must already have an NFS Server, and it must be accessible to all worker nodes in your Kubernetes cluster.
 * Install the [nfs-subdir-external-provisioner](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) [helm chart](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner?tab=readme-ov-file#with-helm).
   * At the time of writing the helm installation command is as shown below.
   ```
