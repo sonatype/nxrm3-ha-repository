@@ -91,7 +91,7 @@ You can either use one of the built-in storage classes for Azure File or create 
 * Set `storageClass.enabled` to `false`
 * Set `storageClass.name` to one of the in-built storage classes for Azure file, such as azurefile-csi-premium, azurefile-premium, azurefile, or azurefile-csi
 * Set `storageClass.provisioner` to `file.csi.azure.com`
-* Set the `pvc.volumeClaimTemplate.enabled` parameter to `true`.
+* Set the `pvc.volumeClaimTemplate.enabled` parameter to `true`
 
 ##### Creating your own storage class
 If you would like to create your own storage class instead of using the built-in ones, do as follows:
