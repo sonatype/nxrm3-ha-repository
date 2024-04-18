@@ -142,7 +142,7 @@ The chart doesn't install any cloud-specific resources when `aws.enabled` and `a
   helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
   helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner --set nfs.server=x.x.x.x --set nfs.path=/exported/path --set storageClass.create=true
   ``` 
-  * In the above command, `--set storageClass.create=true` was added to enable the creation of the default nfs storage class bundled with the helm chart.
+  * We have added `--set storageClass.create=true` to the above command in order to create the default nfs storage class bundled with the helm chart.
   * Confirm that the pod for the nfs-subdir-external-provisioner is running:
     * At the time of writing, the pod had a 'app=nfs-subdir-external-provisioner' label. Thus, you could find out using: `kubectl get pods -A -l app=nfs-subdir-external-provisioner`
   * Confirm that the default storage class was created:
