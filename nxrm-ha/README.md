@@ -23,7 +23,7 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 
 ### Storage
 The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
-you configure dynamic provisioning of persistent storage bound to a shared location such as EFS/Azure File/NFS which is accessible to all actives nodes in your Kubernetes cluster. 
+you configure dynamic provisioning of persistent storage bound to a shared location, such as EFS/Azure File/NFS, which is accessible to all actives nodes in your Kubernetes cluster. 
 
 #### Cloud deployments (AWS/Azure)
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
