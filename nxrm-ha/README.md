@@ -32,7 +32,7 @@ you configure dynamic provisioning of persistent storage bound to a shared locat
 
 #### On-premises deployments
 1. Set up an NFS server and make it accessible to all worker nodes in your Kubernetes cluster.
-2. See our [On-Premises High Availability Deployment Using Kubernetes](https://help.sonatype.com/en/option-2---on-premises-high-availability-deployment-using-kubernetes.html) for more information
+2. See our [documentation on on-premises high availability deployments using Kubernetes](https://help.sonatype.com/en/option-2---on-premises-high-availability-deployment-using-kubernetes.html) for more information
 
 
 ## Format Limitations
