@@ -33,7 +33,7 @@ tests:
 
       - equal:
           path: reclaimPolicy
-          value: "Retain"
+          value: "Delete"
 
       - equal:
           path: parameters

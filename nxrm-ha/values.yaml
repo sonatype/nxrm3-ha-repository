@@ -129,11 +129,11 @@ ingress:
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
 #    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
 storageClass:
-  enabled: false # For built-in storage class, set storageClass.enabled to false
-  name: nexus-storage # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. azurefile-csi, azurefile-csi-premium for AKS
-  provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use file.csi.azure.com (or "kubernetes.io/azure-file" if aks version is less than 1.21). For AWS EKS: efs.csi.aws.com.
+  enabled: false
+  name: nexus-log-storage #For Azure AKS built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here (e.g., azurefile-csi, azurefile-csi-premium)
+  provisioner: provisionerName # For AWS EKS, use 'efs.csi.aws.com'. For AKS, use 'file.csi.azure.com' (or 'kubernetes.io/azure-file' if your AKS version is less than 1.21).
   volumeBindingMode: "WaitForFirstConsumer"
-  reclaimPolicy: Retain
+  reclaimPolicy: Delete
   allowVolumeExpansion: false # can set to true for Azure
   # mount options e.g. for Azure
   mountOptions:
@@ -144,15 +144,16 @@ storageClass:
 #    - mfsymlinks
 #    - cache=strict # https://linux.die.net/man/8/mount.cifs
 #    - nosharesock
-
+  # Mount options (e.g., for AWS)
   parameters:
 #    provisioningMode: efs-ap # e.g. for AWS
-#    fileSystemId: "fs-abc123" # e.g. for AWS
+#    fileSystemId: "fs-abc123" # Your EFS file system id
 #    directoryPerms: "700" # e.g. for AWS
 #
-#    # e.g. for Azure
+#    # e.g., for Azure
 #    skuName: Standard_LRS # Azure recommends using Premium_LRS for better performance
 pvc:
+  name: nexus-logs-claim
   accessModes: ReadWriteMany
   storage: 2Gi
   volumeClaimTemplate:
