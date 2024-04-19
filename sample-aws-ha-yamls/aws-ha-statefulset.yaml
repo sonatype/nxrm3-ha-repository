@@ -68,10 +68,10 @@ spec:
           # See help documentation, these are minimum system requirements
           resources:
             limits:
-              cpu: 4 #This is an example. Update as needed
-              memory: "8Gi" #This is an example. Update as needed
+              cpu: "16" #This is an example. Update as needed
+              memory: "16Gi" #This is an example. Update as needed
             requests:
-              cpu: 4 #This is an example. Update as needed
+              cpu: "8" #This is an example. Update as needed
               memory: "8Gi" #This is an example. Update as needed
           securityContext:
             runAsUser: 200
@@ -114,48 +114,6 @@ spec:
               name: nexus-secret
             - name: nexus-data
               mountPath: /nexus-data
-            - name: logback-tasklogfile-override
-              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
-              subPath: logback-tasklogfile-appender-override.xml
-        - name: request-log
-          image: busybox:1.33.1
-          args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log' ]
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
-          resources:
-            limits:
-              cpu: "0.2"
-              memory: "512Mi"
-            requests:
-              cpu: "0.1"
-              memory: "256Mi"
-        - name: audit-log
-          image: busybox:1.33.1
-          args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log' ]
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
-          resources:
-            limits:
-              cpu: "0.2"
-              memory: "512Mi"
-            requests:
-              cpu: "0.1"
-              memory: "256Mi"
-        - name: tasks-log
-          image: busybox:1.33.1
-          args: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log' ]
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
-          resources:
-            limits:
-              cpu: "0.2"
-              memory: "512Mi"
-            requests:
-              cpu: "0.1"
-              memory: "256Mi"
       volumes:
         - name: nexus-secret
           csi:
@@ -164,18 +122,12 @@ spec:
             volumeAttributes:
               secretProviderClass: nxrm-nexus-secret
               fsType: ext4
-        - name: logback-tasklogfile-override
-          configMap:
-            name: nxrm-logback-tasklogfile-override
-            items:
-              - key: logback-tasklogfile-appender-override.xml
-                path: logback-tasklogfile-appender-override.xml
   volumeClaimTemplates:
     - metadata:
         name: nexus-data
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "nxrm-nexus-storage"
+        storageClassName: "nxrm-nexus-log-storage"
         resources:
           requests:
-            storage: 20Gi
+            storage: 4Gi

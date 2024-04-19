@@ -81,6 +81,13 @@ spec:
         - name: license-volume
           configMap:
             name: nxrm-license
-        - name: nexus-data
-          emptyDir: # This is an example, please replace with a PV and PVC for a disk based volume
-            sizeLimit: 2Gi
+
+  volumeClaimTemplates:
+    - metadata:
+        name: nexus-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "nfs-client"
+        resources:
+          requests:
+            storage: 4Gi

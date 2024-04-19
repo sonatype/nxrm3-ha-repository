@@ -173,9 +173,6 @@ spec:
           {{ end }}
             - name: nexus-data
               mountPath: /nexus-data
-            - name: logback-tasklogfile-override
-              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
-              subPath: logback-tasklogfile-appender-override.xml
             {{- if .Values.config.enabled }}
             - name: {{ template "nexus.name" . }}-conf
               mountPath: {{ .Values.config.mountPath }}
@@ -188,30 +185,6 @@ spec:
             {{- if .Values.statefulset.additionalVolumeMounts}}
               {{ toYaml .Values.statefulset.additionalVolumeMounts | nindent 12 }}
             {{- end }}
-        - name: request-log
-          image: {{ .Values.statefulset.requestLogContainer.image.repository }}:{{ .Values.statefulset.requestLogContainer.image.tag }}
-          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log']
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
-          resources:
-            {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
-        - name: audit-log
-          image: {{ .Values.statefulset.auditLogContainer.image.repository }}:{{ .Values.statefulset.auditLogContainer.image.tag }}
-          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log']
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
-          resources:
-            {{ toYaml .Values.statefulset.auditLogContainer.resources | nindent 12 }}
-        - name: tasks-log
-          image: {{ .Values.statefulset.taskLogContainer.image.repository }}:{{ .Values.statefulset.taskLogContainer.image.tag }}
-          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log']
-          volumeMounts:
-            - name: nexus-data
-              mountPath: /nexus-data
-          resources:
-            {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
         {{- if .Values.statefulset.additionalContainers }}
           {{ toYaml .Values.statefulset.additionalContainers | nindent 8 }}
         {{- end }}
@@ -251,12 +224,6 @@ spec:
           secret:
             secretName: {{ .Values.secret.license.name }}
       {{ end }}
-        - name: logback-tasklogfile-override
-          configMap:
-            name: {{ template "nexus.fullname" . }}-logback-tasklogfile-override
-            items:
-              - key: logback-tasklogfile-appender-override.xml
-                path: logback-tasklogfile-appender-override.xml
   {{- if  and (not .Values.pvc.volumeClaimTemplate.enabled) (not .Values.pvc.existingClaim) }}
         - name: nexus-data
           emptyDir:
