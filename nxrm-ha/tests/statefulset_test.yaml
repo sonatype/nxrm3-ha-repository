@@ -621,11 +621,11 @@ tests:
           value:
             # See help documentation, these are minimum system requirements
             requests:
-              cpu: 4
+              cpu: 8
               memory: "8Gi"
             limits:
-              cpu: 4
-              memory: "8Gi"
+              cpu: 16
+              memory: "16Gi"
 
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet
