@@ -1,0 +1,137 @@
+suite: test headless service
+templates:
+  - service-headless.yaml
+release:
+  name: "test-release"
+chart:
+  version: "latest"
+  appVersion: "latest"
+tests:
+  - it: should create headless service
+    set:
+      nexus:
+        extraLabels:
+          l1: label1
+          l2: label2
+        extraSelectorLabels:
+          sl1: selectorLabel1
+          sl2: selectorLabel2
+      service:
+        annotations:
+          a1: annotation1
+          a2: annotation2
+        headless:
+          annotations:
+            a3: annotation3
+    asserts:
+      - isKind:
+          of: Service
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha-hl"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.annotations
+          value:
+            a1: annotation1
+            a2: annotation2
+            a3: annotation3
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            l1: label1
+            l2: label2
+
+      - isNull:
+          path: spec.type
+
+      - equal:
+          path: spec.clusterIP
+          value: "None"
+
+      - equal:
+          path: spec.publishNotReadyAddresses
+          value: true
+
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/name: nxrm-ha
+            sl1: selectorLabel1
+            sl2: selectorLabel2
+
+      - equal:
+          path: spec.ports[0].name
+          value: "nexus-ui"
+
+      - equal:
+          path: spec.ports[0].port
+          value: 8081
+
+      - equal:
+          path: spec.ports[0].targetPort
+          value: "nexus-ui"
+  - it: should create headless service with additional headless annotations
+    set:
+      service:
+        annotations:
+          a1: annotation1
+          a2: annotation2
+        headless:
+          annotations:
+            a3: annotation3
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a1: annotation1
+            a2: annotation2
+            a3: annotation3
+  - it: should create headless service without additional headless annotation
+    set:
+      service:
+        annotations:
+          a1: annotation1
+          a2: annotation2
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a1: annotation1
+            a2: annotation2
+  - it: should create headless service with common annotation overwrite
+    set:
+      service:
+        annotations:
+          a1: annotation1
+          a2: annotation2
+        headless:
+          annotations:
+            a1: annotation-overwrite
+    asserts:
+      - equal:
+          path: metadata.annotations
+          value:
+            a1: annotation-overwrite
+            a2: annotation2
+  - it: should create headless service with publishNotReadyAddresses set to false
+    set:
+      service:
+        headless:
+          publishNotReadyAddresses: false
+    asserts:
+      - equal:
+          path: spec.publishNotReadyAddresses
+          value: false
