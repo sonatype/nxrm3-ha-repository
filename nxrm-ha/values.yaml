@@ -99,6 +99,7 @@ statefulset:
     failureThreshold: 6
     path: /
   imagePullSecrets: {}
+  securityContext: {}
 ingress:
   name: "nexus-ingress"
   enabled: false
