@@ -66,6 +66,10 @@ spec:
       imagePullSecrets:
         - name: {{ template "nexus.name" . }}-imagepullsecret
       {{- end }}
+      {{- if .Values.statefulset.securityContext }}
+      securityContext:
+        {{ toYaml .Values.statefulset.securityContext | nindent 8 }}
+      {{- end }}
       containers:
         - name: nxrm-app
           image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.nexusTag }}
