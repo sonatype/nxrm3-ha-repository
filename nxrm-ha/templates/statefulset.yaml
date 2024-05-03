@@ -49,6 +49,7 @@ spec:
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ include "nexus.serviceAccountName" . }}
       {{- end }}
+      automountServiceAccountToken: {{ .Values.statefulset.automountServiceAccountToken }}
       terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
       {{- if .Values.statefulset.initContainers }}
       initContainers:
