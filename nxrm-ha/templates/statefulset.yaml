@@ -151,8 +151,14 @@ spec:
           -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME}{{ .Values.statefulset.container.env.jdbcUrlParams }} \
           -Dnexus.datastore.nexus.username=${DB_USER} \
           -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
-          {{ else }}
+          {{ else if .Values.secret.license.enabled }}
               value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} -Dnexus.licenseFile=${LICENSE_FILE} \
+              -Dnexus.datastore.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
+              -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME}{{ .Values.statefulset.container.env.jdbcUrlParams }} \
+              -Dnexus.datastore.nexus.username=${DB_USER} \
+              -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+          {{ else }}
+              value: "{{ .Values.statefulset.container.env.install4jAddVmParams }} \
               -Dnexus.datastore.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
               -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:{{ .Values.statefulset.container.env.nexusDBPort }}/${DB_NAME}{{ .Values.statefulset.container.env.jdbcUrlParams }} \
               -Dnexus.datastore.nexus.username=${DB_USER} \
