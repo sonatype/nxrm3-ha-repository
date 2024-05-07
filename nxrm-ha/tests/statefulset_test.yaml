@@ -156,6 +156,15 @@ tests:
       - equal:
           path: spec.template.spec.volumes[0]
           value:
+            name: logback-tasklogfile-override
+            configMap:
+              name: test-release-nxrm-ha-logback-tasklogfile-override
+              items:
+                  - key: logback-tasklogfile-appender-override.xml
+                    path: logback-tasklogfile-appender-override.xml
+      - equal:
+          path: spec.template.spec.volumes[1]
+          value:
             name: nexus-data
             emptyDir:
               sizeLimit: 2Gi
@@ -261,6 +270,52 @@ tests:
           path: spec.template.spec.terminationGracePeriodSeconds
           value: 120
 
+  - it: should create init container
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: chown-nexusdata-owner-to-nexus-and-init-log-dir
+
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.initContainers[0].command
+          value: [ /bin/sh ]
+
+      - equal:
+          path: spec.template.spec.initContainers[0].args
+          value:
+            - -c
+            - >-
+              mkdir -p /nexus-data/etc/logback &&
+              mkdir -p /nexus-data/log/tasks &&
+              mkdir -p /nexus-data/log/audit &&
+              touch -a /nexus-data/log/tasks/allTasks.log &&
+              touch -a /nexus-data/log/audit/audit.log &&
+              touch -a /nexus-data/log/request.log &&
+              chown -R '200:200' /nexus-data
+
+      - equal:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+      - equal:
+          path: spec.template.spec.initContainers[0].resources
+          value:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+
   - it: should specify node selectors
     template: statefulset.yaml
     set:
@@ -334,7 +389,7 @@ tests:
       - equal:
           path: spec.volumeClaimTemplates[0].spec.accessModes
           value:
-            - ReadWriteMany
+            - ReadWriteOnce
 
       - equal:
           path: spec.volumeClaimTemplates[0].spec.storageClassName
@@ -346,9 +401,12 @@ tests:
             requests:
               storage: 2Gi
 
-      - isNull:
-          path: spec.template.spec.volumes
+      - notEqual:
+          path: spec.template.spec.volumes[0].name
+          value: "emptyDir"
 
+      - isNull:
+          path: spec.template.spec.volumes[1]
 
   - it: should use existing claim when volumeClaimTemplate not enabled and existing claim specified
     template: statefulset.yaml
@@ -364,14 +422,14 @@ tests:
           path: spec.volumeClaimTemplates
 
       - equal:
-          path: spec.template.spec.volumes[0].name
+          path: spec.template.spec.volumes[1].name
           value: nexus-data
 
       - isNull:
-          path: spec.template.spec.volumes[0].emptyDir
+          path: spec.template.spec.volumes[1].emptyDir
 
       - equal:
-          path: spec.template.spec.volumes[0].persistentVolumeClaim.claimName
+          path: spec.template.spec.volumes[1].persistentVolumeClaim.claimName
           value: "foo-pvc"
 
   - it: should use emptyDir when volumeClaimTemplate when not enabled and no existing claim specified
@@ -387,14 +445,14 @@ tests:
           path: spec.volumeClaimTemplates
 
       - equal:
-          path: spec.template.spec.volumes[0].name
+          path: spec.template.spec.volumes[1].name
           value: nexus-data
 
       - isNotNull:
-          path: spec.template.spec.volumes[0].emptyDir
+          path: spec.template.spec.volumes[1].emptyDir
 
       - equal:
-          path: spec.template.spec.volumes[0].emptyDir.sizeLimit
+          path: spec.template.spec.volumes[1].emptyDir.sizeLimit
           value: "2Gi"
 
   - it: should set additional environment variable when specified
@@ -462,27 +520,6 @@ tests:
       storageClass:
         name: "nexusrepo-storage"
       statefulset:
-        initContainers:
-          # chown nexus-data to 'nexus' user and init log directories/files for a new pod
-          # otherwise the side car containers will crash a couple of times and backoff whilst waiting
-          # for nxrm-app to start and this increases the total start up time.
-          - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
-            image: busybox:1.33.1
-            command: [ /bin/sh ]
-            args:
-              - -c
-              - >-
-                chown -R '200:200' /nexus-data
-            volumeMounts:
-              - name: nexus-data
-                mountPath: /nexus-data
-            resources:
-              limits:
-                cpu: "0.2"
-                memory: "512Mi"
-              requests:
-                cpu: "0.1"
-                memory: "256Mi"
         postStart:
           command: '["/bin/sh", "-c", "ls"]'
         imagePullSecrets:
@@ -563,6 +600,12 @@ tests:
           value:
             - -c
             - >-
+              mkdir -p /nexus-data/etc/logback &&
+              mkdir -p /nexus-data/log/tasks &&
+              mkdir -p /nexus-data/log/audit &&
+              touch -a /nexus-data/log/tasks/allTasks.log &&
+              touch -a /nexus-data/log/audit/audit.log &&
+              touch -a /nexus-data/log/request.log &&
               chown -R '200:200' /nexus-data
 
       - equal:
@@ -756,13 +799,18 @@ tests:
           value:
               - name: nexus-data
                 mountPath: /nexus-data
+              - name: logback-tasklogfile-override
+                mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+                subPath: logback-tasklogfile-appender-override.xml
       - equal:
           path: spec.template.spec.volumes[0]
           value:
-            emptyDir:
-              sizeLimit: 2Gi
-            name: nexus-data
-
+            name: logback-tasklogfile-override
+            configMap:
+              name: test-release-nxrm-ha-logback-tasklogfile-override
+              items:
+                - key: logback-tasklogfile-appender-override.xml
+                  path: logback-tasklogfile-appender-override.xml
 
   - it: should mount config volume when enabled
     template: statefulset.yaml
@@ -775,6 +823,9 @@ tests:
           value:
             - name: nexus-data
               mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
             - name: nxrm-ha-conf
               mountPath: /sonatype-nexus-conf
       - equal:
@@ -797,6 +848,9 @@ tests:
           value:
             - name: nexus-data
               mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
             - name: nxrm-ha-properties
               mountPath: /nexus-data/etc/nexus.properties
               subPath: nexus.properties
@@ -835,6 +889,9 @@ tests:
           value:
             - name: nexus-data
               mountPath: /nexus-data
+            - name: logback-tasklogfile-override
+              mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
+              subPath: logback-tasklogfile-appender-override.xml
             - name: bar-mount
               mountPath: /bar-mount
             - name: foo-mount
@@ -866,7 +923,7 @@ tests:
             args: [ /bin/sh, -c, 'tail -n+1 -F /bar.log' ]
     asserts:
       - equal:
-          path: spec.template.spec.containers[1]
+          path: spec.template.spec.containers[4]
           value:
             name: foo-container
             image: fooimage:footag
@@ -875,7 +932,7 @@ tests:
             - -c
             - 'tail -n+1 -F /foo.log'
       - equal:
-          path: spec.template.spec.containers[2]
+          path: spec.template.spec.containers[5]
           value:
             name: bar-container
             image: barimage:bartag
@@ -883,3 +940,105 @@ tests:
               - /bin/sh
               - -c
               - 'tail -n+1 -F /bar.log'
+
+  - it: should create request-log container
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: request-log
+
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[1].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[1].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[1].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+  - it: should create audit-log container
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: audit-log
+
+      - equal:
+          path: spec.template.spec.containers[2].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[2].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[2].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[1].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+  - it: should create tasks-log container
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[3].name
+          value: tasks-log
+
+      - equal:
+          path: spec.template.spec.containers[3].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[3].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[3].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[3].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
