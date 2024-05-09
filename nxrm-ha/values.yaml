@@ -224,30 +224,32 @@ externalsecrets:
     name: nexus-secret-store
     spec:
       provider:
-        aws:
-          service: SecretsManager
-          region: us-east-1
-          auth:
-            jwt:
-              serviceAccountRef:
-                name: nexus-repository-deployment-sa # use same service account name as specified in serviceAccount.name
-  # Example for Azure
-  #    spec:
-  #      provider:
-  #        azurekv:
-  #          authType: WorkloadIdentity
-  #          vaultUrl: "https://xx-xxxx-xx.vault.azure.net"
-  #          serviceAccountRef:
-  #            name: nexus-repository-deployment-sa # use same service account name as specified in serviceAccount.name
+#        aws:
+#          service: SecretsManager
+#          region: us-east-1
+#          auth:
+#            jwt:
+#              serviceAccountRef:
+#                name: nexus-repository-deployment-sa # use same service account name as specified in serviceAccount.name
+# Example for Azure
+#    spec:
+#      provider:
+#        azurekv:
+#          authType: WorkloadIdentity
+#          vaultUrl: "https://xx-xxxx-xx.vault.azure.net"
+#          serviceAccountRef:
+#            name: nexus-repository-deployment-sa # use same service account name as specified in serviceAccount.name
   secrets:
     database:
       refreshInterval: 1h
+      valueIsJson: false
       providerSecretName: dbSecretName # The name of the AWS SecretsManager/Azure KeyVault etc secret
       dbUserKey: username #  the name of the key in the secret which contains your database username.
       dbPasswordKey: password # the name of the key in the secret which contains your database password.
       dbHostKey: host # the name of the key in the secret which contains your database host.
     admin:
       refreshInterval: 1h
+      valueIsJson: false
       providerSecretName: adminSecretName # The name of the AWS SecretsManager/Azure KeyVault etc secret
       adminPasswordKey: "nexusAdminPassword" # the name of the key in the secret which contains your nexus repository admin password
     license:
