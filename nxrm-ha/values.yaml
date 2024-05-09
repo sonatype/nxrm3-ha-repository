@@ -33,6 +33,7 @@ aws:
     fluentBitVersion: 2.28.0
     clusterName: nxrm-nexus
 statefulset:
+  automountServiceAccountToken: true
   replicaCount: 3
   clustered: true
   additionalVolumes:
