@@ -57,7 +57,33 @@ statefulset:
 
   # # Add init containers. e.g. to be used to give specific permissions for nexus-data.
   # # Add your own init containers as needed
-  initContainers: null
+  initContainers:
+    # chown nexus-data to 'nexus' user and init log directories/files for a new pod
+    # otherwise the side car containers will crash a couple of times and backoff whilst waiting
+    # for nxrm-app to start and this increases the total start up time.
+    - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
+      image: busybox:1.33.1
+      command: [/bin/sh]
+      args:
+        - -c
+        - >-
+          mkdir -p /nexus-data/etc/logback &&
+          mkdir -p /nexus-data/log/tasks &&
+          mkdir -p /nexus-data/log/audit &&
+          touch -a /nexus-data/log/tasks/allTasks.log &&
+          touch -a /nexus-data/log/audit/audit.log &&
+          touch -a /nexus-data/log/request.log &&
+          chown -R '200:200' /nexus-data
+      volumeMounts:
+        - name: nexus-data
+          mountPath: /nexus-data
+      resources:
+        limits:
+          cpu: "0.2"
+          memory: "512Mi"
+        requests:
+          cpu: "0.1"
+          memory: "256Mi"
   container:
     image:
       repository: sonatype/nexus3
@@ -80,6 +106,39 @@ statefulset:
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
 
     additionalEnv: null
+  requestLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  auditLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  taskLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
   startupProbe: # Allow up to 30 minutes for the container to finish any pending DB migration. Once the startup probe succeeds the liveness- and readiness probes get activated (no need for initialDelaySeconds).
     initialDelaySeconds: 0
     periodSeconds: 10
@@ -126,33 +185,21 @@ ingress:
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
 #    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
+logStorage:
+  tailSecondaryLogs: true
+  combineTaskLogs: true
 storageClass:
-  enabled: false
-  name: nexus-log-storage #For Azure AKS built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here (e.g., azurefile-csi, azurefile-csi-premium)
-  provisioner: provisionerName # For AWS EKS, use 'efs.csi.aws.com'. For AKS, use 'file.csi.azure.com' (or 'kubernetes.io/azure-file' if your AKS version is less than 1.21).
+  enabled: false # For built-in storage class, set storageClass.enabled to false
+  name: nexus-storage # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. managed-csi for AKS
+  provisioner: provisionerName # To use your own storage class set storageClass.enabled to true and specify provisioner. E.g. for AKS use managed-csi. For AWS EKS: ebs.csi.aws.com. In case of AWS EKS cluster running version less than 1.23 use 'kubernetes.io/aws-ebs'
   volumeBindingMode: "WaitForFirstConsumer"
-  reclaimPolicy: Delete
-  allowVolumeExpansion: false # can set to true for Azure
-  # mount options e.g. for Azure
-  mountOptions:
-#    - dir_mode=0700
-#    - file_mode=0700
-#    - uid=0
-#    - gid=0
-#    - mfsymlinks
-#    - cache=strict # https://linux.die.net/man/8/mount.cifs
-#    - nosharesock
-  # Mount options (e.g., for AWS)
-  parameters:
-#    provisioningMode: efs-ap # e.g. for AWS
-#    fileSystemId: "fs-abc123" # Your EFS file system id
-#    directoryPerms: "700" # e.g. for AWS
-#
-#    # e.g., for Azure
-#    skuName: Standard_LRS # Azure recommends using Premium_LRS for better performance
+  reclaimPolicy: Retain
+#  parameters:
+#    type: type
+#    fsType: "fsType" # e.g. ext4
+#    iopsPerGB: "10"
 pvc:
-  name: nexus-logs-claim
-  accessModes: ReadWriteMany
+  accessModes: ReadWriteOnce # Set to ReadWriteMany if using EFS/Azure Files/NFS for shared log storage
   storage: 2Gi
   volumeClaimTemplate:
     enabled: false
@@ -195,7 +242,7 @@ secret:
       fileContentsBase64: your_license_file_contents_in_base_64
       mountPath: /var/nexus-repo-license
   azure:
-    # a managed identity or service principal that has Key Vault admin access to the key vault
+    # a managed identity or service principal that has secrets management access to the key vault
     userAssignedIdentityID: "userAssignedIdentityID"
     tenantId: "azureTenantId"
     keyvaultName: yourazurekeyvault
@@ -234,4 +281,4 @@ nexus:
 config:
   enabled: false
   mountPath: /sonatype-nexus-conf
-  data: []
+  data: null
