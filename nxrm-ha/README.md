@@ -36,33 +36,32 @@ Note:
 #### Migrating from local storage (i.e. EBS/Azure Disk/local disk) to EFS/Azure File/NFS storage for Nexus Repository logs
 If you have version 66.0.0 (or lower) of the nxrm-ha chart installed and wish to switch to using shared storage for Nexus Repository logs from , please do as follows:
 
-- Back up the logs from all your Nexus Repository pods
-  - Log into the Nexus Repository UI
-  - Generate a support zip for each Nexus Repository pod in your nxrm-ha installation
-- Scale statefulset replicas to zero
-  - `kubectl get statefulsets -n nexusrepo`
-  - `kubectl scale statefulsets -n nexusrepo <stateful set name> --replicas=0`
-- After statefulset replicas is zero, delete the statefulset i.e. `kubectl delete statefulsets -n nexusrepo <stateful set name>`
-- Delete EBS/Azure disk/local disk PVCs: 
-  - `kubectl get pvc -n nexusrepo`
-  - `kubectl delete pvc -n nexusrepo <pvc 1> <pvc 2> <pvc n>`
-  - If you have a custom storage class for EBS PVC/PV pair, delete that storage class as well
-- To upgrade to the new version (68.0.0) of the nxrm-ha helm chart:
-  - Provision your shared storage e.g. EFS/Azure File/NFS and set appropriate permissions
-  - Update your custom values.yaml file for shared storage as explained in the applicable section (i.e. EFS/Azure File/NFS) below for configuring dynamic persistent volume provisioning. 
-  - Run helm upgrade: `helm upgrade nxrm sonatype/nxrm-ha -f <your values.yaml> --version 68.0.0`
-  - Scale replicas as needed
-- Confirm all Nexus Repository pods start up and creates new PVCs
-  - Confirm new PVCs were created and that they are bound appropriately depending on your configuration (i.e. EFS access points/Azure File shares/NFS mounts)
-  - kubectl get pvc -n nexusrepo 
-  - kubectl describe pvc -n nexusrepo nexus-data-nxrm-nxrm-ha-0 
-  - kubectl describe pvc -n nexusrepo nexus-data-nxrm-nxrm-ha-1 
-  - Check that the 'volume.beta.kubernetes.io/storage-provisioner' annotation in the PVC description is representative of your configuration i.e. EFS/Azure File/NFS provisioner
-  - Confirm pods are up and running:
-    - kubectl get pods -n nexusrepo 
-    - kubectl logs -n nexusrepo nxrm-nxrm-ha-0 -f 
-    - kubectl logs -n nexusrepo nxrm-nxrm-ha-1 -f 
-    - kubectl logs -n nexusrepo nxrm-nxrm-ha-2 -f
+1. Back up all of your Nexus Repository pods' logs by logging in and generating a support zip for each one (see our [support zip help documentation](https://help.sonatype.com/en/support-features.html#creating-a-support-zip-in-a-high-availability-environment) to learn how).
+2. Scale statefulset replicas to zero using commands like the following:
+   * `kubectl get statefulsets -n nexusrepo`
+   * `kubectl scale statefulsets -n nexusrepo <stateful set name> --replicas=0`
+3. After scaling statefulset replicas to zero, delete the statefulset using a command like the following:
+   *`kubectl delete statefulsets -n nexusrepo <stateful set name>`
+4. Delete EBS/Azure disk/local disk PVCs using commands like the following: 
+   * `kubectl get pvc -n nexusrepo`
+   * `kubectl delete pvc -n nexusrepo <pvc 1> <pvc 2> <pvc n>`
+   * If you have a custom storage class for EBS PVC/PV pair, delete that storage class as well.
+4. Upgrade to the new version (68.0.0) of the nxrm-ha helm chart by taking the following steps:
+   * Provision your shared storage (e.g., EFS/Azure File/NFS), and set appropriate permissions.
+   * Update your custom values.yaml file for shared storage as detailed in the applicable section below for configuring dynamic persistent volume provisioning for your selected storage option. 
+   * Run helm upgrade: `helm upgrade nxrm sonatype/nxrm-ha -f <your values.yaml> --version 68.0.0`
+   * Scale replicas as needed.
+5. Confirm all Nexus Repository pods start up and create new PVCs.
+   * Confirm new PVCs were created and that they are bound appropriately depending on your configuration (i.e., EFS access points/Azure File shares/NFS mounts):
+      * `kubectl get pvc -n nexusrepo` 
+      * `kubectl describe pvc -n nexusrepo nexus-data-nxrm-nxrm-ha-0` 
+      * `kubectl describe pvc -n nexusrepo nexus-data-nxrm-nxrm-ha-1`
+      * Check that the `volume.beta.kubernetes.io/storage-provisioner` annotation in the PVC description is representative of your configuration (i.e., EFS/Azure File/NFS provisioner).
+   * Confirm pods are up and running using commands like the following:
+      * `kubectl get pods -n nexusrepo` 
+      * `kubectl logs -n nexusrepo nxrm-nxrm-ha-0 -f` 
+      * `kubectl logs -n nexusrepo nxrm-nxrm-ha-1 -f` 
+      * `kubectl logs -n nexusrepo nxrm-nxrm-ha-2 -f`
 
 #### Cloud deployments (AWS/Azure)
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
