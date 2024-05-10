@@ -28,9 +28,9 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
 you configure dynamic provisioning of persistent storage bound to a shared location, such as EFS/Azure File/NFS, which is accessible to all actives nodes in your Kubernetes cluster. 
 
-Note:
-- The supported storage mechanism up to version 66.0.0 of this helm chart was local storage such as EBS/Azure Disk/locally attached disks (for onprem deployments)
-- From version 68.0.0 onwards, the recommended storage mechanism is shared storage such as EFS/Azure File/NFS (for onprem deployments). However, the chart is still compatible with local storage.
+> **_Note:_**  Versions **66.0.0 and older** of this chart only supported local storage (e.g., EBS, Azure Disk, locally attached disks for on-prem deployments). 
+> 
+> From version **68.0.0+**, we recommend and support using **shared storage** (e.g., EFS, Azure File, NFS for on-prem deployments). However, this chart is still compatible with local storage.
 
 
 #### Migrating from local storage (i.e., EBS/Azure Disk/local disk) to shared storage (i.e., EFS/Azure File/NFS) for storing Nexus Repository logs
