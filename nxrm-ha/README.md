@@ -17,6 +17,9 @@
 
 This Helm chart configures the Kubernetes resources that are needed for a high-availability (HA) Nexus Repository deployment on AWS/Azure/Onprem.
 
+- To submit ideas on this helm chart, please file them at ideas.sonatype.com
+- If you encounter any problems/issues with the helm chart, please contact Sonatype support as support@sonatype.com 
+
 ---
 
 # Pre-requisites
