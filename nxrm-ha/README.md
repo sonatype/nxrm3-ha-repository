@@ -33,8 +33,9 @@ Note:
 - From version 68.0.0 onwards, the recommended storage mechanism is shared storage such as EFS/Azure File/NFS (for onprem deployments). However, the chart is still compatible with local storage.
 
 
-#### Migrating from local storage (i.e. EBS/Azure Disk/local disk) to EFS/Azure File/NFS storage for Nexus Repository logs
-If you have version 66.0.0 (or lower) of the nxrm-ha chart installed and wish to switch to using shared storage for Nexus Repository logs from , please do as follows:
+#### Migrating from local storage (i.e., EBS/Azure Disk/local disk) to shared storage (i.e., EFS/Azure File/NFS) for storing Nexus Repository logs
+
+If you have installed version 66.0.0 or older of the nxrm-ha chart and wish to switch to using shared storage for Nexus Repository logs, please do as follows:
 
 1. Back up all of your Nexus Repository pods' logs by logging in and generating a support zip for each one (see our [support zip help documentation](https://help.sonatype.com/en/support-features.html#creating-a-support-zip-in-a-high-availability-environment) to learn how).
 2. Scale statefulset replicas to zero using commands like the following:
