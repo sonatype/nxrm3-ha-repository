@@ -1,0 +1,23 @@
+{{- if .Values.logStorage.combineTaskLogs }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "nexus.fullname" . }}-logback-tasklogfile-override
+  namespace: {{ .Values.namespaces.nexusNs.name }}
+data:
+  logback-tasklogfile-appender-override.xml: |
+    <included>
+      <appender name="tasklogfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <File>${karaf.data}/log/tasks/allTasks.log</File>
+        <filter class="org.sonatype.nexus.pax.logging.TaskLogsFilter" />
+        <Append>true</Append>
+        <encoder class="org.sonatype.nexus.pax.logging.NexusLayoutEncoder">
+          <pattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ"} %-5p [%thread] %node %mdc{userId:-*SYSTEM} %c - %m%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+          <fileNamePattern>${karaf.data}/log/tasks/allTasks-%d{yyyy-MM-dd}.log.gz</fileNamePattern>
+          <maxHistory>1</maxHistory>
+        </rollingPolicy>
+      </appender>
+    </included>
+{{- end }}

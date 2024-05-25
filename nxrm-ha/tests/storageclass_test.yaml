@@ -32,8 +32,12 @@ tests:
           value: "provisioner"
 
       - equal:
+          path: volumeBindingMode
+          value: "WaitForFirstConsumer"
+
+      - equal:
           path: reclaimPolicy
-          value: "Delete"
+          value: "Retain"
 
       - equal:
           path: parameters
