@@ -17,6 +17,9 @@
 
 This Helm chart configures the Kubernetes resources that are needed for a high-availability (HA) Nexus Repository deployment on AWS/Azure/Onprem.
 
+- To submit ideas on this helm chart, please file them at http://ideas.sonatype.com
+- If you encounter any problems/issues with the helm chart, please contact Sonatype support as support@sonatype.com 
+
 ---
 
 # Pre-requisites
@@ -24,6 +27,42 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 ### Storage
 The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
 you configure dynamic provisioning of persistent storage bound to a shared location, such as EFS/Azure File/NFS, which is accessible to all actives nodes in your Kubernetes cluster. 
+
+> **_Note:_**  Versions **66.0.0 and older** of this chart only supported local storage (e.g., EBS, Azure Disk, locally attached disks for on-prem deployments). 
+> 
+> From version **68.0.0+**, we recommend and support using **shared storage** (e.g., EFS, Azure File, NFS for on-prem deployments). However, this chart is still compatible with local storage.
+
+
+#### Migrating from local storage (i.e., EBS/Azure Disk/local disk) to shared storage (i.e., EFS/Azure File/NFS) for storing Nexus Repository logs
+
+If you have installed version 66.0.0 or older of the nxrm-ha chart and wish to switch to using shared storage for Nexus Repository logs, please do as follows:
+
+1. Back up all of your Nexus Repository pods' logs by logging in and generating a support zip for each one (see our [support zip help documentation](https://help.sonatype.com/en/support-features.html#creating-a-support-zip-in-a-high-availability-environment) to learn how).
+2. Scale statefulset replicas to zero using commands like the following:
+   * `kubectl get statefulsets -n nexusrepo`
+   * `kubectl scale statefulsets -n nexusrepo <stateful set name> --replicas=0`
+3. After scaling statefulset replicas to zero, delete the statefulset using a command like the following:
+   *`kubectl delete statefulsets -n nexusrepo <stateful set name>`
+4. Delete EBS/Azure disk/local disk PVCs using commands like the following: 
+   * `kubectl get pvc -n nexusrepo`
+   * `kubectl delete pvc -n nexusrepo <pvc 1> <pvc 2> <pvc n>`
+   * If you have a custom storage class for EBS PVC/PV pair, delete that storage class as well.
+4. Upgrade to the new version (68.0.0) of the nxrm-ha helm chart by taking the following steps:
+   * Provision your shared storage (e.g., EFS/Azure File/NFS), and set appropriate permissions.
+   * Update your custom values.yaml file for shared storage as detailed in the applicable section below for configuring dynamic persistent volume provisioning for your selected storage option. 
+   * Run helm upgrade: `helm upgrade nxrm sonatype/nxrm-ha -f <your values.yaml> --version 68.0.0`
+   * Scale replicas as needed.
+5. Confirm all Nexus Repository pods start up and create new PVCs.
+   * Confirm new PVCs were created and that they are bound appropriately depending on your configuration (i.e., EFS access points/Azure File shares/NFS mounts):
+      * `kubectl get pvc -n nexusrepo` 
+      * `kubectl describe pvc -n nexusrepo nexus-data-nxrm-nxrm-ha-0` 
+      * `kubectl describe pvc -n nexusrepo nexus-data-nxrm-nxrm-ha-1`
+      * Check that the `volume.beta.kubernetes.io/storage-provisioner` annotation in the PVC description is representative of your configuration (i.e., EFS/Azure File/NFS provisioner).
+   * Confirm pods are up and running using commands like the following:
+      * `kubectl get pods -n nexusrepo` 
+      * `kubectl logs -n nexusrepo nxrm-nxrm-ha-0 -f` 
+      * `kubectl logs -n nexusrepo nxrm-nxrm-ha-1 -f` 
+      * `kubectl logs -n nexusrepo nxrm-nxrm-ha-2 -f`
 
 #### Cloud deployments (AWS/Azure)
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
@@ -296,7 +335,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `statefulset.container.env.nexusDBPort`                     | The database port of the PostgreSQL database to use.                                                                                                                                                                                                                                                                                                                             | 5432                                                                                                                |
 | `statefulset.container.env.install4jAddVmParams`            | Xmx and Xms settings for JVM                                                                                                                                                                                                                                                                                                                                                     | -Xms2703m -Xmx2703m                                                                                                 |
 | `statefulset.container.env.jdbcUrlParams`                   | Additional parameters to append to the database url. Expected format is  `"?foo=bar&baz=foo"`                                                                                                                                                                                                                                                                                    | null                                                                                                                |
-| `statefulset.container.additionalEnv`                       | Additional environment variables for the Nexus Repository container. You can also use this setting to override a default env variable by specifying the same key/name as the default env variable you wish override. Specify this as a block of name and value pairs                                                                                                             | null                                                                                                                |
+| `statefulset.container.additionalEnv`                       | Additional environment variables for the Nexus Repository container. You can also use this setting to override a default env variable by specifying the same key/name as the default env variable you wish override. Specify this as a block of name and value pairs (e.g., "<br/>additionalEnv:<br/>- name: foo<br/> value: bar<br/>- name: foo2<br/> value: bar2")                 | null                                                                                                                |
 | `statefulset.requestLogContainer.image.repository`          | Image registry URL for a container which tails Nexus Repository's request log                                                                                                                                                                                                                                                                                                    | busybox                                                                                                             |
 | `statefulset.requestLogContainer.image.tag`                 | Image tag for a container which tails Nexus Repository's request log                                                                                                                                                                                                                                                                                                             | 1.33.1                                                                                                              |
 | `statefulset.requestLogContainer.resources.requests.cpu`    | The minimum cpu the request log container can request                                                                                                                                                                                                                                                                                                                            | 0.1                                                                                                                 |
