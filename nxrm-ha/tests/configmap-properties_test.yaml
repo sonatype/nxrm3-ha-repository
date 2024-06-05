@@ -3,6 +3,7 @@ templates:
   - configmap-properties.yaml
 release:
   name: "test-release"
+  namespace: "test-namespace"
 chart:
   version: "latest"
   appVersion: "latest"
@@ -50,3 +51,18 @@ tests:
             nexus.properties: |-
               hello=world
               super=ted
+
+  - it: should create nexus.properties file in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      nexus:
+        properties:
+          override: true
+          data:
+            "hello": "world"
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"

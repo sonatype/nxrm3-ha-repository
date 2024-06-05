@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ template "nexus.fullname" . }}-fluent-bit
-  namespace: {{ .Values.namespaces.cloudwatchNs.name }}
+  namespace: {{ .Values.namespaces.cloudwatchNs.name | quote}}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -33,13 +33,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ template "nexus.fullname" . }}-fluent-bit
-    namespace: {{ .Values.namespaces.cloudwatchNs.name }}
+    namespace: {{ .Values.namespaces.cloudwatchNs.name | quote }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: fluent-bit-cluster-info
-  namespace: {{ .Values.namespaces.cloudwatchNs.name }}
+  namespace: {{ .Values.namespaces.cloudwatchNs.name | quote }}
 data:
   cluster.name: {{ .Values.aws.fluentbit.clusterName }}
   http.server: "On"
@@ -52,7 +52,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "nexus.fullname" . }}-fluent-bit-config
-  namespace: {{ .Values.namespaces.cloudwatchNs.name }}
+  namespace: {{ .Values.namespaces.cloudwatchNs.name | quote }}
   labels:
     k8s-app: fluent-bit
 data:
@@ -247,7 +247,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: {{ template "nexus.fullname" . }}-fluent-bit
-  namespace: {{ .Values.namespaces.cloudwatchNs.name }}
+  namespace: {{ .Values.namespaces.cloudwatchNs.name | quote }}
   labels:
     k8s-app: fluent-bit
     version: v1

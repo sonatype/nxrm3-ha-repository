@@ -5,7 +5,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: external-dns
-  namespace: {{ .Values.namespaces.externaldnsNs }}
   labels:
     app.kubernetes.io/name: external-dns
 rules:
@@ -20,7 +19,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: external-dns-viewer
-  namespace: {{ .Values.namespaces.externaldnsNs }}  
   labels:
     app.kubernetes.io/name: external-dns
 roleRef:
@@ -30,13 +28,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ include "nexus.serviceAccountName" . }}
-    namespace: {{ .Values.namespaces.externaldnsNs }}
+    namespace: {{ .Values.namespaces.externaldnsNs | quote }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: external-dns
-  namespace: {{ .Values.namespaces.externaldnsNs }}  
+  namespace: {{ .Values.namespaces.externaldnsNs | quote }}
   labels:
     app.kubernetes.io/name: external-dns
 spec:
