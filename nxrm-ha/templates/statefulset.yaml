@@ -275,7 +275,7 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Values.pvc.existingClaim }}
   {{ end }}
-    {{- with .Values.tolerations }}
+    {{- with .Values.statefulset.tolerations }}
       tolerations:
         {{ toYaml . | nindent 8 }}
     {{- end }}
