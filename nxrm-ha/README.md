@@ -280,10 +280,11 @@ To uninstall the deployment, use the following:
   
   ```helm uninstall nxrm```
   
-After removing the deployment, ensure that the namespace is deleted and that Nexus Repository is not listed when using the following:
+After removing the deployment, ensure that the namespace created by the helm chart is deleted and that Nexus Repository is not listed when using the following:
   
   ```helm list```
 
+> **_Note:_** If you specified a namespace during chart installation (e.g., helm install nxrm3 . --create-namespace --namespace <customnamespace>), you will need to remove this namespace after running the uninstall command for the helm chart. The uninstall command will only remove the namespace created by the helm chart itself.
 
 ## Configuration
 
