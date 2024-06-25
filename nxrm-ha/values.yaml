@@ -20,10 +20,10 @@ azure:
   keyvault:
     enabled: false # set to true to pull license, db and nexus admin password secrets from azure key vault
 aws:
-  enabled: false #set to true to enable aws specific yamls like external dns and fluent bit
+  enabled: true #set to true to enable aws specific yamls like external dns and fluent bit
   clusterRegion: us-east-1
   secretmanager:
-    enabled: false # set to true to pull license, db and nexus admin password secrets from aws secret manager
+    enabled: true # set to true to pull license, db and nexus admin password secrets from aws secret manager
   externaldns:
     enabled: false
     domainFilter: example.com #your root domain e.g example.com
@@ -222,12 +222,12 @@ secret:
   dbSecret:
     enabled: false # Enable to apply database-secret.yaml which allows you to specify db credentials
   db:
-    user: nxrm-db-user
-    userAlias: nxrm-db-user-alias
-    password: nxrm-db-password
-    passwordAlias: nxrm-db-password-alias
-    host: nxrm-db-host
-    hostAlias: nxrm-db-host-alias
+    user: nxrm_db_user
+    userAlias: nxrm_db_user_alias
+    password: nxrm_db_password
+    passwordAlias: nxrm_db_password_alias
+    host: nxrm_db_host
+    hostAlias: nxrm_db_host_alias
   nexusAdmin:
     name: "nexusAdminPassword"
     alias: "admin-nxrm-password-alias"
