@@ -23,7 +23,8 @@ This Helm chart configures the Kubernetes resources that are needed for a high-a
 ---
 
 # Pre-requisites
-
+> **_Note:_**  Before upgrading your Nexus Repository instance, review the [Nexus Repository Release Notes](https://help.sonatype.com/en/release-notes.html) to evaluate any potential breaking changes.
+>
 ### Storage
 The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
 you configure dynamic provisioning of persistent storage bound to a shared location, such as EFS/Azure File/NFS, which is accessible to all actives nodes in your Kubernetes cluster. 
