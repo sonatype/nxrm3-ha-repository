@@ -63,8 +63,15 @@ spec:
         {{ toYaml .Values.statefulset.hostAliases | nindent 8 }}
       {{- end }}
       {{- if .Values.statefulset.imagePullSecrets }}
+      {{- if (kindIs "slice" .Values.statefulset.imagePullSecrets) }}
+      {{- with .Values.statefulset.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{ else }}
       imagePullSecrets:
         - name: {{ template "nexus.name" . }}-imagepullsecret
+      {{- end }}
       {{- end }}
       containers:
         - name: nxrm-app
