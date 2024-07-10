@@ -20,10 +20,10 @@ azure:
   keyvault:
     enabled: false # set to true to pull license, db and nexus admin password secrets from azure key vault
 aws:
-  enabled: true #set to true to enable aws specific yamls like external dns and fluent bit
+  enabled: false #set to true to enable aws specific yamls like external dns and fluent bit
   clusterRegion: us-east-1
   secretmanager:
-    enabled: true # set to true to pull license, db and nexus admin password secrets from aws secret manager
+    enabled: false # set to true to pull license, db and nexus admin password secrets from aws secret manager
   externaldns:
     enabled: false
     domainFilter: example.com #your root domain e.g example.com
