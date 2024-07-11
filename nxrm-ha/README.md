@@ -13,7 +13,7 @@
 
 -->
 
-# Helm Chart for a High-Availability Nexus Repository Deployment
+# Helm Chart for High Availability (HA) and Resilient Deployments
 
 This Helm chart configures the Kubernetes resources that are needed for HA or resilient Nexus Repository deployments in AWS, Azure, or on-premises.
 
