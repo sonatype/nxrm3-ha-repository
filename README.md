@@ -13,13 +13,16 @@
 
 -->
 
-# Nexus Repository 3 High Availability (HA) Helm and Sample YAML Repository
-This repository contains resources for those in our **Nexus Repository 3 High Availability**. 
-Please refer to the documentation provided by your Customer Success Engineer for instructions on how to use these files.
+# Nexus Repository 3 High Availability (HA) and Resiliency Helm Chart and Sample YAML Repository
+This repository contains resources for those deploying Sonatype Nexus Repository in an HA or resilient environment. Please refer to the documentation provided by your Customer Success Engineer for instructions on how to use these files. Also see our [resiliency and HA help documentation](https://help.sonatype.com/en/resiliency-and-high-availability.html).
+
+Have an idea for an improvement? Pro customers can submit ideas through [Sonatype's Ideas portal](https://ideas.sonatype.com/).
+
+> **_NOTE:_** Sonatype does not support or plan to support using a Helm chart for deployments using embedded databases, which includes all OSS deployments. Using Kubernetes to manage an application with an embedded database is a leading cause of corruption, outages, and data loss.
 
 ## HA Prerequisites and System Requirements
 
-Along with the HA-specific requirements listed below, you should also ensure that you meet our [normal Nexus Repository system requirements](https://help.sonatype.com/repomanager3/product-information/system-requirements).
+Along with the HA-specific requirements listed below and further detailed in our [HA system requirements help documentation](https://help.sonatype.com/en/system-requirements-for-high-availability-deployments.html), each instance must also meet our [normal Nexus Repository system requirements](https://help.sonatype.com/repomanager3/product-information/system-requirements).
 
 HA requires the following:
 * A Nexus Repository 3 Pro license
