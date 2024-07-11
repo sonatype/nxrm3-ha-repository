@@ -22,7 +22,7 @@ Have an idea for an improvement? Pro customers can submit ideas through [Sonatyp
 
 ## HA Prerequisites and System Requirements
 
-Along with the HA-specific requirements listed below and further detailed in our [HA system requirements help documentation](https://help.sonatype.com/en/system-requirements-for-high-availability-deployments.html), you should also ensure that you meet our [normal Nexus Repository system requirements](https://help.sonatype.com/repomanager3/product-information/system-requirements).
+Along with the HA-specific requirements listed below and further detailed in our [HA system requirements help documentation](https://help.sonatype.com/en/system-requirements-for-high-availability-deployments.html), each instance must also meet our [normal Nexus Repository system requirements](https://help.sonatype.com/repomanager3/product-information/system-requirements).
 
 HA requires the following:
 * A Nexus Repository 3 Pro license
