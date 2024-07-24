@@ -43,8 +43,9 @@ tests:
           value:
             name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
             value: "true"
-      - isNull:
-          path: spec.template.spec.updateStrategy
+      - equal:
+          path: spec.updateStrategy.type
+          value: RollingUpdate
 
   - it: should mount license secret when secret.license.enabled
     template: statefulset.yaml
@@ -601,7 +602,7 @@ tests:
             - name: nxrm-ha-imagepullsecret
       
       - equal:
-          path: spec.template.spec.updateStrategy.type
+          path: spec.updateStrategy.type
           value: OnDelete
 
       - equal:
