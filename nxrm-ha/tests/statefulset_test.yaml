@@ -43,9 +43,8 @@ tests:
           value:
             name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
             value: "true"
-      - equal:
-          path: spec.updateStrategy.type
-          value: RollingUpdate
+      - isNull:
+          path: spec.updateStrategy
 
   - it: should mount license secret when secret.license.enabled
     template: statefulset.yaml
