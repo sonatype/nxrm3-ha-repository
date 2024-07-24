@@ -30,6 +30,22 @@ tests:
           path: spec.replicas
           value: 5
 
+  - it: should set zdu env to true and rollingUpgrades when zeroDowntimeEnabled is true
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          env:
+            zeroDowntimeEnabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
+            value: "true"
+      - isNull:
+          path: spec.template.spec.updateStrategy
+
   - it: should mount license secret when secret.license.enabled
     template: statefulset.yaml
     set:
@@ -583,6 +599,10 @@ tests:
           path: spec.template.spec.imagePullSecrets
           value:
             - name: nxrm-ha-imagepullsecret
+      
+      - equal:
+          path: spec.template.spec.updateStrategy.type
+          value: OnDelete
 
       - equal:
           path: spec.template.spec.initContainers[0].name
