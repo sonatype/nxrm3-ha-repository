@@ -143,7 +143,8 @@ spec:
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
             - name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
-              value: {{ .Values.statefulset.container.env.zeroDowntimeEnabled | quote }}
+          {{- $zeroDowntimeEnabled := default false .Values.statefulset.container.env.zeroDowntimeEnabled }}
+              value: "{{ toString $zeroDowntimeEnabled }}"
             - name: LICENSE_FILE
           {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
               value: /nxrm-secrets/{{ .Values.secret.license.name }}
