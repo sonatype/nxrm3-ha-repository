@@ -75,7 +75,7 @@ statefulset:
           touch -a /nexus-data/log/request.log &&
           chown -R '200:200' /nexus-data
       volumeMounts:
-        - name: nexus-data
+        - name: nexus-
           mountPath: /nexus-data
       resources:
         limits:
