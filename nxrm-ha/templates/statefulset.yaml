@@ -20,6 +20,10 @@ spec:
   {{ else }}
   replicas: 1
   {{ end }}
+  {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}
+  updateStrategy:
+    type: OnDelete
+  {{- end }}
   serviceName: {{ include "nexus.service.headless" . }}
   selector:
     matchLabels:
@@ -53,10 +57,6 @@ spec:
       {{- if .Values.statefulset.initContainers }}
       initContainers:
         {{ toYaml .Values.statefulset.initContainers | nindent 8 }}
-      {{- end }}
-      {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}
-      updateStrategy:
-        type: OnDelete
       {{- end }}
       {{- if .Values.statefulset.nodeSelector }}
       nodeSelector:
