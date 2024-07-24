@@ -54,7 +54,7 @@ spec:
       initContainers:
         {{ toYaml .Values.statefulset.initContainers | nindent 8 }}
       {{- end }}
-      {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}"
+      {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}
       updateStrategy:
         type: OnDelete
       {{- end }}
