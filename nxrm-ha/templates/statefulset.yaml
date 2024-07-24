@@ -54,6 +54,10 @@ spec:
       initContainers:
         {{ toYaml .Values.statefulset.initContainers | nindent 8 }}
       {{- end }}
+      {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}"
+      updateStrategy:
+        type: OnDelete
+      {{- end }}
       {{- if .Values.statefulset.nodeSelector }}
       nodeSelector:
         {{ toYaml .Values.statefulset.nodeSelector | nindent 8 }}
@@ -138,6 +142,8 @@ spec:
                   key: nexus-admin-password
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
+            - name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
+              value: "{{ .Values.statefulset.container.env.zeroDowntimeEnabled }}"
             - name: LICENSE_FILE
           {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
               value: /nxrm-secrets/{{ .Values.secret.license.name }}
