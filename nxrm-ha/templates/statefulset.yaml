@@ -142,7 +142,7 @@ spec:
                   key: nexus-admin-password
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
-            - name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
+            - name: NEXUS_ZERO_DOWNTIME_ENABLED
           {{- $zeroDowntimeEnabled := default false .Values.statefulset.container.env.zeroDowntimeEnabled }}
               value: "{{ toString $zeroDowntimeEnabled }}"
             - name: LICENSE_FILE

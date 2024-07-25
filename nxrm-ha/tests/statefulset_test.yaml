@@ -41,7 +41,7 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[6]
           value:
-            name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
+            name: NEXUS_ZERO_DOWNTIME_ENABLED
             value: "true"
       - isNull:
           path: spec.updateStrategy
@@ -802,7 +802,7 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[6]
           value:
-            name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
+            name: NEXUS_ZERO_DOWNTIME_ENABLED
             value: "false"
       - equal:
           path: spec.template.spec.containers[0].env[7]

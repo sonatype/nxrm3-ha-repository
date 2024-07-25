@@ -103,7 +103,7 @@ spec:
                   key: nexus-admin-password
             - name: NEXUS_SECURITY_RANDOMPASSWORD
               value: "false"
-            - name: CLUSTERED_ZERO_DOWNTIME_ENABLED_ENV
+            - name: NEXUS_ZERO_DOWNTIME_ENABLED
               value: "false"
             - name: INSTALL4J_ADD_VM_PARAMS
               value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=/nxrm-secrets/nxrm-license.lic \
