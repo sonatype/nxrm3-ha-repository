@@ -30,6 +30,22 @@ tests:
           path: spec.replicas
           value: 5
 
+  - it: should set zdu env to true and rollingUpgrades when zeroDowntimeEnabled is true
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          env:
+            zeroDowntimeEnabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[6]
+          value:
+            name: NEXUS_ZERO_DOWNTIME_ENABLED
+            value: "true"
+      - isNull:
+          path: spec.updateStrategy
+
   - it: should mount license secret when secret.license.enabled
     template: statefulset.yaml
     set:
@@ -39,7 +55,7 @@ tests:
             enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[6]
+          path: spec.template.spec.containers[0].env[7]
           value:
             name: LICENSE_FILE
             value: /var/nexus-repo-license/nexus-repo-license.lic
@@ -86,7 +102,7 @@ tests:
           enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[6]
+          path: spec.template.spec.containers[0].env[7]
           value:
             name: LICENSE_FILE
             value: /nxrm-secrets/nexus-repo-license.lic
@@ -116,7 +132,7 @@ tests:
           enabled: true
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[6]
+          path: spec.template.spec.containers[0].env[7]
           value:
             name: LICENSE_FILE
             value: /nxrm-secrets/nexus-repo-license.lic
@@ -150,7 +166,7 @@ tests:
           enabled:
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[6]
+          path: spec.template.spec.containers[0].env[7]
           value:
             name: LICENSE_FILE
             value: /var/nexus-repo-license/nexus-repo-license.lic
@@ -468,12 +484,12 @@ tests:
               value: xyz
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[8]
+          path: spec.template.spec.containers[0].env[9]
           value:
               name: tiger
               value: lion
       - equal:
-          path: spec.template.spec.containers[0].env[9]
+          path: spec.template.spec.containers[0].env[10]
           value:
             name: abc
             value: xyz
@@ -483,7 +499,7 @@ tests:
     template: statefulset.yaml
     asserts:
       - isNull:
-          path: spec.template.spec.containers[0].env[8]
+          path: spec.template.spec.containers[0].env[9]
 
   - it: should set nexus datastore enabled to true when clustered is false
     template: statefulset.yaml
@@ -492,7 +508,7 @@ tests:
         clustered: false
     asserts:
       - equal:
-          path: spec.template.spec.containers[0].env[7]
+          path: spec.template.spec.containers[0].env[8]
           value:
             name: INSTALL4J_ADD_VM_PARAMS
             value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=${LICENSE_FILE} \
@@ -583,6 +599,10 @@ tests:
           path: spec.template.spec.imagePullSecrets
           value:
             - name: nxrm-ha-imagepullsecret
+      
+      - equal:
+          path: spec.updateStrategy.type
+          value: OnDelete
 
       - equal:
           path: spec.template.spec.initContainers[0].name
@@ -782,11 +802,16 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[6]
           value:
+            name: NEXUS_ZERO_DOWNTIME_ENABLED
+            value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[7]
+          value:
             name: LICENSE_FILE
             value: /var/nexus-repo-license/nexus-repo-license.lic
 
       - equal:
-          path: spec.template.spec.containers[0].env[7]
+          path: spec.template.spec.containers[0].env[8]
           value:
             name: INSTALL4J_ADD_VM_PARAMS
             value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=${LICENSE_FILE} \
