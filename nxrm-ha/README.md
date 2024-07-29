@@ -86,6 +86,47 @@ HA supports all formats that PostgreSQL supports.
 
 ## Deployment Configuration
 
+### Secrets
+The chart requires three secrets namely:
+* License secret: stores your Nexus Repository Pro license
+* Database secret: stores your database credentials: username, password and host
+* Initial admin password secret: stores your initial admin password for Nexus Repository
+
+
+#### Injecting required secrets into your Nexus Repository pod
+The chart provides fours ways of injecting secrets into your Nexus Repository pod namely:
+* [External secret operator](https://external-secrets.io/latest/): recommended as it supports several external secret stores (AWS, Azure etc).
+* [Secret Store CSI Driver](https://github.com/kubernetes-sigs/secrets-store-csi-driver): If you're running on AWS or Azure and do not wish to use the external secrets operator, 
+ you can use the secret store csi driver configuration. See [secretprovider.yaml](templates%2Fsecretprovider.yaml) and configuration table below for more details.
+* Use the provided secrets templates:
+  * [database-secret.yaml](templates%2Fdatabase-secret.yaml)
+  * [license-config-mapping.yaml](templates%2Flicense-config-mapping.yaml)
+  * [nexus-admin-secret.yaml](templates%2Fnexus-admin-secret.yaml)
+
+##### External Secrets Operator
+- Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
+- Ensure you have granted the necessary permissions for accessing your external secret store:
+  - For AWS, 
+    - You'll need an IAM role with necessary permissions and associate that IAM role with the service account used by your pods:
+      - See [External secrets operator EKS service account credentials](https://external-secrets.io/latest/provider/aws-secrets-manager/#eks-service-account-credentials) for more details.
+    
+  - For Azure, 
+    - You'll need to create a service account and create a trust relationship between Azure AD and that Kubernetes service account:
+      - See [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
+      - See 'Referenced Service Account' section of [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
+  
+- Create your secrets in your external secret store (e.g. AWS Secrets Manager, Azure Key Vault)
+- In your values.yaml:
+  - Set `externalsecrets.enabled`
+  - Set the `externalsecrets.secretstore.spec` to the correct one (e.g. AWS, Azure, HashiCorp Vault) for your provider. (There are examples for AWS and Azure in the default values.yaml provided with this helm chart). See https://external-secrets.io/latest/ for more examples.
+  - Set the `externalsecrets.secrets.database.providerSecretName` to the name of the secret containing your database credentials in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
+  - Set the `externalsecrets.secrets.database.dbUserKey` to the name of the key in the secret which contains your database username.
+  - Set the `externalsecrets.secrets.database.dbPasswordKey` to the name of the key in the secret which contains your database password.
+  - Set the `externalsecrets.secrets.database.dbHostKey` to the name of the key in the secret which contains your database host.
+  - Set the `externalsecrets.secrets.admin.providerSecretName` to the name of the secret containing your Nexus Repository admin password in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
+  - Set the `externalsecrets.secrets.admin.adminPasswordKey` to the name of the key in the secret which contains your initial Nexus Repository admin password.
+  - Set the `externalsecrets.secrets.license.providerSecretName` to the name of the secret containing your Nexus Repository license in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
+
 ### AWS
 * Set `aws.enabled` to `true`.
 
@@ -101,6 +142,7 @@ HA supports all formats that PostgreSQL supports.
 * Set `pvc.volumeClaimTemplate.enabled` to `true`
 
 #### Secrets
+If you do not wish to the [external secrets operator](https://external-secrets.io/latest/) for providing your secrets into your Nexus Repository pods, then you may use AWS Secret Manager directly.
 AWS Secret Manager is disabled by default. If you would like to store your database secrets and license in AWS Secrets Manager, do as follows:
 * Set `aws.secretmanager.enabled` to `true`.
    * Database credentials:
@@ -158,6 +200,7 @@ If you would like to create your own storage class instead of using the built-in
 * Set `pvc.volumeClaimTemplate.enabled` to `true`
 
 #### Secrets
+If you do not wish to the [external secrets operator](https://external-secrets.io/latest/) for providing your secrets into your Nexus Repository pods, then you may use Azure Key Vault directly.
 Azure Key Vault is disabled by default. If you would like to store your database secrets and license in Azure Key Vault, do as follows:
 * Set `azure.keyvault.enabled` to `true`.
    * Database credentials
@@ -406,6 +449,15 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `service.headless.annotations`                              | Annotations for the headless service object                                                                                                                                                                                                                                                                                                                                      | `{}`                                                                                                                |
 | `service.headless.publishNotReadyAddresses`                 | Whether or not the service to be discoverable even before the corresponding endpoints are ready                                                                                                                                                                                                                                                                                  | `true`                                                                                                              |
 | `service.nexus.targetPort`                                  | The port to forward requests to                                                                                                                                                                                                                                                                                                                                                  | `8081`                                                                                                              |
+ | `externalsecrets.enabled`                                   | Set this to true if https://external-secrets.io/latest/ is installed in your Kubernetes cluster and you would like to use it for providing needed secrets to your Nexus Repository pods                                                                                                                                                                                          |                                                                                                                     |
+ | `externalsecrets.secretstore.spec`                          | Set this to the SecretStore configuration for your external secret store. See https://external-secrets.io/latest/ for examples.                                                                                                                                                                                                                                                  |                                                                                                                     |
+ | `externalsecrets.secrets.database.providerSecretName`       | Set this to the name of the secret containing your database credentials in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault                                                                                                       |                                                                                                                     |
+ | `externalsecrets.secrets.database.dbUserKey`                | Set this to the name of the key in the secret which contains your database username.                                                                                                                                                                                                                                                                                             |                                                                                                                     |
+ | `externalsecrets.secrets.database.dbPasswordKey`            | Set this to the name of the key in the secret which contains your database password.                                                                                                                                                                                                                                                                                             |                                                                                                                     |
+ | `externalsecrets.secrets.database.dbHostKey`                | Set this to the name of the key in the secret which contains your database host.                                                                                                                                                                                                                                                                                                 |                                                                                                                     |
+ | `externalsecrets.secrets.admin.providerSecretName`          | Set this to the name of the secret containing your Nexus Repository admin password in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault                                                                                            |                                                                                                                     |
+ | `externalsecrets.secrets.admin.adminPasswordKey`            | Set this to the name of the key in the secret which contains your which contains your initial Nexus Repository admin password.                                                                                                                                                                                                                                                   |                                                                                                                     |
+ | `externalsecrets.secrets.license.providerSecretName`        | Set this to the name of the secret containing your Nexus Repository license in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault                                                                                                   |                                                                                                                     |
 | `secret.secretProviderClass`                                | The secret provider class for Kubernetes secret store object. See [secret.yaml](templates%2Fsecret.yaml). Set this when using AWS Secret Manager or Azure Key Vault                                                                                                                                                                                                              | secretProviderClass                                                                                                 |
 | `secret.provider`                                           | The provider (e.g. azure, aws etc) for Kubernetes secret store object. Set this when using AWS Secret Manager or Azure Key Vault                                                                                                                                                                                                                                                 | provider                                                                                                            |
 | `secret.dbSecret.enabled`                                   | Whether or not to install [database-secret.yaml](templates%2Fdatabase-secret.yaml). Set this to `false` when using AWS Secret Manager or Azure Key Vault                                                                                                                                                                                                                         | `false`                                                                                                             |
