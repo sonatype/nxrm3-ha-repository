@@ -72,6 +72,37 @@ tests:
             secret:
               secretName: nexus-repo-license.lic
 
+  - it: should mount nexus secret when secret.nexusSecret.enabled
+    template: statefulset.yaml
+    set:
+      secret:
+        nexusSecret:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[7]
+          value:
+            name: NEXUS_SECRETS_KEY_ID
+            value: "super_secret_key_id"
+      - equal:
+          path: spec.template.spec.containers[0].env[8]
+          value:
+            name: NEXUS_SECRETS_KEY_FILE
+            value: /var/nexus-repo-secrets/nexusSecret.json
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: nexus-secret-volume
+            mountPath: /var/nexus-repo-secrets
+            readOnly: true
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: nexus-secret-volume
+            secret:
+              secretName: nexusSecret.json
+
+
   - it: should mount db secret when secret.db.enabled is enabled
     template: statefulset.yaml
     set:

@@ -105,7 +105,6 @@ statefulset:
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
       zeroDowntimeEnabled: false
-
     additionalEnv: null
   requestLogContainer:
     image:
@@ -242,6 +241,12 @@ secret:
       file: # Specify the license file name with --set-file license.licenseSecret.file="file_name" helm option
       fileContentsBase64: your_license_file_contents_in_base_64
       mountPath: /var/nexus-repo-license
+  nexusSecret:
+    enabled: false
+    name: nexusSecret.json
+    nexusSecretsKeyId: "super_secret_key_id"
+    secretKeyfile: "secretfileName" # Specify the nexus secrets file name with --set-file secret.nexusSecret.secretKeyfile="file_name" helm option
+    mountPath: /var/nexus-repo-secrets
   azure:
     # a managed identity or service principal that has secrets management access to the key vault
     userAssignedIdentityID: "userAssignedIdentityID"

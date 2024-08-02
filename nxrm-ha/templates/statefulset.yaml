@@ -145,6 +145,12 @@ spec:
             - name: NEXUS_ZERO_DOWNTIME_ENABLED
           {{- $zeroDowntimeEnabled := default false .Values.statefulset.container.env.zeroDowntimeEnabled }}
               value: "{{ toString $zeroDowntimeEnabled }}"
+          {{- if .Values.secret.nexusSecret.enabled }}
+            - name: NEXUS_SECRETS_KEY_ID
+              value: {{ .Values.secret.nexusSecret.nexusSecretsKeyId | quote }}
+            - name: NEXUS_SECRETS_KEY_FILE
+              value: {{ .Values.secret.nexusSecret.mountPath }}/{{ .Values.secret.nexusSecret.name }}
+          {{ end }}
             - name: LICENSE_FILE
           {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
               value: /nxrm-secrets/{{ .Values.secret.license.name }}
@@ -176,6 +182,11 @@ spec:
           {{- if .Values.secret.license.licenseSecret.enabled }}
             - name: license-volume
               mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
+              readOnly: true
+          {{ end }}
+          {{- if .Values.secret.nexusSecret.enabled }}
+            - name: nexus-secret-volume
+              mountPath: {{ .Values.secret.nexusSecret.mountPath }}
               readOnly: true
           {{ end }}
             - name: nexus-data
@@ -263,6 +274,11 @@ spec:
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}
+      {{ end }}
+      {{- if .Values.secret.nexusSecret.enabled }}
+        - name: nexus-secret-volume
+          secret:
+            secretName: {{ .Values.secret.nexusSecret.name }}
       {{ end }}
       {{- if .Values.logStorage.combineTaskLogs }}
         - name: logback-tasklogfile-override
