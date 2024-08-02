@@ -243,7 +243,7 @@ secret:
       mountPath: /var/nexus-repo-license
   nexusSecret:
     enabled: false
-    name: nexus_secret.json
+    name: nexus-secret.json
     nexusSecretsKeyId: "super_secret_key_id"
     secretKeyfile: "secretfileName" # Specify the nexus secrets file name with --set-file secret.nexusSecret.secretKeyfile="file_name" helm option
     mountPath: /var/nexus-repo-secrets

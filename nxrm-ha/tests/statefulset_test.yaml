@@ -88,7 +88,7 @@ tests:
           path: spec.template.spec.containers[0].env[8]
           value:
             name: NEXUS_SECRETS_KEY_FILE
-            value: /var/nexus-repo-secrets/nexus_secret.json
+            value: /var/nexus-repo-secrets/nexus-secret.json
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[0]
           value:
@@ -100,7 +100,7 @@ tests:
           value:
             name: nexus-secret-volume
             secret:
-              secretName: nexus_secret.json
+              secretName: nexus-secret.json
 
 
   - it: should mount db secret when secret.db.enabled is enabled
