@@ -146,8 +146,6 @@ spec:
           {{- $zeroDowntimeEnabled := default false .Values.statefulset.container.env.zeroDowntimeEnabled }}
               value: "{{ toString $zeroDowntimeEnabled }}"
           {{- if .Values.secret.nexusSecret.enabled }}
-            - name: NEXUS_SECRETS_KEY_ID
-              value: {{ .Values.secret.nexusSecret.nexusSecretsKeyId | quote }}
             - name: NEXUS_SECRETS_KEY_FILE
               value: {{ .Values.secret.nexusSecret.mountPath }}/{{ .Values.secret.nexusSecret.name }}
           {{ end }}
