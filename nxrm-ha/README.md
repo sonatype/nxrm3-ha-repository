@@ -114,7 +114,97 @@ The chart provides fours ways of injecting secrets into your Nexus Repository po
     - You'll need to create a service account and create a trust relationship between Azure AD and that Kubernetes service account:
       - See [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
       - See 'Referenced Service Account' section of [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
-  
+    
+
+###### Guidance for setting up permissions needed for External Secrets Operator on Azure (AKS)
+- According to https://external-secrets.io/latest/provider/azure-key-vault/#authentication the recommended way to authenticate external secrets operator for Azure Key Vault is through workload identity.
+- We tried this out by following the steps on the page at: https://azure.github.io/azure-workload-identity/docs/quick-start.html which is referenced from https://external-secrets.io/latest/provider/azure-key-vault/#authentication : 
+  - According to https://azure.github.io/azure-workload-identity/docs/quick-start.html you can either use the azwi (Azure Workload Identity) tool for Azure Active Directory (AAD) application or use az cli for  user-assigned managed identity, we opted for azwi tool. See next section for details.
+
+###### Setting up permissions using The Azure Workload Identity tool for Azure Active Directory (AAD) application
+- Install azwi :  See https://azure.github.io/azure-workload-identity/docs/installation/azwi.html for brew command
+- Open a shell
+  - [Set the following env variables](https://azure.github.io/azure-workload-identity/docs/quick-start.html#2-export-environment-variables):
+    ```
+    export APPLICATION_NAME=nexus-repo-aks-aad
+    export KEYVAULT_NAME=test-nexusha-secrets (your key vault name)
+    export KEYVAULT_SCOPE=$(az keyvault show --name "${KEYVAULT_NAME}" --query id -o tsv)
+    export SERVICE_ACCOUNT_NAMESPACE=nexusrepo (must be same as namespace in values.yaml of ha helm chart)
+    export SERVICE_ACCOUNT_NAME=nexus-repository-dev-ha-sa. (Must be same as that specified in values.yaml of ha helm chart)
+    export SERVICE_ACCOUNT_ISSUER=$(az aks show --resource-group nexus-repo-ha --name nexus-repo-ha-aks --query "oidcIssuerProfile.issuerUrl" -otsv)
+    ```
+
+  - [Create Key Vault](https://azure.github.io/azure-workload-identity/docs/quick-start.html#3-create-an-azure-key-vault-and-secret) 
+
+    - [Create an AAD application or user-assigned managed identity and grant permissions to access the secret](https://azure.github.io/azure-workload-identity/docs/quick-start.html#4-create-an-aad-application-or-user-assigned-managed-identity-and-grant-permissions-to-access-the-secret)
+      - `azwi serviceaccount create phase app --aad-application-name "${APPLICATION_NAME}"` 
+      - Output should be like:
+          ```
+          INFO[0000] No subscription provided, using selected subscription from Azure CLI: REDACTED
+          INFO[0005] [aad-application] created an AAD application  clientID=REDACTED name=azwi-test objectID=REDACTED
+          WARN[0005] --service-principal-name not specified, falling back to AAD application name
+          INFO[0005] [aad-application] created service principal   clientID=REDACTED name=azwi-test objectID=REDACTED
+          ```
+      - Make a note of the client id value in the output as you’ll need it for your helm values.yaml. You’ll also need to know your Azure tenant id for your helm values.yaml. You can find out from the Azure portal or use this command to find out from the AAD application you just created:
+      `az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appOwnerOrganizationId' -otsv`
+
+      - Set access policy for the AAD application or user-assigned managed identity to access the keyvault secret:
+        - If your key vault is using RBAC use the command below
+          ```
+          export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
+          az role assignment create --role "Key Vault Secrets User" --assignee $APPLICATION_CLIENT_ID --scope $KEYVAULT_SCOPE
+          ```
+          (RBAC Key Vault command source: https://learn.microsoft.com/en-us/azure/aks/csi-secrets-store-identity-access#configure-managed-identity )
+
+        - If your Key vault is not using RBAC (i.e. if you’re using user-assigned managed identity) then you can use command below:
+          ```
+          export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
+          az keyvault set-policy --name "${KEYVAULT_NAME}" --secret-permissions get --spn "${APPLICATION_CLIENT_ID}"
+          ```
+          (source: https://azure.github.io/azure-workload-identity/docs/quick-start.html#4-create-an-aad-application-or-user-assigned-managed-identity-and-grant-permissions-to-access-the-secret )
+      - Skip [Create a Kubernetes service account](https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account) 
+        - We will skip this since our nxrm-ha helm chart will be doing this for us. We’ll just need to make sure we specify the appropriate annotations and labels to the service account the helm chart will create (see below)
+
+      - [Establish federated identity credential between the identity and the service account issuer & subject](https://azure.github.io/azure-workload-identity/docs/quick-start.html#6-establish-federated-identity-credential-between-the-identity-and-the-service-account-issuer--subject)
+        ``` 
+          azwi serviceaccount create phase federated-identity \ 
+          --aad-application-name "${APPLICATION_NAME}" \ 
+          --service-account-namespace "${SERVICE_ACCOUNT_NAMESPACE}" \ 
+          --service-account-name "${SERVICE_ACCOUNT_NAME}" \ 
+          --service-account-issuer-url "${SERVICE_ACCOUNT_ISSUER}"
+        ```
+        - Output should be like:
+          ```
+            INFO[0000] No subscription provided, using selected subscription from Azure CLI: REDACTED
+            INFO[0032] [federated-identity] added federated credential  objectID=REDACTED subject="system:serviceaccount:default:workload-identity-sa"
+          ```
+      - Update your nxrm-ha values.yaml:
+        - Service account section:
+          ```
+          serviceAccount:
+             enabled: true
+             name: nexus-repository-dev-ha-sa #
+             labels:
+                azure.workload.identity/use: "true"
+             annotations:
+                azure.workload.identity/client-id: ab67cbbb-e374-4586-bcb6-8d80df659b41
+                azure.workload.identity/tenant-id: bd28fc0b-f086-430f-ac20-16268536c81f
+          ```
+        - External secrets:
+          ```
+          externalsecrets:
+             enabled: true
+             secretstore:
+                name: nexus-secret-store
+                spec:
+                   provider:
+                      azurekv:
+                         authType: WorkloadIdentity
+                         vaultUrl: "https://test-nexusha-secrets.vault.azure.net/" #use your key vault url here
+                         serviceAccountRef:
+                            name: nexus-repository-dev-ha-sa # use same service account name as specified in serviceAccount.name
+          ```
+
 - Create your secrets in your external secret store (e.g. AWS Secrets Manager, Azure Key Vault)
 - In your values.yaml:
   - Set `externalsecrets.enabled`
