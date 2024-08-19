@@ -122,6 +122,11 @@ tests:
     template: statefulset.yaml
     set:
       secret:
+        aws:
+          nexusSecret:
+            enabled: true
+        nexusSecret:
+          enabled: true
         secretProviderClass: "awsSecretProvider"
       aws:
         secretmanager:
@@ -129,6 +134,11 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[7]
+          value:
+            name: NEXUS_SECRETS_KEY_FILE
+            value: /nxrm-secrets/nexus-secret.json
+      - equal:
+          path: spec.template.spec.containers[0].env[8]
           value:
             name: LICENSE_FILE
             value: /nxrm-secrets/nexus-repo-license.lic
@@ -152,6 +162,11 @@ tests:
     template: statefulset.yaml
     set:
       secret:
+        azure:
+          nexusSecret:
+            enabled: true
+        nexusSecret:
+          enabled: true
         secretProviderClass: "azureVaultProvider"
       azure:
         keyvault:
@@ -159,6 +174,11 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[7]
+          value:
+            name: NEXUS_SECRETS_KEY_FILE
+            value: /nxrm-secrets/nexus-secret.json
+      - equal:
+          path: spec.template.spec.containers[0].env[8]
           value:
             name: LICENSE_FILE
             value: /nxrm-secrets/nexus-repo-license.lic

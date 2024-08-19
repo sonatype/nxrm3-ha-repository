@@ -253,9 +253,14 @@ secret:
     keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
     usePodIdentity: false
+    nexusSecret:
+      enabled: false
   aws:
     license:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
+    nexusSecret:
+      enabled: false
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-secrets-file
     adminpassword:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:admin-nxrm-password
     rds:
