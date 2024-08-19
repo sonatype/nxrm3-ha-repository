@@ -147,7 +147,7 @@ spec:
               value: "{{ toString $zeroDowntimeEnabled }}"
           {{- if .Values.secret.nexusSecret.enabled }}
             - name: NEXUS_SECRETS_KEY_FILE
-          {{ if or .Values.secret.aws.nexusSecret.enabled .Values.secret.azure.nexusSecret.enabled }}
+          {{ if or (and .Values.aws.secretmanager.enabled .Values.secret.aws.nexusSecret.enabled) (and .Values.azure.keyvault.enabled .Values.secret.azure.nexusSecret.enabled ) }}
               value: /nxrm-secrets/{{ .Values.secret.nexusSecret.name }}
           {{ else }}
               value: {{ .Values.secret.nexusSecret.mountPath }}/{{ .Values.secret.nexusSecret.name }}
