@@ -239,7 +239,7 @@ externalsecrets:
 #          authType: WorkloadIdentity
 #          vaultUrl: "https://xx-xxxx-xx.vault.azure.net"
 #          serviceAccountRef:
-#            name: nexus-repository-deployment-sa # use same service account name as specified in serviceAccount.name
+#            name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
   secrets:
     database:
       refreshInterval: 1h
