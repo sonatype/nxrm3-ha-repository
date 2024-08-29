@@ -251,8 +251,8 @@ externalsecrets:
     admin:
       refreshInterval: 1h
       valueIsJson: false
-      providerSecretName: adminSecretName # The name of the AWS SecretsManager/Azure KeyVault etc secret
-      adminPasswordKey: "nexusAdminPassword" # the name of the key in the secret which contains your nexus repository admin password
+      providerSecretName: adminSecretName # The name of the AWS SecretsManager/Azure KeyVault/etc. secret
+      adminPasswordKey: "nexusAdminPassword" # The name of the key in the secret that contains your nexus repository admin password
     license:
       providerSecretName: nexus-repo-license.lic # The name of the AWS SecretsManager/Azure KeyVault/etc. secret that contains your Nexus Repository license
       decodingStrategy: Base64
