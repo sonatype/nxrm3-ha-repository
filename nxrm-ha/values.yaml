@@ -244,10 +244,10 @@ externalsecrets:
     database:
       refreshInterval: 1h
       valueIsJson: false
-      providerSecretName: dbSecretName # The name of the AWS SecretsManager/Azure KeyVault etc secret
-      dbUserKey: username #  the name of the key in the secret which contains your database username.
-      dbPasswordKey: password # the name of the key in the secret which contains your database password.
-      dbHostKey: host # the name of the key in the secret which contains your database host.
+      providerSecretName: dbSecretName # The name of the AWS SecretsManager/Azure KeyVault/etc. secret
+      dbUserKey: username #  The name of the key in the secret that contains your database username
+      dbPasswordKey: password # The name of the key in the secret that contains your database password
+      dbHostKey: host # The name of the key in the secret that contains your database host
     admin:
       refreshInterval: 1h
       valueIsJson: false
