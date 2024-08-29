@@ -231,7 +231,7 @@ externalsecrets:
 #          auth:
 #            jwt:
 #              serviceAccountRef:
-#                name: nexus-repository-deployment-sa # use same service account name as specified in serviceAccount.name
+#                name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
 # Example for Azure
 #    spec:
 #      provider:
