@@ -184,7 +184,7 @@ tests:
           value:
             name: nexus-data
             emptyDir:
-              sizeLimit: 2Gi
+              sizeLimit: 25Gi
 
   - it: should set service account name when aws enabled
     template: statefulset.yaml
@@ -416,7 +416,7 @@ tests:
           path: spec.volumeClaimTemplates[0].spec.resources
           value:
             requests:
-              storage: 2Gi
+              storage: 25Gi
 
       - notEqual:
           path: spec.template.spec.volumes[0].name
@@ -470,7 +470,7 @@ tests:
 
       - equal:
           path: spec.template.spec.volumes[1].emptyDir.sizeLimit
-          value: "2Gi"
+          value: "25Gi"
 
   - it: should set additional environment variable when specified
     template: statefulset.yaml
