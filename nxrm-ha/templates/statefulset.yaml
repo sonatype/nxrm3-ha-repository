@@ -66,9 +66,12 @@ spec:
       hostAliases:
         {{ toYaml .Values.statefulset.hostAliases | nindent 8 }}
       {{- end }}
-      {{- if .Values.statefulset.imagePullSecrets }}
+      {{- if and .Values.statefulset.imagePullSecrets.secret (not .Values.statefulset.imagePullSecrets.existingSecret.enabled) }}
       imagePullSecrets:
         - name: {{ template "nexus.name" . }}-imagepullsecret
+      {{- else if and (not .Values.statefulset.imagePullSecrets.secret) .Values.statefulset.imagePullSecrets.existingSecret.enabled .Values.statefulset.imagePullSecrets.existingSecret.name }}
+      imagePullSecrets:
+        - name: {{ .Values.statefulset.imagePullSecrets.existingSecret.name }}
       {{- end }}
       containers:
         - name: nxrm-app
