@@ -237,6 +237,20 @@ secret:
     passwordAlias: nxrm_db_password_alias
     host: nxrm_db_host
     hostAlias: nxrm_db_host_alias
+  # -- Use an existing secret for the database variables: DB_NAME, DB_HOST, DB_USER, DB_PASSWORD
+  existingDbSecret:
+    # -- Enabled the use of the already created secret
+    enabled: false
+    # -- The name of the preexisting secret that contains the values for the env variables: DB_NAME, DB_HOST, DB_USER, DB_PASSWORD
+    name: ""
+    # -- The name of the key specifying the database name
+    dbNameKey: ""
+    # -- The name of the key specifying the database host
+    dbHostKey: ""
+    # -- The name of the key specifying the database user
+    dbUserKey: ""
+    # -- The name of the key specifying the database password
+    dbPassKey: ""
   nexusAdmin:
     name: "nexusAdminPassword"
     alias: "admin-nxrm-password-alias"
