@@ -16,20 +16,20 @@ serviceAccount:
     # If using externaldns, role with route53 permissions needed by external-dns
     # eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/nxrm-nexus-role
 azure:
-  enabled: false #set to true to enable azure specific yamls/snippets
+  enabled: false # set to true to enable azure specific yamls/snippets
   keyvault:
     enabled: false # set to true to pull license, db and nexus admin password secrets from azure key vault
 aws:
-  enabled: false #set to true to enable aws specific yamls like external dns and fluent bit
+  enabled: false # set to true to enable aws specific yamls like external dns and fluent bit
   clusterRegion: us-east-1
   secretmanager:
     enabled: false # set to true to pull license, db and nexus admin password secrets from aws secret manager
   externaldns:
     enabled: false
-    domainFilter: example.com #your root domain e.g example.com
+    domainFilter: example.com # your root domain e.g example.com
     awsZoneType: private # hosted zone to look at (valid values are public, private or no value for both)
   fluentbit:
-    enabled: false #set this to true to enable sending of logs to CloudWatch
+    enabled: false # set this to true to enable sending of logs to CloudWatch
     fluentBitVersion: 2.28.0
     clusterName: nxrm-nexus
 statefulset:
