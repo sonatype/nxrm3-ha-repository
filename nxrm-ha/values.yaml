@@ -317,6 +317,8 @@ secret:
     adminPassword: yourinitialnexuspassword #You should change this when you login for the first time
   license:
     name: nexus-repo-license.lic
+    # -- Use an already created secret with the license contents in base64, it takes the name from the above field -> name: nexus-repo-license.lic and the mount path from below: licenseSecret.mountPath
+    existingSecret: false
     licenseSecret:
       enabled: false
       file: # Specify the license file name with --set-file secret.license.licenseSecret.file="file_name" helm option

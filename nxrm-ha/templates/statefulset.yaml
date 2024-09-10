@@ -207,7 +207,7 @@ spec:
             - name: nxrm-secrets
               mountPath: /nxrm-secrets
           {{- end }}
-          {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled }}
+          {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled .Values.secret.license.existingSecret }}
             - name: license-volume
               mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
               readOnly: true
@@ -300,7 +300,7 @@ spec:
             secretName: {{ template "nexus.name" . }}-dbsecret
         {{ end }}
       {{ end }}
-      {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled }}
+      {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled .Values.secret.license.existingSecret }}
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}
