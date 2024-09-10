@@ -108,7 +108,30 @@ statefulset:
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
       zeroDowntimeEnabled: false
-    additionalEnv: null
+
+    additionalEnv:
+      null
+      # -- Uncomment these when using secret.existingDbSecret.enabled = true
+      # - name: DB_NAME
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: secret-name
+      #       key: secret-key
+      # - name: DB_HOST
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: secret-name
+      #       key: secret-key
+      # - name: DB_USER
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: secret-name
+      #       key: secret-key
+      # - name: DB_PASSWORD
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: secret-name
+      #       key: secret-key
   requestLogContainer:
     image:
       repository: busybox
@@ -297,7 +320,7 @@ secret:
     hostAlias: nxrm_db_host_alias
   # -- Use an existing secret for the database variables: DB_NAME, DB_HOST, DB_USER, DB_PASSWORD
   existingDbSecret:
-    # -- Enabled the use of the already created secret
+    # -- Enabled the use of an already created secret, you need to uncomment the values from additionalEnv
     enabled: false
     # -- The name of the preexisting secret that contains the values for the env variables: DB_NAME, DB_HOST, DB_USER, DB_PASSWORD
     name: ""
