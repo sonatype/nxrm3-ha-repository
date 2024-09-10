@@ -121,6 +121,28 @@ spec:
             timeoutSeconds: {{ .Values.statefulset.readinessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
           env:
+          {{- if and .Values.secret.existingDbSecret.enabled (not .Values.secret.dbSecret.enabled) (not .Values.aws.secretmanager.enabled) (not .Values.azure.keyvault.enabled) }}
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.existingDbSecret.name }}
+                  key: {{ .Values.secret.existingDbSecret.dbNameKey }}
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.existingDbSecret.name }}
+                  key: {{ .Values.secret.existingDbSecret.dbHostKey }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.existingDbSecret.name }}
+                  key: {{ .Values.secret.existingDbSecret.dbUserKey }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.existingDbSecret.name }}
+                  key: {{ .Values.secret.existingDbSecret.dbPassKey }}
+          {{- else }}
             - name: DB_NAME
               value: "{{ .Values.statefulset.container.env.nexusDBName }}"
             - name: DB_PASSWORD
@@ -138,6 +160,7 @@ spec:
                 secretKeyRef:
                   name: {{ template "nexus.name" . }}-dbsecret
                   key: db-host
+          {{ end }}
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               valueFrom:
                 secretKeyRef:
