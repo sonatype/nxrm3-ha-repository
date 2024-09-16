@@ -201,7 +201,7 @@ storageClass:
 #    iopsPerGB: "10"
 pvc:
   accessModes: ReadWriteOnce # Set to ReadWriteMany if using EFS/Azure Files/NFS for shared log storage
-  storage: 25Gi
+  storage: 2Gi
   volumeClaimTemplate:
     enabled: false
   existingClaim: null
