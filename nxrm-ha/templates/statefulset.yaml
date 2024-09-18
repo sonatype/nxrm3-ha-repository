@@ -150,6 +150,14 @@ spec:
             - name: NEXUS_ZERO_DOWNTIME_ENABLED
           {{- $zeroDowntimeEnabled := default false .Values.statefulset.container.env.zeroDowntimeEnabled }}
               value: "{{ toString $zeroDowntimeEnabled }}"
+          {{- if .Values.secret.nexusSecret.enabled }}
+            - name: NEXUS_SECRETS_KEY_FILE
+          {{ if or (and .Values.aws.secretmanager.enabled .Values.secret.aws.nexusSecret.enabled) (and .Values.azure.keyvault.enabled .Values.secret.azure.nexusSecret.enabled ) }}
+              value: /nxrm-secrets/{{ .Values.secret.nexusSecret.name }}
+          {{ else }}
+              value: {{ .Values.secret.nexusSecret.mountPath }}/{{ .Values.secret.nexusSecret.name }}
+          {{ end }}
+          {{ end }}
             - name: LICENSE_FILE
           {{- if or .Values.aws.secretmanager.enabled .Values.azure.keyvault.enabled  }}
               value: /nxrm-secrets/{{ .Values.secret.license.name }}
@@ -181,6 +189,11 @@ spec:
           {{- if or .Values.secret.license.licenseSecret.enabled .Values.secret.license.existingSecret }}
             - name: license-volume
               mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
+              readOnly: true
+          {{ end }}
+          {{- if and .Values.secret.nexusSecret.enabled (not .Values.secret.aws.nexusSecret.enabled) (not .Values.secret.azure.nexusSecret.enabled) }}
+            - name: nexus-secret-volume
+              mountPath: {{ .Values.secret.nexusSecret.mountPath }}
               readOnly: true
           {{ end }}
             - name: nexus-data
@@ -268,6 +281,11 @@ spec:
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}
+      {{ end }}
+      {{- if and .Values.secret.nexusSecret.enabled (not .Values.secret.aws.nexusSecret.enabled ) (not .Values.secret.azure.nexusSecret.enabled) }}
+        - name: nexus-secret-volume
+          secret:
+            secretName: {{ .Values.secret.nexusSecret.name }}
       {{ end }}
       {{- if .Values.logStorage.combineTaskLogs }}
         - name: logback-tasklogfile-override

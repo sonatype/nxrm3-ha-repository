@@ -82,6 +82,9 @@ spec:
           configMap:
             name: nxrm-license
 
+        - name: nexus-secret-volume
+          secret:
+            secretName: "nexus-secret-volume"
   volumeClaimTemplates:
     - metadata:
         name: nexus-data
