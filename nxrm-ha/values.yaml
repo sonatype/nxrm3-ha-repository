@@ -105,7 +105,6 @@ statefulset:
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
       zeroDowntimeEnabled: false
-
     additionalEnv: null
   requestLogContainer:
     image:
@@ -239,9 +238,14 @@ secret:
     name: nexus-repo-license.lic
     licenseSecret:
       enabled: false
-      file: # Specify the license file name with --set-file license.licenseSecret.file="file_name" helm option
+      file: # Specify the license file name with --set-file secret.license.licenseSecret.file="file_name" helm option
       fileContentsBase64: your_license_file_contents_in_base_64
       mountPath: /var/nexus-repo-license
+  nexusSecret:
+    enabled: false
+    name: nexus-secret.json
+    secretKeyfile: "secretfileName" # Specify the nexus secrets file name with --set-file secret.nexusSecret.secretKeyfile="file_name" helm option
+    mountPath: /var/nexus-repo-secrets
   azure:
     # a managed identity or service principal that has secrets management access to the key vault
     userAssignedIdentityID: "userAssignedIdentityID"
@@ -249,9 +253,14 @@ secret:
     keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
     usePodIdentity: false
+    nexusSecret:
+      enabled: false
   aws:
     license:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
+    nexusSecret:
+      enabled: false
+      arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-secrets-file
     adminpassword:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:admin-nxrm-password
     rds:
