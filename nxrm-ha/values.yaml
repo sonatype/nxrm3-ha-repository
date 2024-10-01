@@ -241,6 +241,11 @@ externalsecrets:
 #          serviceAccountRef:
 #            name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
   secrets:
+    nexusSecret:
+      enabled: false
+      refreshInterval: 1h
+      providerSecretName: nexus-secret.json
+      decodingStrategy: Base64
     database:
       refreshInterval: 1h
       valueIsJson: false

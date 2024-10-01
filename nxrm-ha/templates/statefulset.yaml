@@ -186,7 +186,7 @@ spec:
               mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
               readOnly: true
           {{ end }}
-          {{- if and .Values.secret.nexusSecret.enabled (not .Values.secret.aws.nexusSecret.enabled) (not .Values.secret.azure.nexusSecret.enabled) }}
+          {{-  if or ( .Values.secret.nexusSecret.enabled ) (and .Values.externalsecrets.enabled .Values.externalsecrets.secrets.nexusSecret.enabled ) }}
             - name: nexus-secret-volume
               mountPath: {{ .Values.secret.nexusSecret.mountPath }}
               readOnly: true
@@ -277,7 +277,7 @@ spec:
           secret:
             secretName: {{ .Values.secret.license.name }}
       {{ end }}
-      {{- if and .Values.secret.nexusSecret.enabled (not .Values.secret.aws.nexusSecret.enabled ) (not .Values.secret.azure.nexusSecret.enabled) }}
+      {{- if or (.Values.secret.nexusSecret.enabled) (and .Values.externalsecrets.enabled .Values.externalsecrets.secrets.nexusSecret.enabled) }}
         - name: nexus-secret-volume
           secret:
             secretName: {{ .Values.secret.nexusSecret.name }}
