@@ -123,6 +123,10 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
    * License
       * Store your Nexus Repository Pro license in AWS Secrets Manager.
       * Update the `secret.aws.license.arn` to your Secret Manager ARN containing your Nexus Repository Pro license.
+  * Encryption Keys
+    * Store the json file containing your encryption keys in AWS Secrets Manager
+    * Set `secret.aws.nexusSecret.enabled` and `secret.nexusSecret.enabled` to true
+    * Ensure `secret.azure.nexusSecret.enabled` and `azure.keyvault.enabled` are false
 
 
 ### Azure
@@ -175,6 +179,11 @@ Azure Key Vault is disabled by default. If you would like to store your database
    * License
       * Store your Nexus Repository Pro license in Azure Key Vault.
       * Set the `secret.license.name` to Azure Key Vault secret containing your Nexus Repository Pro license.
+  * Encryption Keys
+    * Store the json file containing your encryption keys in Azure Key Vault
+    * Set `secret.azure.nexusSecret.enabled` and `secret.nexusSecret.enabled` to true
+    * Ensure `secret.aws.nexusSecret.enabled ` and `aws.secretmanager.enabled` are false
+
 
 ### On-premises
 The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
@@ -208,8 +217,9 @@ The chart doesn't install any cloud-specific resources when `aws.enabled` and `a
 * License
    * Set the `secret.license.licenseSecret.enabled` to `true` to enable [license-config-mapping.yaml](nxrm-ha%2Ftemplates%2Flicense-config-mapping.yaml) for storing your Nexus Repository Pro license.
    * Specify values for [license-config-mapping.yaml](nxrm-ha%2Ftemplates%2Flicense-config-mapping.yaml).
-
-
+* Encryption Keys
+    * Set `secret.nexusSecret.enabled` to true
+    * Ensure `secret.azure.nexusSecret.enabled`, `azure.keyvault.enabled`, `secret.aws.nexusSecret.enabled ` and `aws.secretmanager.enabled` are false
 
 ## Installing this Chart
 You can install this helm chart from the git repository or sonatype helm index.
@@ -261,6 +271,8 @@ helm install nxha1 \
 sonatype/nxrm-ha
 ```
 
+---
+## Nexus Secrets
 
 ---
 
