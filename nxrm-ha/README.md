@@ -126,6 +126,7 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
   * Encryption Keys
     * Store the json file containing your encryption keys in AWS Secrets Manager
     * Set `secret.aws.nexusSecret.enabled` and `secret.nexusSecret.enabled` to true
+    * Set `secret.aws.nexusSecret.arn` to the ARN of your secret in AWS Secrets Manager
     * Ensure `secret.azure.nexusSecret.enabled` and `azure.keyvault.enabled` are false
 
 
@@ -181,6 +182,7 @@ Azure Key Vault is disabled by default. If you would like to store your database
       * Set the `secret.license.name` to Azure Key Vault secret containing your Nexus Repository Pro license.
   * Encryption Keys
     * Store the json file containing your encryption keys in Azure Key Vault
+    * Specify your key vault name in `secret.azuee.keyvaultName`
     * Set `secret.azure.nexusSecret.enabled` and `secret.nexusSecret.enabled` to true
     * Ensure `secret.aws.nexusSecret.enabled ` and `aws.secretmanager.enabled` are false
 
@@ -219,7 +221,7 @@ The chart doesn't install any cloud-specific resources when `aws.enabled` and `a
    * Specify values for [license-config-mapping.yaml](nxrm-ha%2Ftemplates%2Flicense-config-mapping.yaml).
 * Encryption Keys
     * Set `secret.nexusSecret.enabled` to true
-    * Ensure `secret.azure.nexusSecret.enabled`, `azure.keyvault.enabled`, `secret.aws.nexusSecret.enabled ` and `aws.secretmanager.enabled` are false
+    * Ensure `secret.azure.nexusSecret.enabled`, `azure.keyvault.enabled`, `secret.aws.nexusSecret.enabled` and `aws.secretmanager.enabled` are false
 
 ## Installing this Chart
 You can install this helm chart from the git repository or sonatype helm index.
