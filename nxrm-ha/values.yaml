@@ -245,7 +245,7 @@ externalsecrets:
       enabled: false
       refreshInterval: 1h
       providerSecretName: nexus-secret.json
-      decodingStrategy: null # Can be Base64
+      decodingStrategy: null # For Azure set to Base64
     database:
       refreshInterval: 1h
       valueIsJson: false
