@@ -51,7 +51,7 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.externaldns.name }}
       containers:
         - name: external-dns
-          image: k8s.gcr.io/external-dns/external-dns:v0.13.1
+          image: {{ .Values.externaldns.image }}
           args:
             - --source=service
             - --source=ingress
