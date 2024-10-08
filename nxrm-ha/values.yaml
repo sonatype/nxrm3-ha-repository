@@ -7,6 +7,8 @@ namespaces:
     enabled: false
     name: amazon-cloudwatch
   externaldnsNs: nexus-externaldns
+externaldns:
+  image: k8s.gcr.io/external-dns/external-dns:v0.13.1
 serviceAccount:
   enabled: false
   name: nexus-repository-deployment-sa #This service account in managed by Helm
@@ -16,6 +18,10 @@ serviceAccount:
     # and secrets manager is enabled then this role should have permissions for using secret manager.
     # If using externaldns, role with route53 permissions needed by external-dns
     # eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/nxrm-nexus-role
+  externaldns:
+    name: nexus-repository-dev-ha-externaldns
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/external-dns-role
 azure:
   enabled: false  #set to true to enable azure specific yamls/snippets
   keyvault:
@@ -167,14 +173,22 @@ ingress:
   host: null #host to apply this ingress rule to e.g. example.com. Set it as you wish
   hostPath: /
   dockersubdomain: false # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. This will result in the creation of routing rules in your load balancer for sub domains of your host. Thus, you must also set the host
+  dockersubdomains:
+#    - dockerrepo1.example.com
+#    - dockerrepo2.example.com
+#    - dockerrepo3.example.com
   defaultRule: false
   additionalRules: null
   ingressClassName: null # e.g. nginx, alb
 #  tls:
+#    - secretName: "nexusrepo-example-cert-2048"
+#      hosts:
+#      - www.nexusrepo.example.com
+#      - nexusrepo.example.com
 #    - secretName: "tlsSecretName1"
 #      hosts:
-#      - repo.foo1
-#      - repo.bar1
+#        - repo.foo2
+#        - repo.bar2
 #    - secretName: "tlsSecretName2"
 #      hosts:
 #        - repo.foo2
@@ -337,14 +351,80 @@ nexus:
   extraSelectorLabels: {}
   docker:
     enabled: false
+    createIngress: true
+    createDockerRules: false
     type: NodePort
     protocol: TCP
-  # registries:
-  #   - host: chart.local
-  #     port: 5000
-  #     secretName: registry-secret
-  #     targetPort: 8081
-  #     annotations: {}
+    registries:
+      - host: docker1.nexusrepo.example.com
+        port: 5000
+        secretName: docker1-nexusrepo-cert
+        targetPort: 8081
+        annotations: { }
+        enableTLS: true
+        certificate:
+          enabled: false
+          name: "docker1-nexusrepo-cert"
+          commonName: "www.docker1.nexusrepo.example.com"
+          duration: 2160h0m0s
+          renewBefore: 360h0m0s
+          secretName: docker1-nexusrepo-cert
+          privateKey:
+            algorithm: "RSA"
+            size: 2048
+          usages:
+            - server auth
+            - client auth
+          dnsNames:
+            - www.docker1.nexusrepo.example.com
+            - docker1.nexusrepo.example.com
+      - host: docker2.nexusrepo.example.com
+        port: 5001
+        secretName: docker2-nexusrepo-cert
+        targetPort: 8081
+        annotations: { }
+        enableTLS: true
+        certificate:
+          enabled: false
+          name: "docker2-nexusrepo-cert"
+          commonName: "www.docker2.nexusrepo.example.com"
+          duration: 2160h0m0s
+          renewBefore: 360h0m0s
+          secretName: docker2-nexusrepo-cert
+          privateKey:
+            algorithm: "RSA"
+            size: 2048
+          usages:
+            - server auth
+            - client auth
+          dnsNames:
+            - www.docker2.nexusrepo.example.com
+            - docker2.nexusrepo.example.com
+certificate:
+  enabled: false
+  issuer:
+    group: awspca.cert-manager.io
+    kind: AWSPCAClusterIssuer
+    apiVersion: awspca.cert-manager.io/v1beta1
+    name: demo-test-root-ca
+    arn: private-ca-arn
+    region: region
+  nexus:
+    enabled: false
+    name: "nexusrepo-cert-2048"
+    commonName: "www.nexusrepo.example.com"
+    duration: 2160h0m0s
+    renewBefore: 360h0m0s
+    secretName: nexusrepo-example-cert-2048
+    privateKey:
+      algorithm: "RSA"
+      size: 2048
+    usages:
+      - server auth
+      - client auth
+    dnsNames:
+      - www.nexusrepo.example.com
+      - nexusrepo.example.com
 
 # Enable configmap and add arbitrary data in configmap
 config:
