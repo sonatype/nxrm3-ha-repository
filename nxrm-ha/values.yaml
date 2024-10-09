@@ -177,6 +177,7 @@ ingress:
 #    - dockerrepo1.example.com
 #    - dockerrepo2.example.com
 #    - dockerrepo3.example.com
+  subdomainWildcard: true
   defaultRule: false
   additionalRules: null
   ingressClassName: null # e.g. nginx, alb
@@ -351,37 +352,38 @@ nexus:
   extraSelectorLabels: {}
   docker:
     enabled: false
-    createIngress: true
-    createDockerRules: false
+    createIngress: true #set to true to create dedicated ingresses for docker connector
+    exposeDockerPorts: true
+    createDockerRulesOnMainIngress: false
     type: NodePort
     protocol: TCP
     registries:
       - host: docker1.nexusrepo.example.com
         port: 5000
         secretName: docker1-nexusrepo-cert
-        targetPort: 8081
+        targetPort: 5000 # if using subdomains should be container port i.e. 8081
         annotations: { }
         enableTLS: true
-        certificate:
-          enabled: false
-          name: "docker1-nexusrepo-cert"
-          commonName: "www.docker1.nexusrepo.example.com"
-          duration: 2160h0m0s
-          renewBefore: 360h0m0s
-          secretName: docker1-nexusrepo-cert
-          privateKey:
-            algorithm: "RSA"
-            size: 2048
-          usages:
-            - server auth
-            - client auth
-          dnsNames:
-            - www.docker1.nexusrepo.example.com
-            - docker1.nexusrepo.example.com
+#        certificate:
+#          enabled: false
+#          name: "docker1-nexusrepo-cert"
+#          commonName: "www.docker1.nexusrepo.example.com"
+#          duration: 2160h0m0s
+#          renewBefore: 360h0m0s
+#          secretName: docker1-nexusrepo-cert
+#          privateKey:
+#            algorithm: "RSA"
+#            size: 2048
+#          usages:
+#            - server auth
+#            - client auth
+#          dnsNames:
+#            - www.docker1.nexusrepo.example.com
+#            - docker1.nexusrepo.example.com
       - host: docker2.nexusrepo.example.com
         port: 5001
         secretName: docker2-nexusrepo-cert
-        targetPort: 8081
+        targetPort: 5001 # if using subdomains should be container port i.e. 8081
         annotations: { }
         enableTLS: true
         certificate:

@@ -1,0 +1,141 @@
+suite: test docker connector ingress
+templates:
+  - docker-connector-ingress.yaml
+release:
+  name: "test-release"
+  namespace: "test-namespace"
+chart:
+  version: "latest"
+  appVersion: latest
+tests:
+  - it: should create docker ingress with a HTTP rule which has its host set
+    set:
+      ingress:
+        ingressClassName: nginx
+      nexus:
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              secretName: registry-secret
+              targetPort: 8081
+              annotations:
+                jar: box
+                super: ted
+        extraLabels:
+          foo: bar
+          baz: bay
+
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha-docker-5000"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/instance: test-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: nxrm-ha
+            app.kubernetes.io/version: latest
+            helm.sh/chart: nxrm-ha-latest
+            foo: bar
+            baz: bay
+
+      - equal:
+          path: metadata.annotations
+          value:
+            jar: box
+            super: ted
+
+      - equal:
+          path: spec.ingressClassName
+          value:
+            nginx
+
+      - equal:
+          path: spec.rules
+          value:
+            - host: "chart.local"
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: "test-release-nxrm-ha-docker-5000"
+                        port:
+                          number: 5000
+
+  - it: should create docker ingress TLS section
+    set:
+      ingress:
+        ingressClassName: nginx
+      nexus:
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              enableTLS: true
+              secretName: registry-secret
+    asserts:
+      - equal:
+          path: spec.tls[0].hosts
+          value:
+            - chart.local
+
+      - equal:
+          path: spec.tls[0].secretName
+          value: registry-secret
+
+  - it: should create docker ingress with no TLS section
+    set:
+      ingress:
+        ingressClassName: nginx
+      nexus:
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              enableTLS: false
+    asserts:
+      - isKind:
+          of: Ingress
+
+      - equal:
+          path: metadata.name
+          value: "test-release-nxrm-ha-docker-5000"
+
+      - equal:
+          path: metadata.namespace
+          value: "nexusrepo"
+
+      - isNull:
+          path: spec.tls
+
+  - it: should create docker ingress in release namespace when namespaces.nexusNs.name is empty
+    set:
+      namespaces:
+        nexusNs:
+          name: ""
+      nexus:
+        docker:
+          enabled: true
+          registries:
+            - host: chart.local
+              port: 5000
+              secretName: registry-secret
+              targetPort: 8081
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "test-namespace"
