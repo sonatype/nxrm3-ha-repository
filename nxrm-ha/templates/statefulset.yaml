@@ -62,6 +62,10 @@ spec:
       nodeSelector:
         {{ toYaml .Values.statefulset.nodeSelector | nindent 8 }}
       {{- end }}
+      {{- if .Values.statefulset.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{ toYaml .Values.statefulset.topologySpreadConstraints | nindent 8 }}
+      {{- end }}
       {{- if .Values.statefulset.hostAliases }}
       hostAliases:
         {{ toYaml .Values.statefulset.hostAliases | nindent 8 }}
