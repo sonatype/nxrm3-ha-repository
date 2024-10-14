@@ -1,6 +1,6 @@
 {{- if .Values.certificate.enabled }}
 {{- if .Values.certificate.nexus.enabled }}
-apiVersion: cert-manager.io/v1
+apiVersion: {{ .Values.certificate.apiVersion }}
 kind: Certificate
 metadata:
   name: {{ .Values.certificate.nexus.name }}

@@ -404,14 +404,28 @@ nexus:
             - www.docker2.nexusrepo.example.com
             - docker2.nexusrepo.example.com
 certificate:
+  apiVersion: cert-manager.io/v1
   enabled: false
   issuer:
+    enabled: false
     group: cert-manager.io
     kind: ClusterIssuer
-    apiVersion: awspca.cert-manager.io/v1beta1
-    name: demo-test-root-ca
-    arn: private-ca-arn
-    region: region
+    name: demo-letsencrypt
+    spec:
+      acme:
+        server: https://certificate-issuer-server-url # e.g. for letsencrypt https://acme-staging-v02.api.letsencrypt.org/directory
+        email: email@example.com
+        privateKeySecretRef:
+          name: letsencrypt-staging
+        solvers:
+          - dns01:
+              route53:
+                region: us-east-1
+                role: arn:aws:iam::111111111:role/cert-manager-acme-dns01-route53 # IAM Role which gives cert manager needed route 53 permissions
+                auth:
+                  kubernetes:
+                    serviceAccountRef:
+                      name: cert-manager-acme-dns01-route53
   nexus:
     enabled: false
     name: "nexusrepo-cert"
