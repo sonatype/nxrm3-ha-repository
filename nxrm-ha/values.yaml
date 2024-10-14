@@ -203,6 +203,7 @@ ingress:
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
 #    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
+    # acme.cert-manager.io/http01-edit-in-place: "true" #See https://cert-manager.io/docs/usage/certificate/#issuance-behavior-temporary-certificates-while-issuing
 logStorage:
   tailSecondaryLogs: true
   combineTaskLogs: true
@@ -405,28 +406,40 @@ nexus:
 certificate:
   enabled: false
   issuer:
-    group: awspca.cert-manager.io
-    kind: AWSPCAClusterIssuer
+    group: cert-manager.io
+    kind: ClusterIssuer
     apiVersion: awspca.cert-manager.io/v1beta1
     name: demo-test-root-ca
     arn: private-ca-arn
     region: region
   nexus:
     enabled: false
-    name: "nexusrepo-cert-2048"
+    name: "nexusrepo-cert"
     commonName: "www.nexusrepo.example.com"
-    duration: 2160h0m0s
-    renewBefore: 360h0m0s
+    duration: 2160h0m0s # 90 days
+    renewBefore: 360h0m0s # 15 days
     secretName: nexusrepo-example-cert-2048
+    secretTemplate: null
     privateKey:
-      algorithm: "RSA"
-      size: 2048
+      enabled: false
+      algorithm: null # e.g. "RSA"
+      encoding: null # e.g "PKCS1"
+      size: null # e.g. 2048
+      rotationPolicy: "Always"
+    keystores: null
     usages:
+      - digital signature
+      - key encipherment
       - server auth
-      - client auth
+    subject: null
     dnsNames:
       - www.nexusrepo.example.com
       - nexusrepo.example.com
+    otherNames: null
+    ipAddresses: null
+    emailAddresses: null
+    uris: null
+    isCa: false
 
 # Enable configmap and add arbitrary data in configmap
 config:
