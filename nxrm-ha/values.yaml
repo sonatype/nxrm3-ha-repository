@@ -218,7 +218,8 @@ ingress:
   annotations:
 #  Note: the annotations below are just a guide; delete or insert more as needed depending on your use case: aws, azure, on prem
 #    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-#    alb.ingress.kubernetes.io/scheme: internal # scheme
+#    nginx.ingress.kubernetes.io/proxy-body-size: "0" # For docker push to work when using nginx. See https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#custom-max-body-size for more info
+    #    alb.ingress.kubernetes.io/scheme: internal # scheme
 #    alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
     # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
