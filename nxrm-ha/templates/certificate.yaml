@@ -1,0 +1,87 @@
+{{- if .Values.certificate.enabled }}
+{{- if .Values.certificate.nexus.enabled }}
+apiVersion: {{ .Values.certificate.apiVersion }}
+kind: Certificate
+metadata:
+  name: {{ .Values.certificate.nexus.name }}
+  namespace: {{ default .Release.Namespace .Values.namespaces.nexusNs.name | quote }}
+spec:
+  secretName: {{ .Values.certificate.nexus.secretName }}
+  revisionHistoryLimit:  {{ .Values.certificate.nexus.revisionHistoryLimit }}
+  {{ if .Values.certificate.nexus.secretTemplate }}
+  secretTemplate:
+  {{- with .Values.certificate.nexus.secretTemplate }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ end }}
+  {{ if .Values.certificate.nexus.privateKey.enabled }}
+  privateKey:
+    {{ if .Values.certificate.nexus.privateKey.algorithm }}
+    algorithm: {{ .Values.certificate.nexus.privateKey.algorithm }}
+    {{ end }}
+    {{ if .Values.certificate.nexus.privateKey.encoding }}
+    encoding: {{ .Values.certificate.nexus.privateKey.encoding }}
+    {{ end }}
+    {{ if .Values.certificate.nexus.privateKey.size }}
+    size: {{ .Values.certificate.nexus.privateKey.size }}
+    {{ end }}
+    {{ if .Values.certificate.nexus.privateKey.rotationPolicy }}
+    rotationPolicy: {{ .Values.certificate.nexus.privateKey.rotationPolicy }}
+    {{ end }}
+  {{ end }}
+  {{ if .Values.certificate.nexus.keystores }}
+  keystores:
+    {{- with .Values.certificate.nexus.keystores }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{ end }}
+  duration: {{ .Values.certificate.nexus.duration }}
+  renewBefore: {{ .Values.certificate.nexus.renewBefore }}
+  isCA: {{ .Values.certificate.nexus.isCa }}
+  usages:
+    {{- with .Values.certificate.nexus.usages }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{ if .Values.certificate.nexus.subject }}
+  subject:
+    {{- with .Values.certificate.nexus.subject }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{ end }}
+  {{ if .Values.certificate.nexus.commonName }}
+  commonName: {{ .Values.certificate.nexus.commonName }}
+  {{ end }}
+  dnsNames:
+    {{- with .Values.certificate.nexus.dnsNames }}
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+  {{ if .Values.certificate.nexus.uris }}
+  uris:
+  {{- with .Values.certificate.nexus.uris }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ end }}
+  {{ if .Values.certificate.nexus.emailAddresses }}
+  emailAddresses:
+  {{- with .Values.certificate.nexus.emailAddresses }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ end }}
+  {{ if .Values.certificate.nexus.ipAddresses }}
+  ipAddresses:
+  {{- with .Values.certificate.nexus.ipAddresses }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ end }}
+  {{ if .Values.certificate.nexus.otherNames }}
+  otherNames:
+  {{- with .Values.certificate.nexus.otherNames }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ end }}
+  issuerRef:
+    name: {{ .Values.certificate.issuer.name }}
+    kind: {{ .Values.certificate.issuer.kind }}
+    group: {{ .Values.certificate.issuer.group }}
+{{ end }}
+{{ end }}

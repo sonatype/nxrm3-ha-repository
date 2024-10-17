@@ -1,0 +1,10 @@
+{{- if .Values.certificate.issuer.enabled }}
+apiVersion: {{ .Values.certificate.apiVersion }}
+kind: {{ .Values.certificate.issuer.kind }}
+metadata:
+  name: {{ .Values.certificate.issuer.name }}
+spec:
+  {{- with .Values.certificate.issuer.spec }}
+    {{ toYaml . | nindent 2 }}
+  {{ end }}
+{{ end }}
