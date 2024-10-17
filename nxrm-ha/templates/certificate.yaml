@@ -7,6 +7,7 @@ metadata:
   namespace: {{ default .Release.Namespace .Values.namespaces.nexusNs.name | quote }}
 spec:
   secretName: {{ .Values.certificate.nexus.secretName }}
+  revisionHistoryLimit:  {{ .Values.certificate.nexus.revisionHistoryLimit }}
   {{ if .Values.certificate.nexus.secretTemplate }}
   secretTemplate:
   {{- with .Values.certificate.nexus.secretTemplate }}
