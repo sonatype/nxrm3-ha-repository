@@ -70,10 +70,11 @@ If you have installed version 66.0.0 or older of the nxrm-ha chart and wish to s
       * `kubectl logs -n nexusrepo nxrm-nxrm-ha-1 -f` 
       * `kubectl logs -n nexusrepo nxrm-nxrm-ha-2 -f`
 
-#### Cloud deployments (AWS/Azure)
+#### Cloud deployments (AWS/Azure/GCP)
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
   * For AWS, see our [documentation on high availability deployments in AWS](https://help.sonatype.com/en/option-3---high-availability-deployment-in-amazon-web-services--aws-.html)
   * For Azure, see our [documentation on high availability deployments in Azure](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
+  * For GCP, see our [documentation on high availability deployments in GCP](https://help.sonatype.com/en/option-4---high-availability-deployment-in-gcp.html)
 
 #### On-premises deployments
 1. Set up an NFS server and make it accessible to all worker nodes in your Kubernetes cluster.
@@ -85,6 +86,36 @@ HA supports all formats that PostgreSQL supports.
 
 
 ## Deployment Configuration
+
+### Secrets
+The chart requires three secrets namely:
+* License secret: stores your Nexus Repository Pro license
+* Database secret: stores your database credentials: username, password and host
+* Initial admin password secret: stores your initial admin password for Nexus Repository
+
+
+#### Injecting required secrets into your Nexus Repository pod
+The chart provides fours ways of injecting secrets into your Nexus Repository pod namely:
+* [External secret operator](https://external-secrets.io/latest/): recommended as it supports several external secret stores (AWS, Azure, GCP etc).
+  * Irrespective of whether you're installing on AWS/Azure, the following steps are needed to configure the nxrm-ha helm chart to use the External Secrets Operator:
+    - Create your secrets in your external secret store (e.g. AWS Secrets Manager, Azure Key Vault, Google Secret Manager etc)
+    - In your values.yaml:
+        - Set `externalsecrets.enabled`
+        - Set the `externalsecrets.secretstore.spec` to the correct one (e.g. AWS, Azure, GCP, HashiCorp Vault) for your provider. (There are examples for AWS, Azure, GCP in the default values.yaml provided with this helm chart). See https://external-secrets.io/latest/ for more examples.
+        - Set the `externalsecrets.secrets.database.providerSecretName` to the name of the secret containing your database credentials in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
+        - Set the `externalsecrets.secrets.database.dbUserKey` to the name of the key in the secret which contains your database username.
+        - Set the `externalsecrets.secrets.database.dbPasswordKey` to the name of the key in the secret which contains your database password.
+        - Set the `externalsecrets.secrets.database.dbHostKey` to the name of the key in the secret which contains your database host.
+        - Set the `externalsecrets.secrets.admin.providerSecretName` to the name of the secret containing your Nexus Repository admin password in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
+        - Set the `externalsecrets.secrets.admin.adminPasswordKey` to the name of the key in the secret which contains your initial Nexus Repository admin password.
+        - Set the `externalsecrets.secrets.license.providerSecretName` to the name of the secret containing your Nexus Repository license in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
+
+* [Secret Store CSI Driver](https://github.com/kubernetes-sigs/secrets-store-csi-driver): If you're running on AWS or Azure and do not wish to use the external secrets operator, 
+ you can use the secret store csi driver configuration. See [secretprovider.yaml](templates%2Fsecretprovider.yaml) and configuration table below for more details.
+* Use the provided secrets templates:
+  * [database-secret.yaml](templates%2Fdatabase-secret.yaml)
+  * [license-config-mapping.yaml](templates%2Flicense-config-mapping.yaml)
+  * [nexus-admin-secret.yaml](templates%2Fnexus-admin-secret.yaml)
 
 ### AWS
 * Set `aws.enabled` to `true`.
@@ -101,6 +132,7 @@ HA supports all formats that PostgreSQL supports.
 * Set `pvc.volumeClaimTemplate.enabled` to `true`
 
 #### Secrets
+If you do not wish to the [external secrets operator](https://external-secrets.io/latest/) for providing your secrets into your Nexus Repository pods, then you may use AWS Secret Manager directly.
 AWS Secret Manager is disabled by default. If you would like to store your database secrets and license in AWS Secrets Manager, do as follows:
 * Set `aws.secretmanager.enabled` to `true`.
    * Database credentials:
@@ -129,6 +161,11 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
     * Set `secret.aws.nexusSecret.arn` to the ARN of your secret in AWS Secrets Manager
     * Ensure `secret.azure.nexusSecret.enabled` and `azure.keyvault.enabled` are false
 
+##### External Secrets Operator
+- Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
+- Ensure you have granted the necessary permissions for accessing your external secret store:
+- You'll need an IAM role with necessary permissions and associate that IAM role with the service account used by your pods:
+- See [External secrets operator EKS service account credentials](https://external-secrets.io/latest/provider/aws-secrets-manager/#eks-service-account-credentials) for more details.
 
 ### Azure
 * Set `azure.enabled` to `true`.
@@ -163,6 +200,7 @@ If you would like to create your own storage class instead of using the built-in
 * Set `pvc.volumeClaimTemplate.enabled` to `true`
 
 #### Secrets
+If you do not wish to the [external secrets operator](https://external-secrets.io/latest/) for providing your secrets into your Nexus Repository pods, then you may use Azure Key Vault directly.
 Azure Key Vault is disabled by default. If you would like to store your database secrets and license in Azure Key Vault, do as follows:
 * Set `azure.keyvault.enabled` to `true`.
    * Database credentials
@@ -185,6 +223,344 @@ Azure Key Vault is disabled by default. If you would like to store your database
     * Specify your key vault name in `secret.azuee.keyvaultName`
     * Set `secret.azure.nexusSecret.enabled` and `secret.nexusSecret.enabled` to true
     * Ensure `secret.aws.nexusSecret.enabled ` and `aws.secretmanager.enabled` are false
+
+
+##### External Secrets Operator
+- Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
+- Ensure you have granted the necessary permissions for accessing your external secret store:
+- You'll need to create a service account and create a trust relationship between Azure AD and that Kubernetes service account:
+    - See [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
+    - See 'Referenced Service Account' section of [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
+
+##### Guidance for setting up permissions needed for External Secrets Operator on Azure (AKS)
+- According to https://external-secrets.io/latest/provider/azure-key-vault/#authentication the recommended way to authenticate external secrets operator for Azure Key Vault is through workload identity.
+- We tried this out by following the steps on the page at: https://azure.github.io/azure-workload-identity/docs/quick-start.html which is referenced from https://external-secrets.io/latest/provider/azure-key-vault/#authentication :
+    - According to https://azure.github.io/azure-workload-identity/docs/quick-start.html you can either use the azwi (Azure Workload Identity) tool for Azure Active Directory (AAD) application or use az cli for  user-assigned managed identity, we opted for azwi tool. See next section for details.
+
+##### Setting up permissions using The Azure Workload Identity tool for Azure Active Directory (AAD) application
+- Install azwi :  See https://azure.github.io/azure-workload-identity/docs/installation/azwi.html for brew command
+- Open a shell
+    - [Set the following env variables](https://azure.github.io/azure-workload-identity/docs/quick-start.html#2-export-environment-variables):
+      ```
+      export APPLICATION_NAME=nexus-repo-aks-aad
+      export KEYVAULT_NAME=test-nexusha-secrets (your key vault name)
+      export KEYVAULT_SCOPE=$(az keyvault show --name "${KEYVAULT_NAME}" --query id -o tsv)
+      export SERVICE_ACCOUNT_NAMESPACE=nexusrepo (must be same as namespace in values.yaml of ha helm chart)
+      export SERVICE_ACCOUNT_NAME=nexus-repository-dev-ha-sa. (Must be same as that specified in values.yaml of ha helm chart)
+      export SERVICE_ACCOUNT_ISSUER=$(az aks show --resource-group nexus-repo-ha --name nexus-repo-ha-aks --query "oidcIssuerProfile.issuerUrl" -otsv)
+      ```
+
+    - [Create Key Vault](https://azure.github.io/azure-workload-identity/docs/quick-start.html#3-create-an-azure-key-vault-and-secret)
+
+        - [Create an AAD application or user-assigned managed identity and grant permissions to access the secret](https://azure.github.io/azure-workload-identity/docs/quick-start.html#4-create-an-aad-application-or-user-assigned-managed-identity-and-grant-permissions-to-access-the-secret)
+            - `azwi serviceaccount create phase app --aad-application-name "${APPLICATION_NAME}"`
+            - Output should be like:
+                ```
+                INFO[0000] No subscription provided, using selected subscription from Azure CLI: REDACTED
+                INFO[0005] [aad-application] created an AAD application  clientID=REDACTED name=azwi-test objectID=REDACTED
+                WARN[0005] --service-principal-name not specified, falling back to AAD application name
+                INFO[0005] [aad-application] created service principal   clientID=REDACTED name=azwi-test objectID=REDACTED
+                ```
+            - Make a note of the client id value in the output as you’ll need it for your helm values.yaml. You’ll also need to know your Azure tenant id for your helm values.yaml. You can find out from the Azure portal or use this command to find out from the AAD application you just created:
+              `az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appOwnerOrganizationId' -otsv`
+
+            - Set access policy for the AAD application or user-assigned managed identity to access the keyvault secret:
+                - If your key vault is using RBAC use the command below
+                  ```
+                  export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
+                  az role assignment create --role "Key Vault Secrets User" --assignee $APPLICATION_CLIENT_ID --scope $KEYVAULT_SCOPE
+                  ```
+                  (RBAC Key Vault command source: https://learn.microsoft.com/en-us/azure/aks/csi-secrets-store-identity-access#configure-managed-identity )
+
+                - If your Key vault is not using RBAC (i.e. if you’re using user-assigned managed identity) then you can use command below:
+                  ```
+                  export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
+                  az keyvault set-policy --name "${KEYVAULT_NAME}" --secret-permissions get --spn "${APPLICATION_CLIENT_ID}"
+                  ```
+                  (source: https://azure.github.io/azure-workload-identity/docs/quick-start.html#4-create-an-aad-application-or-user-assigned-managed-identity-and-grant-permissions-to-access-the-secret )
+            - Skip [Create a Kubernetes service account](https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account)
+                - We will skip this since our nxrm-ha helm chart will be doing this for us. We’ll just need to make sure we specify the appropriate annotations and labels to the service account the helm chart will create (see below)
+
+            - [Establish federated identity credential between the identity and the service account issuer & subject](https://azure.github.io/azure-workload-identity/docs/quick-start.html#6-establish-federated-identity-credential-between-the-identity-and-the-service-account-issuer--subject)
+              ``` 
+                azwi serviceaccount create phase federated-identity \ 
+                --aad-application-name "${APPLICATION_NAME}" \ 
+                --service-account-namespace "${SERVICE_ACCOUNT_NAMESPACE}" \ 
+                --service-account-name "${SERVICE_ACCOUNT_NAME}" \ 
+                --service-account-issuer-url "${SERVICE_ACCOUNT_ISSUER}"
+              ```
+                - Output should be like:
+                  ```
+                    INFO[0000] No subscription provided, using selected subscription from Azure CLI: REDACTED
+                    INFO[0032] [federated-identity] added federated credential  objectID=REDACTED subject="system:serviceaccount:default:workload-identity-sa"
+                  ```
+            - Update your nxrm-ha values.yaml:
+                - Service account section:
+                  ```
+                  serviceAccount:
+                     enabled: true
+                     name: nexus-repository-dev-ha-sa #
+                     labels:
+                        azure.workload.identity/use: "true"
+                     annotations:
+                        azure.workload.identity/client-id: ab67cbbb-e374-4586-bcb6-8d80df659b41
+                        azure.workload.identity/tenant-id: bd28fc0b-f086-430f-ac20-16268536c81f
+                  ```
+                - External secrets:
+                  ```
+                  externalsecrets:
+                     enabled: true
+                     secretstore:
+                        name: nexus-secret-store
+                        spec:
+                           provider:
+                              azurekv:
+                                 authType: WorkloadIdentity
+                                 vaultUrl: "https://test-nexusha-secrets.vault.azure.net/" #use your key vault url here
+                                 serviceAccountRef:
+                                    name: nexus-repository-dev-ha-sa # use same service account name as specified in serviceAccount.name
+                  ```
+                  
+### GCP
+
+ * Update values.yaml
+   <a id="enable-service-account"></a>
+   1. Enable service account  (you’ll need the name of the existing Google service account - there is a chapter below on how to create it)
+  
+       ```
+         serviceAccount:
+           enabled: true
+           name: nexus-repository-deployment-sa
+           labels: {}
+           annotations:
+             iam.gke.io/gcp-service-account: <service-account-name>@<project-id>.iam.gserviceaccount.com <- your GCP project service account e-mail
+        
+       ```
+
+   2. Enable ingress 
+        ```
+        ingress:
+          name: "nexus-ingress"
+          enabled: true
+        ```  
+   3. Update ingress properties to correspond to GKE controller class https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress#create-ingress 
+        ```
+        ingress:
+          name: "nexus-ingress"
+          enabled: true
+          ...
+          defaultRule: true
+          additionalRules: null
+          ingressClassName: gce
+          ...
+          annotations:
+            kubernetes.io/ingress.class: "gce"
+        ```
+   4. Enable Nexus NodePort/ClusterIP service 
+    
+         ```
+         service:  #Nexus Repo NodePort Service
+           annotations: {}
+           nexus:
+             enabled: true
+         ```
+
+   5. Now you can update secrets separately (follow steps 6, 7, 8 below) 
+      OR install ESO ([External Secret Operator]https://external-secrets.io/latest/introduction/getting-started/)
+      ESO is the recommended approach for production.
+
+        ```
+        helm install external-secrets \
+           external-secrets/external-secrets \
+            -n external-secrets \
+            --create-namespace
+        ```
+      and use external secrets from Google Secret Manager (https://external-secrets.io/latest/provider/google-secrets-manager/)
+   
+
+   6. Enable db secret 
+        ```    
+        secret:
+          secretProviderClass: "secretProviderClass"
+          provider: provider # e.g. aws, azure etc
+          dbSecret:
+            enabled: true # Enable to apply database-secret.yaml which allows you to specify db credentials
+          db:
+            user: nxrm
+            userAlias: nxrm
+            password: nxrm
+            passwordAlias: nxrm
+            host: 10.10.0.3
+        ```
+
+   7. (Optional) Set default password for Nexus instances 
+        ```
+          nexusAdminSecret:
+            enabled: true # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
+            adminPassword: admin123 #You should change this when you login for the first time
+        ```
+
+   8. Set license (use base64 to encode file)  
+        ```
+          license:
+            name: test-users.lic
+            licenseSecret:
+              enabled: true
+              fileContentsBase64: cylwwtYx6Fg1CUa9yGqBuhGhgc4IS67Ha/+uvxSpA  == your base64 encoded license file == Gd7Z3+WS/0LIeugxSIa+ZDqtg7AR+U3d9ZJA==
+              mountPath: /var/nexus-repo-license
+        ```
+      You can also specify the license file with your helm command as in:
+      `--set-file secret.license.licenseSecret.file=<path to your license file>`
+
+#### How to allow access to GCP credentials from deployed Kubernetes cluster (GKE)
+
+  To allow a container in a GKE cluster node to access Application Default Credentials (ADC),
+  you need to ensure that the GKE nodes have the necessary IAM roles and that the container is configured to use ADC. Here are the steps:
+
+   1.  Ensure GKE Nodes Have the Necessary IAM Roles:
+       When you create the cluster, ensure that you are using a service account that has required IAM roles for the GKE nodes
+       NOTE: It's important to associate GCP service account with cluster node pool when you create node pool.
+       Current GCP limitations doesn't allow to update service account for nodes, so you need to recreate the node pool if you need to change the service account.
+
+       **Check step `2.c` if you need to create a new account**
+
+       You may assign the necessary IAM roles to the service account. For example, if your application needs access to write in Google Cloud Storage,
+       you would assign the `roles/storage.objectAdmin` role.
+     
+        ```
+        gcloud projects add-iam-policy-binding <your-project-id> \
+          --member "serviceAccount:<your-gke-node-service-account>" \
+          --role "roles/storage.objectAdmin"
+        ```
+
+   2. Configure the GKE Cluster (if it's not configured at the creation) to Use Workload Identity:
+      Workload Identity allows Kubernetes service accounts to act as Google service accounts. 
+      This is the recommended way to provide credentials to applications running on GKE.
+      We do not recommend using IAM principal identifiers to configure Workload Identity Federation,
+      because there are a few limitations that apply to GoogleCloud Storage usage
+      (you may need to enable uniform bucket-level access for your buckets etc…, more details here [Identity federation: products and limitations](https://cloud.google.com/iam/docs/federated-identity-supported-services)
+      So we recommend to use this method:  [Alternative: link Kubernetes ServiceAccounts to IAM](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#kubernetes-sa-to-iam) 
+
+   * 2.a
+   Enable Workload Identity:
+
+        ```    
+        gcloud container clusters update <your-cluster-name> \
+          --zone <your-cluster-zone> \
+          --workload-pool=<your-project-id>.svc.id.goog
+        ```
+        ```
+         gcloud container node-pools update NODEPOOL_NAME \
+         --cluster=CLUSTER_NAME \
+         --zone=COMPUTE_ZONE \
+         --workload-metadata=GKE_METADATA
+         ```
+   * 2.b
+   Create a Kubernetes Service Account:
+    
+         ```
+         kubectl create serviceaccount <your-k8s-service-account>
+         ```
+   * 2.c
+      Create a Google Service Account:
+        ```
+        gcloud iam service-accounts create <your-gsa-name> 
+        ```
+   * 2.d
+      Grant required roles to your <your-gsa-name> account
+
+        ```
+         gcloud projects add-iam-policy-binding <your-project-id> \
+         --member "serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+         --role "roles/storage.admin"
+        
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/compute.viewer"
+        
+        // if your intent to use ESO   
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/secretmanager.admin"
+        
+        // if your intent to use ESO    
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/iam.serviceAccountTokenCreator"
+        
+        // if your intent to use Google Artifactory to store Nexus docker images for deploy
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/artifactregistry.admin"
+        ```
+   * 2.e
+      Allow the Kubernetes Service Account to Act As the Google Service Account:
+
+        ```
+        gcloud iam service-accounts add-iam-policy-binding <your-gsa-name>@<your-project-id>.iam.gserviceaccount.com \
+          --role roles/iam.workloadIdentityUser \
+          --member "serviceAccount:<your-project-id>.svc.id.goog[<your-namespace>/<your-k8s-service-account>]"
+        ```
+   * 2.f
+        (Optional) Annotate the Kubernetes Service Account:
+    
+        ```
+            kubectl annotate serviceaccount <your-k8s-service-account> \
+            --namespace <your-namespace> \
+            iam.gke.io/gcp-service-account=<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com
+        ```
+        This step is optional - you may annotate the service account in `values.yaml` of the helm chart.
+        For more information, see [Enable service account](#enable-service-account).
+
+3. Deploy Your Application:
+
+Ensure your application is configured to use ADC. When running on GKE with Workload Identity,
+the ADC will automatically use the credentials provided by the annotated Kubernetes service account.
+
+##### Using built-in storage class
+* Ensure you have enabled the built-in storage classes on your GCP cluster. For more information, see the [GCP documentation](https://cloud.google.com/kubernetes-engine/docs/concepts/storage-overview#storageclasses)
+* Set `storageClass.enabled` to `false`
+* Set `storageClass.parameters.type` to one of predefined types, i.e. `pd-ssd` etc...
+* Set `storageClass.parameters.replication-type` to `regional-pd`
+* Set `storageClass.provisioner` to `pd.csi.storage.gke.io`
+* Set `storageClass.volumeBindingMode` to `Immediate`
+
+##### External Secrets Operator
+- Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
+- Ensure you have granted the necessary permissions for accessing your external secret store:
+- You'll need to create a k8s service account and create a link between GCP service account and that Kubernetes service account:
+    - See [Workload identity](https://external-secrets.io/latest/provider/google-secrets-manager/#workload-identity)
+    - See 'Using Service Accounts directly' section [Using Service Accounts directly](https://external-secrets.io/latest/provider/google-secrets-manager/#using-service-accounts-directly)
+- Enable the external secrets operator in your values.yaml:
+    ```
+    externalsecrets:
+      enabled: true
+      secretstore:
+        name: nexus-secret-store
+        spec:
+          provider:
+            gcpsecretsmanager:
+              authType: WorkloadIdentity
+              serviceAccountRef:
+                name: nexus-repository-deployment-sa
+    ```
+- Ensure you have created the necessary secrets in GCP Secret Manager and have the necessary permissions to access them.
+Check section above "Injecting required secrets into your Nexus Repository pod" for more details.
+
+###### Guidance for setting up permissions needed for External Secrets Operator on GCP (EKS)
+
+- For your GSP service account, you'll need to add an additional permissions to access the secret in GCP Secret Manager:
+
+```
+gcloud projects add-iam-policy-binding <your-project-id> \
+--member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+--role="roles/secretmanager.admin"
+
+gcloud projects add-iam-policy-binding  <your-project-id> \
+--member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+--role="roles/iam.serviceAccountTokenCreator"
+```
+
 
 
 ### On-premises
@@ -421,6 +797,15 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `service.headless.annotations`                              | Annotations for the headless service object                                                                                                                                                                                                                                                                                                                                      | `{}`                                                                                                                |
 | `service.headless.publishNotReadyAddresses`                 | Whether or not the service to be discoverable even before the corresponding endpoints are ready                                                                                                                                                                                                                                                                                  | `true`                                                                                                              |
 | `service.nexus.targetPort`                                  | The port to forward requests to                                                                                                                                                                                                                                                                                                                                                  | `8081`                                                                                                              |
+ | `externalsecrets.enabled`                                   | Set this to true if https://external-secrets.io/latest/ is installed in your Kubernetes cluster and you would like to use it for providing needed secrets to your Nexus Repository pods                                                                                                                                                                                          |                                                                                                                     |
+ | `externalsecrets.secretstore.spec`                          | Set this to the SecretStore configuration for your external secret store. See https://external-secrets.io/latest/ for examples.                                                                                                                                                                                                                                                  |                                                                                                                     |
+ | `externalsecrets.secrets.database.providerSecretName`       | Set this to the name of the secret containing your database credentials in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault                                                                                                       |                                                                                                                     |
+ | `externalsecrets.secrets.database.dbUserKey`                | Set this to the name of the key in the secret which contains your database username.                                                                                                                                                                                                                                                                                             |                                                                                                                     |
+ | `externalsecrets.secrets.database.dbPasswordKey`            | Set this to the name of the key in the secret which contains your database password.                                                                                                                                                                                                                                                                                             |                                                                                                                     |
+ | `externalsecrets.secrets.database.dbHostKey`                | Set this to the name of the key in the secret which contains your database host.                                                                                                                                                                                                                                                                                                 |                                                                                                                     |
+ | `externalsecrets.secrets.admin.providerSecretName`          | Set this to the name of the secret containing your Nexus Repository admin password in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault                                                                                            |                                                                                                                     |
+ | `externalsecrets.secrets.admin.adminPasswordKey`            | Set this to the name of the key in the secret which contains your which contains your initial Nexus Repository admin password.                                                                                                                                                                                                                                                   |                                                                                                                     |
+ | `externalsecrets.secrets.license.providerSecretName`        | Set this to the name of the secret containing your Nexus Repository license in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault                                                                                                   |                                                                                                                     |
 | `secret.secretProviderClass`                                | The secret provider class for Kubernetes secret store object. See [secret.yaml](templates%2Fsecret.yaml). Set this when using AWS Secret Manager or Azure Key Vault                                                                                                                                                                                                              | secretProviderClass                                                                                                 |
 | `secret.provider`                                           | The provider (e.g. azure, aws etc) for Kubernetes secret store object. Set this when using AWS Secret Manager or Azure Key Vault                                                                                                                                                                                                                                                 | provider                                                                                                            |
 | `secret.dbSecret.enabled`                                   | Whether or not to install [database-secret.yaml](templates%2Fdatabase-secret.yaml). Set this to `false` when using AWS Secret Manager or Azure Key Vault                                                                                                                                                                                                                         | `false`                                                                                                             |

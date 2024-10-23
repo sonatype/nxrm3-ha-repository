@@ -1,0 +1,212 @@
+# Declare variables to be passed into your templates.
+namespaces:
+  nexusNs:
+    enabled: true
+    name: "nexusrepo"
+serviceAccount:
+  enabled: true
+  name: nexus-repository-deployment-sa
+  labels: {}
+  annotations:
+    iam.gke.io/gcp-service-account: gke-nxrm-acc@nxrm-gcp-deployments.iam.gserviceaccount.com
+statefulset:
+  name: nxrm-statefulset
+  serviceName: nxrm-statefulset-service
+  replicaCount: 3
+  clustered: true
+  additionalVolumes:
+  additionalVolumeMounts:
+  additionalContainers:
+  annotations: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  hostAliases: []
+  postStart:
+    command: null
+  preStart:
+    command: null
+
+  initContainers:
+    - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
+      image: busybox:1.33.1
+      command: [/bin/sh]
+      args:
+        - -c
+        - >-
+          mkdir -p /nexus-data/etc/logback &&
+          mkdir -p /nexus-data/log/tasks &&
+          mkdir -p /nexus-data/log/audit &&
+          touch -a /nexus-data/log/tasks/allTasks.log &&
+          touch -a /nexus-data/log/audit/audit.log &&
+          touch -a /nexus-data/log/request.log &&
+          chown -R '200:200' /nexus-data
+      volumeMounts:
+        - name: nexus-data
+          mountPath: /nexus-data
+      resources:
+        limits:
+          cpu: "0.2"
+          memory: "512Mi"
+        requests:
+          cpu: "0.1"
+          memory: "256Mi"
+  container:
+    image:
+      # below - path to Google Artifactory where the image is stored
+      repository: us-central1-docker.pkg.dev/nxrm-gcp-deployments/nexus-docker-images/nexus-3.74.0
+      nexusTag: latest
+    resources:
+      # See help documentation, these are minimum system requirements
+      requests:
+        cpu: 8
+        memory: "8Gi"
+      limits:
+        cpu: 16
+        memory: "16Gi"
+    containerPort: 8081
+    pullPolicy: IfNotPresent
+    terminationGracePeriod: 120
+    env:
+      nexusDBName: nexus
+      nexusDBPort: 5432
+      install4jAddVmParams: "-Xms2703m -Xmx2703m" # See help documentation for Nexus config recommendations
+      jdbcUrlParams: null
+      zeroDowntimeEnabled: false
+    additionalEnv: null
+  requestLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  auditLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  taskLogContainer:
+    image:
+      repository: busybox
+      tag: 1.33.1
+    resources:
+      limits:
+        cpu: "0.2"
+        memory: "512Mi"
+      requests:
+        cpu: "0.1"
+        memory: "256Mi"
+  startupProbe:
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 180
+    path: /
+  livenessProbe:
+    initialDelaySeconds: 0
+    periodSeconds: 60
+    timeoutSeconds: 1
+    failureThreshold: 6
+    path: /
+  readinessProbe:
+    initialDelaySeconds: 0
+    periodSeconds: 60
+    timeoutSeconds: 1
+    failureThreshold: 6
+    path: /
+  imagePullSecrets: {}
+ingress:
+  name: "nexus-ingress"
+  enabled: true
+  host: null
+  hostPath: /
+  dockersubdomain: false
+  defaultRule: true
+  additionalRules: null
+  ingressClassName: gce
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+logStorage:
+  tailSecondaryLogs: true
+  combineTaskLogs: true
+storageClass:
+  enabled: false
+  name: nexus-storage
+  provisioner: provisionerName
+  volumeBindingMode: "WaitForFirstConsumer"
+  reclaimPolicy: Retain
+pvc:
+  accessModes: ReadWriteOnce
+  storage: 2Gi
+  volumeClaimTemplate:
+    enabled: false
+  existingClaim: null
+service:
+  annotations: {}
+  nexus:
+    enabled: true
+    type: NodePort
+    protocol: TCP
+    port: 80
+    targetPort: 8081
+  headless:
+    annotations: {}
+    publishNotReadyAddresses: true
+externalsecrets:
+  enabled: false
+secret:
+  secretProviderClass: "secretProviderClass"
+  provider: provider
+  dbSecret:
+    enabled: true
+  db:
+    user: nxrm
+    userAlias: nxrm
+    password: nxrm
+    passwordAlias: nxrm
+    host: 10.10.0.3
+    hostAlias: nxrm_db_host_alias
+  nexusAdmin:
+    name: "nexusAdminPassword"
+    alias: "admin-nxrm-password-alias"
+  nexusAdminSecret:
+    enabled: true
+    adminPassword: admin123
+  license:
+    name: test-users.lic
+    licenseSecret:
+      enabled: true
+      fileContentsBase64: cylwwtYx6Fg1CUa7hu7OcuaYECMURFiyGqB .... 3k9jzAbxYpSJfjGd7Z3+WS/0LIeugxSIa+ZDqtg7AR+U3d9ZJA== # - base64 encoded license file
+      mountPath: /var/nexus-repo-license
+  nexusSecret:
+    enabled: false
+    name: nexus-secret.json
+    secretKeyfile: "secretfileName"
+    mountPath: /var/nexus-repo-secrets
+nexus:
+  securityContext:
+    runAsUser: 200
+  properties:
+    override: false
+    data: null
+  extraLabels: {}
+  extraSelectorLabels: {}
+  docker:
+    enabled: false
+    type: NodePort
+    protocol: TCP
+
+config:
+  enabled: false
+  mountPath: /sonatype-nexus-conf
+  data: null
