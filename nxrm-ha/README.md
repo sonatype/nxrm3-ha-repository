@@ -324,6 +324,7 @@ Azure Key Vault is disabled by default. If you would like to store your database
 ### GCP
 
  * Update values.yaml
+   <a id="enable-service-account"></a>
    1. Enable service account  (you’ll need the name of the existing Google service account - there is a chapter below on how to create it)
   
        ```
@@ -332,8 +333,6 @@ Azure Key Vault is disabled by default. If you would like to store your database
            name: nexus-repository-deployment-sa
            labels: {}
            annotations:
-             meta.helm.sh/release-name: <your-release-name>
-             meta.helm.sh/release-namespace: nexusrepo
              iam.gke.io/gcp-service-account: <service-account-name>@<project-id>.iam.gserviceaccount.com <- your GCP project service account e-mail
         
        ```
@@ -357,7 +356,7 @@ Azure Key Vault is disabled by default. If you would like to store your database
           annotations:
             kubernetes.io/ingress.class: "gce"
         ```
-   4. Enable Nexus NodePort service 
+   4. Enable Nexus NodePort/ClusterIP service 
     
          ```
          service:  #Nexus Repo NodePort Service
@@ -368,6 +367,7 @@ Azure Key Vault is disabled by default. If you would like to store your database
 
    5. Now you can update secrets separately (follow steps 6, 7, 8 below) 
       OR install ESO ([External Secret Operator]https://external-secrets.io/latest/introduction/getting-started/)
+      ESO is the recommended approach for production.
 
         ```
         helm install external-secrets \
@@ -409,6 +409,8 @@ Azure Key Vault is disabled by default. If you would like to store your database
               fileContentsBase64: cylwwtYx6Fg1CUa9yGqBuhGhgc4IS67Ha/+uvxSpA  == your base64 encoded license file == Gd7Z3+WS/0LIeugxSIa+ZDqtg7AR+U3d9ZJA==
               mountPath: /var/nexus-repo-license
         ```
+      You can also specify the license file with your helm command as in:
+      `--set-file secret.license.licenseSecret.file=<path to your license file>`
 
 #### How to allow access to GCP credentials from deployed Kubernetes cluster (GKE)
 
@@ -500,13 +502,15 @@ Azure Key Vault is disabled by default. If you would like to store your database
           --member "serviceAccount:<your-project-id>.svc.id.goog[<your-namespace>/<your-k8s-service-account>]"
         ```
    * 2.f
-        Annotate the Kubernetes Service Account:
+        (Optional) Annotate the Kubernetes Service Account:
     
         ```
             kubectl annotate serviceaccount <your-k8s-service-account> \
             --namespace <your-namespace> \
             iam.gke.io/gcp-service-account=<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com
         ```
+        This step is optional - you may annotate the service account in `values.yaml` of the helm chart.
+        For more information, see [Enable service account](#enable-service-account).
 
 3. Deploy Your Application:
 
