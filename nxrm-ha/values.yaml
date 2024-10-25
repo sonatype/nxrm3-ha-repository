@@ -10,6 +10,7 @@ namespaces:
 serviceAccount:
   enabled: false
   name: nexus-repository-deployment-sa #This service account in managed by Helm
+  labels: {}
   annotations:
     # Set annotations for service account. E.g. if deploying to AWS EKS
     # and secrets manager is enabled then this role should have permissions for using secret manager.
@@ -33,6 +34,8 @@ aws:
     fluentBitVersion: 2.28.0
     clusterName: nxrm-nexus
 statefulset:
+  name: nxrm-statefulset
+  serviceName: nxrm-statefulset-service
   replicaCount: 3
   clustered: true
   additionalVolumes:
@@ -246,6 +249,49 @@ service: # Nexus Repo NodePort Service
   headless:
     annotations: {}
     publishNotReadyAddresses: true # We want all pods in the StatefulSet to have their addresses published even before they're ready.
+externalsecrets:
+  enabled: false
+  secretstore:
+    name: nexus-secret-store
+    spec:
+      provider:
+#        aws:
+#          service: SecretsManager
+#          region: us-east-1
+#          auth:
+#            jwt:
+#              serviceAccountRef:
+#                name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
+# Example for Azure
+#    spec:
+#      provider:
+#        azurekv:
+#          authType: WorkloadIdentity
+#          vaultUrl: "https://xx-xxxx-xx.vault.azure.net"
+#          serviceAccountRef:
+#            name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
+  secrets:
+    nexusSecret:
+      enabled: false
+      refreshInterval: 1h
+      providerSecretName: nexus-secret.json
+      decodingStrategy: null # For Azure set to Base64
+    database:
+      refreshInterval: 1h
+      valueIsJson: false
+      providerSecretName: dbSecretName # The name of the AWS SecretsManager/Azure KeyVault/etc. secret
+      dbUserKey: username #  The name of the key in the secret that contains your database username
+      dbPasswordKey: password # The name of the key in the secret that contains your database password
+      dbHostKey: host # The name of the key in the secret that contains your database host
+    admin:
+      refreshInterval: 1h
+      valueIsJson: false
+      providerSecretName: adminSecretName # The name of the AWS SecretsManager/Azure KeyVault/etc. secret
+      adminPasswordKey: "nexusAdminPassword" # The name of the key in the secret that contains your nexus repository admin password
+    license:
+      providerSecretName: nexus-repo-license.lic # The name of the AWS SecretsManager/Azure KeyVault/etc. secret that contains your Nexus Repository license
+      decodingStrategy: null # Can be Base64
+      refreshInterval: 1h
 secret:
   secretProviderClass: "secretProviderClass"
   provider: provider # e.g. aws, azure etc
