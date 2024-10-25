@@ -8,7 +8,7 @@ chart:
   version: "latest"
   appVersion: "latest"
 tests:
-  - it: should create license secret
+  - it: should create license secret when license.licenseSecret.enabled is true
     set:
       secret:
         license:
@@ -58,3 +58,28 @@ tests:
       - equal:
           path: metadata.namespace
           value: "test-namespace"
+  - it: should be empty doc when azure.keyvault.enabled is true
+    set:
+      azure:
+        keyvault:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should be empty doc when aws.secretmanager.enabled is true
+    set:
+      aws:
+        secretmanager:
+          enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should be empty doc when externalsecrets.enabled is true
+    set:
+      externalsecrets:
+        enabled: true
+    asserts:
+      - hasDocuments:
+          count: 0
