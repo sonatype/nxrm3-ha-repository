@@ -70,10 +70,11 @@ If you have installed version 66.0.0 or older of the nxrm-ha chart and wish to s
       * `kubectl logs -n nexusrepo nxrm-nxrm-ha-1 -f` 
       * `kubectl logs -n nexusrepo nxrm-nxrm-ha-2 -f`
 
-#### Cloud deployments (AWS/Azure)
+#### Cloud deployments (AWS/Azure/GCP)
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
   * For AWS, see our [documentation on high availability deployments in AWS](https://help.sonatype.com/en/option-3---high-availability-deployment-in-amazon-web-services--aws-.html)
   * For Azure, see our [documentation on high availability deployments in Azure](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
+  * For GCP, see our [documentation on high availability deployments in GCP](https://help.sonatype.com/en/option-4---high-availability-deployment-in-gcp.html)
 
 #### On-premises deployments
 1. Set up an NFS server and make it accessible to all worker nodes in your Kubernetes cluster.
@@ -95,12 +96,12 @@ The chart requires three secrets namely:
 
 #### Injecting required secrets into your Nexus Repository pod
 The chart provides fours ways of injecting secrets into your Nexus Repository pod namely:
-* [External secret operator](https://external-secrets.io/latest/): recommended as it supports several external secret stores (AWS, Azure etc).
+* [External secret operator](https://external-secrets.io/latest/): recommended as it supports several external secret stores (AWS, Azure, GCP etc).
   * Irrespective of whether you're installing on AWS/Azure, the following steps are needed to configure the nxrm-ha helm chart to use the External Secrets Operator:
-    - Create your secrets in your external secret store (e.g. AWS Secrets Manager, Azure Key Vault)
+    - Create your secrets in your external secret store (e.g. AWS Secrets Manager, Azure Key Vault, Google Secret Manager etc)
     - In your values.yaml:
         - Set `externalsecrets.enabled`
-        - Set the `externalsecrets.secretstore.spec` to the correct one (e.g. AWS, Azure, HashiCorp Vault) for your provider. (There are examples for AWS and Azure in the default values.yaml provided with this helm chart). See https://external-secrets.io/latest/ for more examples.
+        - Set the `externalsecrets.secretstore.spec` to the correct one (e.g. AWS, Azure, GCP, HashiCorp Vault) for your provider. (There are examples for AWS, Azure, GCP in the default values.yaml provided with this helm chart). See https://external-secrets.io/latest/ for more examples.
         - Set the `externalsecrets.secrets.database.providerSecretName` to the name of the secret containing your database credentials in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
         - Set the `externalsecrets.secrets.database.dbUserKey` to the name of the key in the secret which contains your database username.
         - Set the `externalsecrets.secrets.database.dbPasswordKey` to the name of the key in the secret which contains your database password.
@@ -320,6 +321,248 @@ Azure Key Vault is disabled by default. If you would like to store your database
                                     name: nexus-repository-dev-ha-sa # use same service account name as specified in serviceAccount.name
                   ```
                   
+### GCP
+
+ * Update values.yaml
+   <a id="enable-service-account"></a>
+   1. Enable service account  (you’ll need the name of the existing Google service account - there is a chapter below on how to create it)
+  
+       ```
+         serviceAccount:
+           enabled: true
+           name: nexus-repository-deployment-sa
+           labels: {}
+           annotations:
+             iam.gke.io/gcp-service-account: <service-account-name>@<project-id>.iam.gserviceaccount.com <- your GCP project service account e-mail
+        
+       ```
+
+   2. Enable ingress 
+        ```
+        ingress:
+          name: "nexus-ingress"
+          enabled: true
+        ```  
+   3. Update ingress properties to correspond to GKE controller class https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress#create-ingress 
+        ```
+        ingress:
+          name: "nexus-ingress"
+          enabled: true
+          ...
+          defaultRule: true
+          additionalRules: null
+          ingressClassName: gce
+          ...
+          annotations:
+            kubernetes.io/ingress.class: "gce"
+        ```
+   4. Enable Nexus NodePort/ClusterIP service 
+    
+         ```
+         service:  #Nexus Repo NodePort Service
+           annotations: {}
+           nexus:
+             enabled: true
+         ```
+
+   5. Now you can update secrets separately (follow steps 6, 7, 8 below) 
+      OR install ESO ([External Secret Operator]https://external-secrets.io/latest/introduction/getting-started/)
+      ESO is the recommended approach for production.
+
+        ```
+        helm install external-secrets \
+           external-secrets/external-secrets \
+            -n external-secrets \
+            --create-namespace
+        ```
+      and use external secrets from Google Secret Manager (https://external-secrets.io/latest/provider/google-secrets-manager/)
+   
+
+   6. Enable db secret 
+        ```    
+        secret:
+          secretProviderClass: "secretProviderClass"
+          provider: provider # e.g. aws, azure etc
+          dbSecret:
+            enabled: true # Enable to apply database-secret.yaml which allows you to specify db credentials
+          db:
+            user: nxrm
+            userAlias: nxrm
+            password: nxrm
+            passwordAlias: nxrm
+            host: 10.10.0.3
+        ```
+
+   7. (Optional) Set default password for Nexus instances 
+        ```
+          nexusAdminSecret:
+            enabled: true # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
+            adminPassword: admin123 #You should change this when you login for the first time
+        ```
+
+   8. Set license (use base64 to encode file)  
+        ```
+          license:
+            name: test-users.lic
+            licenseSecret:
+              enabled: true
+              fileContentsBase64: cylwwtYx6Fg1CUa9yGqBuhGhgc4IS67Ha/+uvxSpA  == your base64 encoded license file == Gd7Z3+WS/0LIeugxSIa+ZDqtg7AR+U3d9ZJA==
+              mountPath: /var/nexus-repo-license
+        ```
+      You can also specify the license file with your helm command as in:
+      `--set-file secret.license.licenseSecret.file=<path to your license file>`
+
+#### How to allow access to GCP credentials from deployed Kubernetes cluster (GKE)
+
+  To allow a container in a GKE cluster node to access Application Default Credentials (ADC),
+  you need to ensure that the GKE nodes have the necessary IAM roles and that the container is configured to use ADC. Here are the steps:
+
+   1.  Ensure GKE Nodes Have the Necessary IAM Roles:
+       When you create the cluster, ensure that you are using a service account that has required IAM roles for the GKE nodes
+       NOTE: It's important to associate GCP service account with cluster node pool when you create node pool.
+       Current GCP limitations doesn't allow to update service account for nodes, so you need to recreate the node pool if you need to change the service account.
+
+       **Check step `2.c` if you need to create a new account**
+
+       You may assign the necessary IAM roles to the service account. For example, if your application needs access to write in Google Cloud Storage,
+       you would assign the `roles/storage.objectAdmin` role.
+     
+        ```
+        gcloud projects add-iam-policy-binding <your-project-id> \
+          --member "serviceAccount:<your-gke-node-service-account>" \
+          --role "roles/storage.objectAdmin"
+        ```
+
+   2. Configure the GKE Cluster (if it's not configured at the creation) to Use Workload Identity:
+      Workload Identity allows Kubernetes service accounts to act as Google service accounts. 
+      This is the recommended way to provide credentials to applications running on GKE.
+      We do not recommend using IAM principal identifiers to configure Workload Identity Federation,
+      because there are a few limitations that apply to GoogleCloud Storage usage
+      (you may need to enable uniform bucket-level access for your buckets etc…, more details here [Identity federation: products and limitations](https://cloud.google.com/iam/docs/federated-identity-supported-services)
+      So we recommend to use this method:  [Alternative: link Kubernetes ServiceAccounts to IAM](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#kubernetes-sa-to-iam) 
+
+   * 2.a
+   Enable Workload Identity:
+
+        ```    
+        gcloud container clusters update <your-cluster-name> \
+          --zone <your-cluster-zone> \
+          --workload-pool=<your-project-id>.svc.id.goog
+        ```
+        ```
+         gcloud container node-pools update NODEPOOL_NAME \
+         --cluster=CLUSTER_NAME \
+         --zone=COMPUTE_ZONE \
+         --workload-metadata=GKE_METADATA
+         ```
+   * 2.b
+   Create a Kubernetes Service Account:
+    
+         ```
+         kubectl create serviceaccount <your-k8s-service-account>
+         ```
+   * 2.c
+      Create a Google Service Account:
+        ```
+        gcloud iam service-accounts create <your-gsa-name> 
+        ```
+   * 2.d
+      Grant required roles to your <your-gsa-name> account
+
+        ```
+         gcloud projects add-iam-policy-binding <your-project-id> \
+         --member "serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+         --role "roles/storage.admin"
+        
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/compute.viewer"
+        
+        // if your intent to use ESO   
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/secretmanager.admin"
+        
+        // if your intent to use ESO    
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/iam.serviceAccountTokenCreator"
+        
+        // if your intent to use Google Artifactory to store Nexus docker images for deploy
+        gcloud projects add-iam-policy-binding <your-project-id> \
+        --member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+        --role="roles/artifactregistry.admin"
+        ```
+   * 2.e
+      Allow the Kubernetes Service Account to Act As the Google Service Account:
+
+        ```
+        gcloud iam service-accounts add-iam-policy-binding <your-gsa-name>@<your-project-id>.iam.gserviceaccount.com \
+          --role roles/iam.workloadIdentityUser \
+          --member "serviceAccount:<your-project-id>.svc.id.goog[<your-namespace>/<your-k8s-service-account>]"
+        ```
+   * 2.f
+        (Optional) Annotate the Kubernetes Service Account:
+    
+        ```
+            kubectl annotate serviceaccount <your-k8s-service-account> \
+            --namespace <your-namespace> \
+            iam.gke.io/gcp-service-account=<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com
+        ```
+        This step is optional - you may annotate the service account in `values.yaml` of the helm chart.
+        For more information, see [Enable service account](#enable-service-account).
+
+3. Deploy Your Application:
+
+Ensure your application is configured to use ADC. When running on GKE with Workload Identity,
+the ADC will automatically use the credentials provided by the annotated Kubernetes service account.
+
+##### Using built-in storage class
+* Ensure you have enabled the built-in storage classes on your GCP cluster. For more information, see the [GCP documentation](https://cloud.google.com/kubernetes-engine/docs/concepts/storage-overview#storageclasses)
+* Set `storageClass.enabled` to `false`
+* Set `storageClass.parameters.type` to one of predefined types, i.e. `pd-ssd` etc...
+* Set `storageClass.parameters.replication-type` to `regional-pd`
+* Set `storageClass.provisioner` to `pd.csi.storage.gke.io`
+* Set `storageClass.volumeBindingMode` to `Immediate`
+
+##### External Secrets Operator
+- Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
+- Ensure you have granted the necessary permissions for accessing your external secret store:
+- You'll need to create a k8s service account and create a link between GCP service account and that Kubernetes service account:
+    - See [Workload identity](https://external-secrets.io/latest/provider/google-secrets-manager/#workload-identity)
+    - See 'Using Service Accounts directly' section [Using Service Accounts directly](https://external-secrets.io/latest/provider/google-secrets-manager/#using-service-accounts-directly)
+- Enable the external secrets operator in your values.yaml:
+    ```
+    externalsecrets:
+      enabled: true
+      secretstore:
+        name: nexus-secret-store
+        spec:
+          provider:
+            gcpsecretsmanager:
+              authType: WorkloadIdentity
+              serviceAccountRef:
+                name: nexus-repository-deployment-sa
+    ```
+- Ensure you have created the necessary secrets in GCP Secret Manager and have the necessary permissions to access them.
+Check section above "Injecting required secrets into your Nexus Repository pod" for more details.
+
+###### Guidance for setting up permissions needed for External Secrets Operator on GCP (EKS)
+
+- For your GSP service account, you'll need to add an additional permissions to access the secret in GCP Secret Manager:
+
+```
+gcloud projects add-iam-policy-binding <your-project-id> \
+--member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+--role="roles/secretmanager.admin"
+
+gcloud projects add-iam-policy-binding  <your-project-id> \
+--member="serviceAccount:<your-gsa-name>@<your-project-id>.iam.gserviceaccount.com" \
+--role="roles/iam.serviceAccountTokenCreator"
+```
+
+
+
 ### On-premises
 The chart doesn't install any cloud-specific resources when `aws.enabled` and `azure.enabled` are set to `false`.
 
