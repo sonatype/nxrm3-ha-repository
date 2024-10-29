@@ -517,13 +517,19 @@ Azure Key Vault is disabled by default. If you would like to store your database
 Ensure your application is configured to use ADC. When running on GKE with Workload Identity,
 the ADC will automatically use the credentials provided by the annotated Kubernetes service account.
 
-##### Using built-in storage class
-* Ensure you have enabled the built-in storage classes on your GCP cluster. For more information, see the [GCP documentation](https://cloud.google.com/kubernetes-engine/docs/concepts/storage-overview#storageclasses)
-* Set `storageClass.enabled` to `false`
-* Set `storageClass.parameters.type` to one of predefined types, i.e. `pd-ssd` etc...
-* Set `storageClass.parameters.replication-type` to `regional-pd`
-* Set `storageClass.provisioner` to `pd.csi.storage.gke.io`
-* Set `storageClass.volumeBindingMode` to `Immediate`
+#### Configuration for dynamic persistent volume provisioning
+* Ensure you have enabled the built-in storage classes on your GCP cluster. 
+* You need to install Google CSI Filestore driver on your GKE cluster. 
+* For more information, see the [GCP documentation](https://cloud.google.com/kubernetes-engine/docs/concepts/storage-overview#filestore)
+* Set `storageClass.enabled` to `true`
+* Set `storageClass.provisioner` to `filestore.csi.storage.gke.io`
+* Set `storageClass.parameters` to
+    ```
+         tier: enterprise
+         multishare: "true"
+    ```
+* Set `pvc.volumeClaimTemplate.enabled` to `true`
+
 
 ##### External Secrets Operator
 - Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
