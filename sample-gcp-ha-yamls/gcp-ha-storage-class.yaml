@@ -19,8 +19,9 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: "nxrm-nexus-log-storage"
-provisioner: pd.csi.storage.gke.io # Requires the GKE CSI driver to be installed and configured in the cluster.
+provisioner: filestore.csi.storage.gke.io # Requires the GKE Filestore CSI driver to be installed and configured in the cluster.
 parameters:
-  type: pd-ssd
-  replication-type: regional-pd
+  tier: enterprise
+  multishare: "true"
 volumeBindingMode: Immediate
+allowVolumeExpansion: true
