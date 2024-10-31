@@ -240,6 +240,19 @@ externalsecrets:
 #          vaultUrl: "https://xx-xxxx-xx.vault.azure.net"
 #          serviceAccountRef:
 #            name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
+# Example for Google (GCP)
+#    spec:
+#      provider:
+#        gcpsm:
+#          projectID: "nxrm-gcp-deployments"
+#          auth:
+#            workloadIdentity:
+#              clusterLocation: "us-central1-a"
+#              clusterName: "test-gke-cluster"
+#              serviceAccountRef:
+#                name: nexus-repository-deployment-sa
+#                namespace: nexusrepo
+
   secrets:
     nexusSecret:
       enabled: false

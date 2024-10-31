@@ -98,6 +98,7 @@ The chart requires three secrets namely:
 The chart provides fours ways of injecting secrets into your Nexus Repository pod namely:
 * [External secret operator](https://external-secrets.io/latest/): recommended as it supports several external secret stores (AWS, Azure, GCP etc).
   * Irrespective of whether you're installing on AWS/Azure, the following steps are needed to configure the nxrm-ha helm chart to use the External Secrets Operator:
+    - [Install external secret operator](https://external-secrets.io/latest/)
     - Create your secrets in your external secret store (e.g. AWS Secrets Manager, Azure Key Vault, Google Secret Manager etc)
     - In your values.yaml:
         - Set `externalsecrets.enabled`
@@ -109,6 +110,7 @@ The chart provides fours ways of injecting secrets into your Nexus Repository po
         - Set the `externalsecrets.secrets.admin.providerSecretName` to the name of the secret containing your Nexus Repository admin password in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
         - Set the `externalsecrets.secrets.admin.adminPasswordKey` to the name of the key in the secret which contains your initial Nexus Repository admin password.
         - Set the `externalsecrets.secrets.license.providerSecretName` to the name of the secret containing your Nexus Repository license in your external secret store. E.g. if using AWS, this should be the name of the secret in your AWS Secrets Manager. If using Azure, this should be the name of the secret in your Azure Key Vault
+        - Ensure `secret.azure.nexusSecret.enabled` and `azure.keyvault.enabled` are `false`
 
 * [Secret Store CSI Driver](https://github.com/kubernetes-sigs/secrets-store-csi-driver): If you're running on AWS or Azure and do not wish to use the external secrets operator, 
  you can use the secret store csi driver configuration. See [secretprovider.yaml](templates%2Fsecretprovider.yaml) and configuration table below for more details.
