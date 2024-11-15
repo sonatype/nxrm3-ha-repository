@@ -68,7 +68,7 @@ spec:
       {{- end }}
       {{- if .Values.statefulset.imagePullSecrets }}
       imagePullSecrets:
-        - name: {{ template "nexus.name" . }}-imagepullsecret
+        {{ toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: nxrm-app
@@ -304,7 +304,7 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Values.pvc.existingClaim }}
   {{ end }}
-    {{- with .Values.tolerations }}
+    {{- with .Values.statefulset.tolerations }}
       tolerations:
         {{ toYaml . | nindent 8 }}
     {{- end }}

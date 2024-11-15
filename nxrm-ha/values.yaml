@@ -17,7 +17,7 @@ serviceAccount:
     # If using externaldns, role with route53 permissions needed by external-dns
     # eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/nxrm-nexus-role
 azure:
-  enabled: false  #set to true to enable azure specific yamls/snippets
+  enabled: false #set to true to enable azure specific yamls/snippets
   keyvault:
     enabled: false # set to true to pull license, db and nexus admin password secrets from azure key vault
 aws:
@@ -45,6 +45,7 @@ statefulset:
   annotations: {}
   podAnnotations: {}
   nodeSelector: {}
+  tolerations: []
   # hostAliases allows the modification of the hosts file inside a container
   hostAliases: []
   # - ip: "192.168.1.10"
@@ -54,7 +55,7 @@ statefulset:
 
   # Uncomment and modify this to run a command after starting the nexus container.
   postStart:
-    command: null   # '["/bin/sh", "-c", "ls"]'
+    command: null # '["/bin/sh", "-c", "ls"]'
   preStart:
     command: null
 
@@ -160,7 +161,7 @@ statefulset:
     timeoutSeconds: 1
     failureThreshold: 6
     path: /
-  imagePullSecrets: {}
+  imagePullSecrets: []
 ingress:
   name: "nexus-ingress"
   enabled: false
@@ -170,22 +171,22 @@ ingress:
   defaultRule: false
   additionalRules: null
   ingressClassName: null # e.g. nginx, alb
-#  tls:
-#    - secretName: "tlsSecretName1"
-#      hosts:
-#      - repo.foo1
-#      - repo.bar1
-#    - secretName: "tlsSecretName2"
-#      hosts:
-#        - repo.foo2
-#        - repo.bar2
+  #  tls:
+  #    - secretName: "tlsSecretName1"
+  #      hosts:
+  #      - repo.foo1
+  #      - repo.bar1
+  #    - secretName: "tlsSecretName2"
+  #      hosts:
+  #        - repo.foo2
+  #        - repo.bar2
   annotations:
 #  Note: the annotations below are just a guide; delete or insert more as needed depending on your use case: aws, azure, on prem
 #    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 #    alb.ingress.kubernetes.io/scheme: internal # scheme
 #    alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
-    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
+#    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+#    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
 #    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
 logStorage:
@@ -208,7 +209,7 @@ pvc:
     enabled: false
   existingClaim: null
 
-service:  #Nexus Repo NodePort Service
+service: #Nexus Repo NodePort Service
   annotations: {}
   nexus:
     enabled: false
@@ -339,7 +340,7 @@ nexus:
     enabled: false
     type: NodePort
     protocol: TCP
-  # registries:
+    registries: []
   #   - host: chart.local
   #     port: 5000
   #     secretName: registry-secret
