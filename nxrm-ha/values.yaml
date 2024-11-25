@@ -321,16 +321,6 @@ secret:
   existingDbSecret:
     # -- Enabled the use of an already created secret, you need to uncomment the values from additionalEnv
     enabled: false
-    # -- The name of the preexisting secret that contains the values for the env variables: DB_NAME, DB_HOST, DB_USER, DB_PASSWORD
-    name: ""
-    # -- The name of the key specifying the database name
-    dbNameKey: ""
-    # -- The name of the key specifying the database host
-    dbHostKey: ""
-    # -- The name of the key specifying the database user
-    dbUserKey: ""
-    # -- The name of the key specifying the database password
-    dbPassKey: ""
   nexusAdmin:
     name: "nexusAdminPassword"
     alias: "admin-nxrm-password-alias"
