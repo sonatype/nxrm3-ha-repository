@@ -7,6 +7,29 @@ namespaces:
     enabled: false
     name: amazon-cloudwatch
   externaldnsNs: nexus-externaldns
+  certmanagerNs:
+    name: "cert-manager"
+externaldns:
+  image: k8s.gcr.io/external-dns/external-dns:v0.13.1
+certmanager:
+  letsencrypt:
+    enabled: false # set to true to indicate that you're using letsencrypt as the CA (See https://letsencrypt.org/ and https://cert-manager.io/docs/tutorials/)
+    # service account details for ACME DNS01 challenge
+    # See https://letsencrypt.org/docs/challenge-types/#dns-01-challenge for more information
+    # See https://cert-manager.io/docs/tutorials/getting-started-aws-letsencrypt/#create-an-iam-role-and-associate-it-with-a-kubernetes-service-account for AWS example
+    dns01Challenge:
+      serviceAccount:
+        name: "cert-manager-acme-dns01" # service account for ACME DNS01 challenge
+        enabled: false
+        annotations:
+          eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/cert-manager-acme-dns01
+      rbac:
+        enabled: false
+        role:
+          name: cert-manager-acme-dns01-route53-tokenrequest
+        roleBinding:
+          name: cert-manager-acme-dns01-route53-tokenrequest
+
 serviceAccount:
   enabled: false
   name: nexus-repository-deployment-sa #This service account in managed by Helm
@@ -16,6 +39,10 @@ serviceAccount:
     # and secrets manager is enabled then this role should have permissions for using secret manager.
     # If using externaldns, role with route53 permissions needed by external-dns
     # eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/nxrm-nexus-role
+  externaldns:
+    name: nexus-repository-dev-ha-externaldns
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/external-dns-role
 azure:
   enabled: false  #set to true to enable azure specific yamls/snippets
   keyvault:
@@ -27,7 +54,7 @@ aws:
     enabled: false # set to true to pull license, db and nexus admin password secrets from aws secret manager
   externaldns:
     enabled: false
-    domainFilter: example.com #your root domain e.g example.com
+    domainFilter: nexusrepo.com #your root domain e.g nexusrepo.com
     awsZoneType: private # hosted zone to look at (valid values are public, private or no value for both)
   fluentbit:
     enabled: false #set this to true to enable sending of logs to CloudWatch
@@ -49,8 +76,8 @@ statefulset:
   hostAliases: []
   # - ip: "192.168.1.10"
   #   hostnames:
-  #   - "example.com"
-  #   - "www.example.com"
+  #   - "nexusrepo.com"
+  #   - "www.nexusrepo.com"
 
   # Uncomment and modify this to run a command after starting the nexus container.
   postStart:
@@ -164,17 +191,29 @@ statefulset:
 ingress:
   name: "nexus-ingress"
   enabled: false
-  host: null #host to apply this ingress rule to e.g. example.com. Set it as you wish
+  host: null # host to apply this ingress rule to e.g. www.nexusrepo.com. Set it as you wish. must match hosts in tls section
   hostPath: /
   dockersubdomain: false # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. This will result in the creation of routing rules in your load balancer for sub domains of your host. Thus, you must also set the host
+  dockersubdomains:
+#    - dockerrepo1.nexusrepo.com
+#    - dockerrepo2.nexusrepo.com
+#    - dockerrepo3.nexusrepo.com
+  subdomainWildcard: true
   defaultRule: false
   additionalRules: null
   ingressClassName: null # e.g. nginx, alb
 #  tls:
+#    - secretName: "nexusrepo-example-cert-2048" The name of the secret to store the certificate. Use this same name for the certificate.nexus.secretName to secure the certificate with this certificate
+#      hosts:
+#      - www.nexusrepo.com must match hosts in ingress.host
+#      - nexusrepo.com you can put an additional rule which routes to the same backend service for this host as well
+#      - dockerrepo1.nexusrepo.com
+#      - dockerrepo2.nexusrepo.com
+#      - dockerrepo3.nexusrepo.com
 #    - secretName: "tlsSecretName1"
 #      hosts:
-#      - repo.foo1
-#      - repo.bar1
+#        - repo.foo2
+#        - repo.bar2
 #    - secretName: "tlsSecretName2"
 #      hosts:
 #        - repo.foo2
@@ -182,12 +221,14 @@ ingress:
   annotations:
 #  Note: the annotations below are just a guide; delete or insert more as needed depending on your use case: aws, azure, on prem
 #    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-#    alb.ingress.kubernetes.io/scheme: internal # scheme
+#    nginx.ingress.kubernetes.io/proxy-body-size: "0" # For docker push to work when using nginx. See https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#custom-max-body-size for more info
+    #    alb.ingress.kubernetes.io/scheme: internal # scheme
 #    alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
     # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
-#    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
+#    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.nexusrepo.com, dockerrepo2.nexusrepo.com, dockerrepo3.nexusrepo.com
+    # acme.cert-manager.io/http01-edit-in-place: "true" #See https://cert-manager.io/docs/usage/certificate/#issuance-behavior-temporary-certificates-while-issuing
 logStorage:
   tailSecondaryLogs: true
   combineTaskLogs: true
@@ -337,14 +378,83 @@ nexus:
   extraSelectorLabels: {}
   docker:
     enabled: false
+    createIngress: true #set to true to create dedicated ingresses for docker connector
+    exposeDockerPorts: true
+    createDockerRulesOnMainIngress: false
     type: NodePort
     protocol: TCP
-  # registries:
-  #   - host: chart.local
-  #     port: 5000
-  #     secretName: registry-secret
-  #     targetPort: 8081
-  #     annotations: {}
+    registries:
+      - host: docker1.nexusrepo.com
+        port: 5000
+        secretName: nexusrepo-example-cert-2048
+        targetPort: 5000 # if using subdomains should be container port i.e. 8081
+        annotations: { }
+        enableTLS: true
+      - host: docker2.nexusrepo.com
+        port: 5001
+        secretName: nexusrepo-example-cert-2048
+        targetPort: 5001 # if using subdomains should be container port i.e. 8081
+        annotations: { }
+        enableTLS: true
+certificate:
+  apiVersion: cert-manager.io/v1
+  enabled: false
+  issuer:
+    enabled: false
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: demo-letsencrypt
+    spec:
+      acme:
+        server: https://certificate-issuer-server-url # e.g. for letsencrypt https://acme-staging-v02.api.letsencrypt.org/directory
+        email: email@example.com
+        privateKeySecretRef:
+          name: letsencrypt-staging
+        solvers:
+          - dns01:
+              route53:
+                region: us-east-1
+                # For AWS IAM Role which gives cert manager needed route 53 permissions.
+                # This must be the same role specified in certmanager.letsencrypt.dns01Challenge.serviceAccount.annotations
+                role: arn:aws:iam::111111111:role/cert-manager-acme-dns01
+                auth:
+                  kubernetes:
+                    serviceAccountRef:
+                      # The name of the K8 service account to use to gain needed permissions for the dns01 challenge
+                      # This must be the same service account specified in certmanager.letsencrypt.dns01Challenge.serviceAccount.name
+                      name: cert-manager-acme-dns01
+  nexus:
+    enabled: false
+    name: "nexusrepo-cert"
+    commonName: "www.nexusrepo.com"
+    duration: 2160h0m0s # 90 days
+    renewBefore: 360h0m0s # 15 days
+    secretName: nexusrepo-example-cert-2048 # The name of the secret to store the certificate. Use this same name for the ingress tls.secretName to secure the ingress with this certificate
+    revisionHistoryLimit: 1
+    secretTemplate: null
+    privateKey:
+      enabled: false
+      algorithm: null # e.g. "RSA"
+      encoding: null # e.g "PKCS1"
+      size: null # e.g. 2048
+      rotationPolicy: "Always"
+    keystores: null
+    usages:
+      - digital signature
+      - key encipherment
+      - server auth
+    subject: null
+    dnsNames:
+      - www.nexusrepo.com
+      - nexusrepo.com
+      - dockerrepo1.nexusrepo.com
+      - dockerrepo2.nexusrepo.com
+      - dockerrepo3.nexusrepo.com
+    otherNames: null
+    ipAddresses: null
+    emailAddresses: null
+    uris: null
+    isCa: false
 
 # Enable configmap and add arbitrary data in configmap
 config:

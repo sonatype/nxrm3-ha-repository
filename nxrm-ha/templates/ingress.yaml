@@ -10,16 +10,26 @@ metadata:
     {{- if .Values.nexus.extraLabels }}
       {{- with .Values.nexus.extraLabels }}
         {{ toYaml . | nindent 4 }}
-      {{- end }}
-    {{- end }}
+      {{- end }} # end with extra labels
+    {{- end }} # end if extra labels
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+  {{- end }} # end with annotations
 spec:
   {{- if .Values.ingress.ingressClassName }}
   ingressClassName: {{ .Values.ingress.ingressClassName }}
-  {{ end }}
+  {{ end }} # end if ingress class name
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }} # end range hosts
+      secretName: {{ .secretName }}
+    {{- end }} # range tls
+  {{- end }} # end if tls
   rules:
     {{- if .Values.ingress.defaultRule }}
     {{- if .Values.ingress.host }}
@@ -41,6 +51,7 @@ spec:
       {{ toYaml . | nindent 4 }}
     {{- end }}
     {{- if and .Values.ingress.host .Values.ingress.dockersubdomain }}
+    {{- if .Values.ingress.subdomainWildcard }}
     - host: "*.{{ .Values.ingress.host }}"
       http:
         paths:
@@ -51,48 +62,26 @@ spec:
                 name: {{ $fullName }}
                 port:
                   number: {{ .Values.service.nexus.port }}
-    {{- end }}
-  {{- if .Values.ingress.tls }}
-  tls:
-    {{- range .Values.ingress.tls }}
-    - hosts:
-      {{- range .hosts }}
-      - {{ . | quote }}
-      {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
-  {{- end }}
-{{- end}}
+    {{ else }}
+    {{ range $dockerSubDomain := .Values.ingress.dockersubdomains }}
+    - host: "{{ $dockerSubDomain }}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $.Values.service.nexus.port }}
+    {{ end }}
+    {{ end }}
+    {{ end }}
 {{- if .Values.nexus.docker.enabled }}
-{{ range $registry := .Values.nexus.docker.registries }}
-{{- $fullName := include "nexus.fullname" $ -}}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  namespace: {{ default $.Release.Namespace $.Values.namespaces.nexusNs.name | quote }}
-  name: {{ $fullName | trunc 49 }}-docker-{{ $registry.port }}
-  labels:
-    {{- include "nexus.labels" $ | nindent 4 }}
-    {{- if $.Values.nexus.extraLabels }}
-      {{- with $.Values.nexus.extraLabels }}
-        {{ toYaml . | nindent 4 }}
-      {{- end }}
-    {{- end }}
-  {{- with $registry.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- if $.Values.ingress.ingressClassName }}
-  ingressClassName: {{ $.Values.ingress.ingressClassName }}
-  {{ end }}
-  tls:
-    - hosts:
-        - {{ $registry.host | quote }}
-      secretName: {{ $registry.secretName }}
-  rules:
-    - host: {{ $registry.host }}
+    {{- if .Values.nexus.docker.createDockerRulesOnMainIngress }}
+    {{ range $registry := .Values.nexus.docker.registries }}
+    {{- $fullName := include "nexus.fullname" $ -}}
+    - host: {{ $registry.host | quote }}
       http:
         paths:
           - path: /
@@ -102,6 +91,7 @@ spec:
                 name: {{ $fullName | trunc 49 }}-docker-{{ $registry.port }}
                 port:
                   number: {{ $registry.port }}
----
+    {{ end }}
+{{- end }}
 {{- end }}
 {{- end }}

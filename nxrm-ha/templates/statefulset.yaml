@@ -85,7 +85,7 @@ spec:
           ports:
             - name: nexus-ui
               containerPort: {{ .Values.statefulset.container.containerPort }}
-            {{- if .Values.nexus.docker.enabled }}
+            {{- if and .Values.nexus.docker.enabled .Values.nexus.docker.exposeDockerPorts }}
             {{- range .Values.nexus.docker.registries }}
             - name: docker-{{ .port }}
               containerPort: {{ .port }}
