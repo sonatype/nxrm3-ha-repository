@@ -207,6 +207,9 @@ ingress:
 #      hosts:
 #      - www.nexusrepo.com must match hosts in ingress.host
 #      - nexusrepo.com you can put an additional rule which routes to the same backend service for this host as well
+#      - dockerrepo1.nexusrepo.com
+#      - dockerrepo2.nexusrepo.com
+#      - dockerrepo3.nexusrepo.com
 #    - secretName: "tlsSecretName1"
 #      hosts:
 #        - repo.foo2
@@ -444,6 +447,9 @@ certificate:
     dnsNames:
       - www.nexusrepo.com
       - nexusrepo.com
+      - dockerrepo1.nexusrepo.com
+      - dockerrepo2.nexusrepo.com
+      - dockerrepo3.nexusrepo.com
     otherNames: null
     ipAddresses: null
     emailAddresses: null
