@@ -70,9 +70,12 @@ spec:
       hostAliases:
         {{ toYaml .Values.statefulset.hostAliases | nindent 8 }}
       {{- end }}
-      {{- if .Values.statefulset.imagePullSecrets }}
+      {{- if and .Values.statefulset.imagePullSecrets.secret (not .Values.statefulset.imagePullSecrets.existingSecret.enabled) }}
       imagePullSecrets:
         - name: {{ template "nexus.name" . }}-imagepullsecret
+      {{- else if and (not .Values.statefulset.imagePullSecrets.secret) .Values.statefulset.imagePullSecrets.existingSecret.enabled .Values.statefulset.imagePullSecrets.existingSecret.name }}
+      imagePullSecrets:
+        - name: {{ .Values.statefulset.imagePullSecrets.existingSecret.name }}
       {{- end }}
       containers:
         - name: nxrm-app
@@ -122,6 +125,7 @@ spec:
             timeoutSeconds: {{ .Values.statefulset.readinessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.statefulset.readinessProbe.failureThreshold }}
           env:
+          {{- if (not .Values.secret.existingDbSecret.enabled) }}
             - name: DB_NAME
               value: "{{ .Values.statefulset.container.env.nexusDBName }}"
             - name: DB_PASSWORD
@@ -139,6 +143,7 @@ spec:
                 secretKeyRef:
                   name: {{ template "nexus.name" . }}-dbsecret
                   key: db-host
+          {{ end }}
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               valueFrom:
                 secretKeyRef:
@@ -185,7 +190,7 @@ spec:
             - name: nxrm-secrets
               mountPath: /nxrm-secrets
           {{- end }}
-          {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled }}
+          {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled .Values.secret.license.existingSecret }}
             - name: license-volume
               mountPath: {{ .Values.secret.license.licenseSecret.mountPath }}
               readOnly: true
@@ -278,7 +283,7 @@ spec:
             secretName: {{ template "nexus.name" . }}-dbsecret
         {{ end }}
       {{ end }}
-      {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled }}
+      {{- if or .Values.secret.license.licenseSecret.enabled .Values.externalsecrets.enabled .Values.secret.license.existingSecret }}
         - name: license-volume
           secret:
             secretName: {{ .Values.secret.license.name }}

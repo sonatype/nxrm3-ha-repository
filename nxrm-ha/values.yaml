@@ -109,7 +109,29 @@ statefulset:
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
       zeroDowntimeEnabled: false
-    additionalEnv: null
+    additionalEnv:
+      null
+      # -- Uncomment these when using secret.existingDbSecret.enabled = true
+      # - name: DB_NAME
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: secret-name
+      #       key: secret-key
+      # - name: DB_HOST
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: secret-name
+      #       key: secret-key
+      # - name: DB_USER
+      #   valueFrom:
+      #     secretKeyRef:
+      #       name: secret-name
+      #       key: secret-key
+      # - name: DB_PASSWORD
+      #   valueFrom:
+      #     secretKeyRef:
+    #       name: secret-name
+    #       key: secret-key
   requestLogContainer:
     image:
       repository: busybox
@@ -161,7 +183,15 @@ statefulset:
     timeoutSeconds: 1
     failureThreshold: 6
     path: /
-  imagePullSecrets: {}
+  imagePullSecrets:
+    # -- The base64 encoded dockerconfigjson
+    secret: ""
+    # -- Use an existing imagePullSecret created by a secrets operator
+    existingSecret:
+      # -- By default the existing secret is disabled, set this to true in order to provide an existing imagePullSecret
+      enabled: false
+      # -- The existing imagePullSecret name
+      name: ""
 ingress:
   name: "nexus-ingress"
   enabled: false
@@ -171,22 +201,22 @@ ingress:
   defaultRule: false
   additionalRules: null
   ingressClassName: null # e.g. nginx, alb
-#  tls:
-#    - secretName: "tlsSecretName1"
-#      hosts:
-#      - repo.foo1
-#      - repo.bar1
-#    - secretName: "tlsSecretName2"
-#      hosts:
-#        - repo.foo2
-#        - repo.bar2
+  #  tls:
+  #    - secretName: "tlsSecretName1"
+  #      hosts:
+  #      - repo.foo1
+  #      - repo.bar1
+  #    - secretName: "tlsSecretName2"
+  #      hosts:
+  #        - repo.foo2
+  #        - repo.bar2
   annotations:
 #  Note: the annotations below are just a guide; delete or insert more as needed depending on your use case: aws, azure, on prem
 #    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 #    alb.ingress.kubernetes.io/scheme: internal # scheme
 #    alb.ingress.kubernetes.io/subnets: subnet-1,subnet-2 #comma separated list of subnet ids
-    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
+#    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+#    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
 #    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
 logStorage:
@@ -209,7 +239,7 @@ pvc:
     enabled: false
   existingClaim: null
 
-service:  #Nexus Repo NodePort Service
+service: # Nexus Repo NodePort Service
   annotations: {}
   nexus:
     enabled: false
@@ -288,6 +318,10 @@ secret:
     passwordAlias: nxrm_db_password_alias
     host: nxrm_db_host
     hostAlias: nxrm_db_host_alias
+  # -- Use an existing secret for the database variables: DB_NAME, DB_HOST, DB_USER, DB_PASSWORD
+  existingDbSecret:
+    # -- Enabled the use of an already created secret, you need to uncomment the values from additionalEnv
+    enabled: false
   nexusAdmin:
     name: "nexusAdminPassword"
     alias: "admin-nxrm-password-alias"
@@ -296,6 +330,8 @@ secret:
     adminPassword: yourinitialnexuspassword #You should change this when you login for the first time
   license:
     name: nexus-repo-license.lic
+    # -- Use an already created secret with the license contents in base64, it takes the name from the above field -> name: nexus-repo-license.lic and the mount path from below: licenseSecret.mountPath
+    existingSecret: false
     licenseSecret:
       enabled: false
       file: # Specify the license file name with --set-file secret.license.licenseSecret.file="file_name" helm option
