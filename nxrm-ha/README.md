@@ -169,6 +169,97 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
 - You'll need an IAM role with necessary permissions and associate that IAM role with the service account used by your pods:
 - See [External secrets operator EKS service account credentials](https://external-secrets.io/latest/provider/aws-secrets-manager/#eks-service-account-credentials) for more details.
 
+##### Cert-Manager Configuration
+
+The `certmanager` section in `values.yaml` allows you to configure the integration with Cert-Manager for managing TLS certificates. Cert-Manager automates the issuance and renewal of certificates from various Certificate Authorities (CAs).
+
+Follow the [instructions](https://cert-manager.io/docs/tutorials/getting-started-aws-letsencrypt/) for AWS EKS on the cert-manager website to install and configure it. Once configured, you can enable the integration with the nxrm-ha helm chart by configuring the `certmanager.letsencrypt` section using the parameters below.
+
+##### Parameters
+
+| Parameter                                                           | Description                                                                                                                                                                                                                                                                                                                                                                        | Default                                        |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------|
+| `certmanager.letsencrypt.enabled`                                   | Set to true to indicate that you're using Let's Encrypt as the CA                                                                                                                                                                                                                                                                                                                  | `false`                                        |
+| `certmanager.letsencrypt.dns01Challenge.serviceAccount.name`        | The name of the service account for ACME DNS01 challenge                                                                                                                                                                                                                                                                                                                           | `cert-manager-acme-dns01`                      |
+| `certmanager.letsencrypt.dns01Challenge.serviceAccount.enabled`     | Set to true to enable the service account for ACME DNS01 challenge                                                                                                                                                                                                                                                                                                                 | `false`                                        |
+| `certmanager.letsencrypt.dns01Challenge.serviceAccount.annotations` | Annotations for the service account for ACME DNS01 challenge                                                                                                                                                                                                                                                                                                                       | `{}`                                           |
+| `certmanager.letsencrypt.dns01Challenge.rbac.enabled`               | Set to true to enable RBAC for the service account for ACME DNS01 challenge                                                                                                                                                                                                                                                                                                        | `false`                                        |
+| `certmanager.letsencrypt.dns01Challenge.rbac.role.name`             | The name of the role for the service account for ACME DNS01 challenge                                                                                                                                                                                                                                                                                                              | `cert-manager-acme-dns01-route53-tokenrequest` |
+| `certmanager.letsencrypt.dns01Challenge.rbac.roleBinding.name`      | The name of the role binding for the service account for ACME DNS01 challenge                                                                                                                                                                                                                                                                                                      | `cert-manager-acme-dns01-route53-tokenrequest` |
+
+##### Example Configuration
+
+```yaml
+certmanager:
+  letsencrypt:
+    enabled: true
+    dns01Challenge:
+      serviceAccount:
+        name: cert-manager-acme-dns01
+        enabled: true
+        annotations: {}
+      rbac:
+        enabled: true
+        role:
+          name: cert-manager-acme-dns01-route53-tokenrequest
+        roleBinding:
+          name: cert-manager-acme-dns01-route53-tokenrequest
+```
+
+In addition to the above configuration in your `values.yaml` you also need to configure the certificate section in your values.yaml. See the configuration table below for more details. Below is an example configuration for the certificate section in your values.yaml
+
+```yaml
+certificate:
+  apiVersion: cert-manager.io/v1
+  enabled: true
+  issuer:
+    enabled: true
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+    spec:
+      acme:
+        server: https://acme-v02.api.letsencrypt.org/directory
+        email: email@example.com
+        privateKeySecretRef:
+          name: letsencrypt-prod
+        solvers:
+          - dns01:
+              route53:
+                region: us-east-1
+                role: arn:aws:iam::111111111111:role/cert-manager-acme-dns01
+                hostedZoneID: Z1234567890
+                accessKeyID: AWS_ACCESS_KEY_ID
+                secretAccessKeySecretRef:
+                  name: route53-secret
+                  key: AWS_SECRET_ACCESS_KEY
+  nexus:
+    enabled: true
+    name: nexusrepo-cert
+    commonName: www.nexusrepo.com
+    duration: 2160h0m0s # 90 days
+    renewBefore: 360h0m0s # 15 days
+    secretName: nexusrepo-example-cert-2048
+    revisionHistoryLimit: 1
+    privateKey:
+      enabled: true
+      algorithm: RSA
+      encoding: PKCS1
+      size: 2048
+      rotationPolicy: Always
+    usages:
+      - digital signature
+      - key encipherment
+      - server auth
+    dnsNames:
+      - www.nexusrepo.com
+      - nexusrepo.com
+      - dockerrepo1.nexusrepo.com
+      - dockerrepo2.nexusrepo.com
+      - dockerrepo3.nexusrepo.com
+```
+
+
 ### Azure
 * Set `azure.enabled` to `true`.
 
@@ -226,6 +317,62 @@ Azure Key Vault is disabled by default. If you would like to store your database
     * Set `secret.azure.nexusSecret.enabled` and `secret.nexusSecret.enabled` to true
     * Ensure `secret.aws.nexusSecret.enabled ` and `aws.secretmanager.enabled` are false
 
+##### Cert-Manager Configuration
+
+The `certmanager` section in `values.yaml` allows you to configure the integration with Cert-Manager for managing TLS certificates. Cert-Manager automates the issuance and renewal of certificates from various Certificate Authorities (CAs).
+
+Follow the [instructions](https://cert-manager.io/docs/tutorials/getting-started-aks-letsencrypt/) for Azure Kubernetes Service on the cert-manager website to install and configure it. Once configured, you can enable the integration with the nxrm-ha helm chart by configuring the certificate section in your values.yaml. See the configuration table below for more details. 
+Below is an example configuration for Cert-Manager integration with the nxrm-ha helm chart.
+
+```yaml
+certificate:
+  apiVersion: cert-manager.io/v1
+  enabled: true
+  issuer:
+    enabled: true
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+    spec:
+      acme:
+        server: https://acme-v02.api.letsencrypt.org/directory
+        email: email@example.com
+        privateKeySecretRef:
+          name: letsencrypt-prod
+        solvers:
+          - dns01:
+              azureDNS:
+                resourceGroupName: my-resource-group
+                subscriptionID: abcd1111-v511-1111-11ab-i111111yt111
+                hostedZoneName: nexusrepo.com
+                environment: AzurePublicCloud
+                managedIdentity:
+                  clientID: 11111111-1111-1111-1111-111111111111
+  nexus:
+    enabled: true
+    name: nexusrepo-cert
+    commonName: www.nexusrepo.com
+    duration: 2160h0m0s # 90 days
+    renewBefore: 360h0m0s # 15 days
+    secretName: nexusrepo-example-cert-2048
+    revisionHistoryLimit: 1
+    privateKey:
+      enabled: true
+      algorithm: RSA
+      encoding: PKCS1
+      size: 2048
+      rotationPolicy: Always
+    usages:
+      - digital signature
+      - key encipherment
+      - server auth
+    dnsNames:
+      - www.nexusrepo.com
+      - nexusrepo.com
+      - dockerrepo1.nexusrepo.com
+      - dockerrepo2.nexusrepo.com
+      - dockerrepo3.nexusrepo.com
+```
 
 ##### External Secrets Operator
 - Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
@@ -569,6 +716,56 @@ gcloud projects add-iam-policy-binding  <your-project-id> \
 --role="roles/iam.serviceAccountTokenCreator"
 ```
 
+##### Cert-Manager Configuration
+
+The `certmanager` section in `values.yaml` allows you to configure the integration with Cert-Manager for managing TLS certificates. Cert-Manager automates the issuance and renewal of certificates from various Certificate Authorities (CAs).
+
+Follow the [instructions](https://cert-manager.io/docs/tutorials/getting-started-with-cert-manager-on-google-kubernetes-engine-using-lets-encrypt-for-ingress-ssl/) for Google Kubernetes Service on the cert-manager website to install and configure it. Once configured, you can enable the integration with the nxrm-ha helm chart by configuring the certificate section in your values.yaml. See the configuration table below for more details. Below is an example configuration for Cert-Manager integration with the nxrm-ha helm chart.
+
+```yaml
+certificate:
+  apiVersion: cert-manager.io/v1
+  enabled: true
+  issuer:
+    enabled: true
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+    spec:
+      acme:
+        server: https://acme-v02.api.letsencrypt.org/directory
+        email: email@example.com
+        privateKeySecretRef:
+          name: letsencrypt-prod
+        solvers:
+          - http01:
+              ingress:
+                name: web-ingress # See the documentation:https://cert-manager.io/docs/tutorials/getting-started-with-cert-manager-on-google-kubernetes-engine-using-lets-encrypt-for-ingress-ssl/ for GKE for more information about the configuration of your ingress
+  nexus:
+    enabled: true
+    name: nexusrepo-cert
+    commonName: www.nexusrepo.com
+    duration: 2160h0m0s # 90 days
+    renewBefore: 360h0m0s # 15 days
+    secretName: nexusrepo-example-cert-2048
+    revisionHistoryLimit: 1
+    privateKey:
+      enabled: true
+      algorithm: RSA
+      encoding: PKCS1
+      size: 2048
+      rotationPolicy: Always
+    usages:
+      - digital signature
+      - key encipherment
+      - server auth
+    dnsNames:
+      - www.nexusrepo.com
+      - nexusrepo.com
+      - dockerrepo1.nexusrepo.com
+      - dockerrepo2.nexusrepo.com
+      - dockerrepo3.nexusrepo.com
+```
 
 
 ### On-premises
@@ -656,9 +853,6 @@ helm install nxha1 \
 --set service.nexus.enabled=true \
 sonatype/nxrm-ha
 ```
-
----
-## Nexus Secrets
 
 ---
 
