@@ -193,12 +193,12 @@ ingress:
   enabled: false
   host: null # host to apply this ingress rule to e.g. www.nexusrepo.com. Set it as you wish. must match hosts in tls section
   hostPath: /
-  dockersubdomain: false # uncomment this if you'd like to create a wildcard rule in your ingress for docker sub domain routing. This will result in the creation of routing rules in your load balancer for sub domains of your host. Thus, you must also set the host
+  dockersubdomain: false
   dockersubdomains:
 #    - dockerrepo1.nexusrepo.com
 #    - dockerrepo2.nexusrepo.com
 #    - dockerrepo3.nexusrepo.com
-  subdomainWildcard: true
+  subdomainWildcard: true # Creates a wildcard rule in your ingress for docker subdomain routing. This will result in the creation of routing rules in your load balancer for sub domains of your host. Thus, you must also set the host
   defaultRule: false
   additionalRules: null
   ingressClassName: null # e.g. nginx, alb
@@ -383,19 +383,19 @@ nexus:
     createDockerRulesOnMainIngress: false
     type: NodePort
     protocol: TCP
-    registries:
-      - host: docker1.nexusrepo.com
-        port: 5000
-        secretName: nexusrepo-example-cert-2048
-        targetPort: 5000 # if using subdomains should be container port i.e. 8081
-        annotations: { }
-        enableTLS: true
-      - host: docker2.nexusrepo.com
-        port: 5001
-        secretName: nexusrepo-example-cert-2048
-        targetPort: 5001 # if using subdomains should be container port i.e. 8081
-        annotations: { }
-        enableTLS: true
+#    registries:
+#      - host: docker1.nexusrepo.com
+#        port: 5000
+#        secretName: nexusrepo-example-cert-2048
+#        targetPort: 5000 # if using subdomains should be container port i.e. 8081
+#        annotations: { }
+#        enableTLS: true
+#      - host: docker2.nexusrepo.com
+#        port: 5001
+#        secretName: nexusrepo-example-cert-2048
+#        targetPort: 5001 # if using subdomains should be container port i.e. 8081
+#        annotations: { }
+#        enableTLS: true
 certificate:
   apiVersion: cert-manager.io/v1
   enabled: false
@@ -412,17 +412,26 @@ certificate:
           name: letsencrypt-staging
         solvers:
           - dns01:
-              route53:
-                region: us-east-1
-                # For AWS IAM Role which gives cert manager needed route 53 permissions.
-                # This must be the same role specified in certmanager.letsencrypt.dns01Challenge.serviceAccount.annotations
-                role: arn:aws:iam::111111111:role/cert-manager-acme-dns01
-                auth:
-                  kubernetes:
-                    serviceAccountRef:
-                      # The name of the K8 service account to use to gain needed permissions for the dns01 challenge
-                      # This must be the same service account specified in certmanager.letsencrypt.dns01Challenge.serviceAccount.name
-                      name: cert-manager-acme-dns01
+#  Example for AWS Route53
+#              route53:
+#                region: us-east-1
+#                # For AWS IAM Role which gives cert manager needed route 53 permissions.
+#                # This must be the same role specified in certmanager.letsencrypt.dns01Challenge.serviceAccount.annotations
+#                role: arn:aws:iam::111111111:role/cert-manager-acme-dns01
+#                auth:
+#                  kubernetes:
+#                    serviceAccountRef:
+#                      # The name of the K8 service account to use to gain needed permissions for the dns01 challenge
+#                      # This must be the same service account specified in certmanager.letsencrypt.dns01Challenge.serviceAccount.name
+#                      name: cert-manager-acme-dns01
+#  Example for Azure DNS
+#              azureDNS:
+#                resourceGroupName: my-resource-group # your_own_resource_group_name which contains your DNS zone
+#                subscriptionID: abcd1111-v511-1111-11ab-i111111yt111
+#                hostedZoneName:  nexusrepo.com
+#                environment: AzurePublicCloud
+#                managedIdentity:
+#                  clientID: 11111111-1111-1111-1111-111111111111
   nexus:
     enabled: false
     name: "nexusrepo-cert"
