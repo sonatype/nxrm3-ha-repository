@@ -40,8 +40,8 @@ you configure dynamic provisioning of persistent storage bound to a shared locat
 > 
 > From version **68.0.0+**, we recommend and support using **shared storage** (e.g., EFS, Azure File, NFS for on-prem deployments). However, this chart is still compatible with local storage.
 
-#### Continuing to use local storage **(Not recommended)** in versions 68.0.0+
-If you wish to continue using local storage (i.e., EBS, Azure disk, locally attached disks for on-prem) you can do so as follows:
+#### Continuing to use EBS/Azure Disk/on-prem local disk storage in versions 68.0.0+ - **(Not recommended)**
+If you wish to continue using EBS/Azure Disk/on-prem local disk storage, you can do so as follows:
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
 * Set `pvc.volumeClaimTemplate.enabled` to `true`
 * Set `pvc.accessModes` to `ReadWriteOnce`
