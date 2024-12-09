@@ -22,13 +22,15 @@ This Helm chart configures the Kubernetes resources that are needed for HA or re
 
 > **_NOTE:_** Sonatype does not support or plan to support using a Helm chart for deployments using embedded databases, which includes all OSS deployments. Using Kubernetes to manage an application with an embedded database is a leading cause of corruption, outages, and data loss.
 
-
 ---
 
 # Pre-requisites
 > **_Note:_**  Before upgrading your Nexus Repository instance, review the [Nexus Repository Release Notes](https://help.sonatype.com/en/release-notes.html) to evaluate any potential breaking changes.
 
 Also be sure to review our [HA system requirements help documentation](https://help.sonatype.com/en/system-requirements-for-high-availability-deployments.html) and ensure that each instance meets our [normal Nexus Repository system requirements](https://help.sonatype.com/repomanager3/product-information/system-requirements).
+
+### Sticky Sessions for Load Balancers/Ingress
+> **_NOTE:_** Configuration of sticky sessions is not supported in this chart. If you require sticky sessions, you will need to configure this in your load balancer or ingress controller as applicable.
 
 ### Storage
 The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
