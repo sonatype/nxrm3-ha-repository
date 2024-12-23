@@ -40,6 +40,19 @@ you configure dynamic provisioning of persistent storage bound to a shared locat
 > 
 > From version **68.0.0+**, we recommend and support using **shared storage** (e.g., EFS, Azure File, NFS for on-prem deployments). However, this chart is still compatible with local storage.
 
+#### Continuing to use EBS/Azure Disk/on-prem local disk storage in versions 68.0.0+ - **(Not recommended)**
+If you wish to continue using EBS/Azure Disk/on-prem local disk storage, you can do so as follows:
+* Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
+* Set `pvc.volumeClaimTemplate.enabled` to `true`
+* Set `pvc.accessModes` to `ReadWriteOnce`
+* Set `pvc.storageSize` to the desired size of the volume. E.g., `50Gi`
+* To use a built-in storage class, set `storageClass.name` to `gp2`, `managed-premium` or `premium-rwo` for EKS, AKS and GKE respectively. For  on-prem deployments specify the name of your custom storage class.
+* Set `volumeBindingMode` to `WaitForFirstConsumer`
+* Set `reclaimPolicy` to `Retain` or `Delete` depending on your requirements
+* To use a custom storage class, in addition to the above:
+  * Set `storageClass.enabled` to `true`
+  * Set the `storageClass.provisioner` to the appropriate value (see the documentation for your storage provider for more details). E.g., `ebs.csi.aws.com`, `disk.csi.azure.com` or `pd.csi.storage.gke.io` for EKS, AKS and GKE respectively. For on-prem deployments:`see the CSI driver documentation for your storage provider` E.g., for local static provisioner see https://github.com/kubernetes-sigs/sig-storage-local-static-provisioner
+  * Additional parameters can be set as needed for your custom storage class using the `storageClass.parameters` field.
 
 #### Migrating from local storage (i.e., EBS/Azure Disk/local disk) to shared storage (i.e., EFS/Azure File/NFS) for storing Nexus Repository logs
 
