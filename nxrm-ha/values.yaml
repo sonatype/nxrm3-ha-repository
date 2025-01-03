@@ -13,7 +13,6 @@ externaldns:
   image: k8s.gcr.io/external-dns/external-dns:v0.13.1
 certmanager:
   letsencrypt:
-    enabled: false # set to true to indicate that you're using letsencrypt as the CA (See https://letsencrypt.org/ and https://cert-manager.io/docs/tutorials/)
     # service account details for ACME DNS01 challenge
     # See https://letsencrypt.org/docs/challenge-types/#dns-01-challenge for more information
     # See https://cert-manager.io/docs/tutorials/getting-started-aws-letsencrypt/#create-an-iam-role-and-associate-it-with-a-kubernetes-service-account for AWS example
