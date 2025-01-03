@@ -1125,3 +1125,34 @@ tests:
           value:
             - name: nexus-data
               mountPath: /nexus-data
+
+  - it: should set DB_HOST from container.env.dbHost when specified
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          env:
+            dbHost: mydatabasehost.foo.com
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[0].env[3]
+          value:
+            name: DB_HOST
+            value: mydatabasehost.foo.com
+
+
+  - it: should set DB_HOST from dbsecret when container.env.dbHost is null
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[0].env[3]
+          value:
+            name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                key: db-host
+                name: nxrm-ha-dbsecret

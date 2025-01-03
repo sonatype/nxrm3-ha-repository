@@ -131,10 +131,14 @@ spec:
                   name: {{ template "nexus.name" . }}-dbsecret
                   key: db-user
             - name: DB_HOST
+            {{- if .Values.statefulset.container.env.dbHost }}
+              value: {{ .Values.statefulset.container.env.dbHost }}
+            {{ else }}
               valueFrom:
                 secretKeyRef:
                   name: {{ template "nexus.name" . }}-dbsecret
                   key: db-host
+            {{- end }}
             - name: NEXUS_SECURITY_INITIAL_PASSWORD
               valueFrom:
                 secretKeyRef:

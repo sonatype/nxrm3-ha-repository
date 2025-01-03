@@ -135,6 +135,7 @@ statefulset:
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
       zeroDowntimeEnabled: false
+      dbHost: null # Set this to the host of your database or set to null if you want to source it from {{ template "nexus.name" . }}-dbsecret
     additionalEnv: null
   requestLogContainer:
     image:
