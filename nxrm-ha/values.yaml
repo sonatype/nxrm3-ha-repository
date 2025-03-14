@@ -365,6 +365,7 @@ nexus:
   # Default the pods UID and GID to match the nexus3 container.
   # Customize or remove these values from the securityContext as appropriate for
   # your deployment environment.
+  license: true # Set to false if you don't have a license
   securityContext:
     runAsUser: 200
   properties:
