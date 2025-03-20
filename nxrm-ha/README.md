@@ -139,6 +139,7 @@ The chart provides fours ways of injecting secrets into your Nexus Repository po
 
 #### Configuration for dynamic persistent volume provisioning
 * Set `storageClass.enabled` to `true`
+* Set `pvc.accessModes` to `ReadWriteMany`
 * Set `storageClass.provisioner` to `efs.csi.aws.com`
 * Set `storageClass.parameters` to
     ```
@@ -193,6 +194,7 @@ You can either use one of the built-in storage classes for Azure File or create 
 ##### Using built-in storage class
 * Ensure you have enabled the built-in storage classes on your AKS cluster. For more information, see the Azure file dynamic provisioning section of [our documentation on high availability deployments in Azure](https://help.sonatype.com/en/option-4---high-availability-deployment-in-azure.html)
 * Set `storageClass.enabled` to `false`
+* Set `pvc.accessModes` to `ReadWriteMany`
 * Set `storageClass.name` to one of the in-built storage classes for Azure file, such as azurefile-csi-premium, azurefile-premium, azurefile, or azurefile-csi
 * Set `storageClass.provisioner` to `file.csi.azure.com`
 * Set the `pvc.volumeClaimTemplate.enabled` parameter to `true`
@@ -539,6 +541,7 @@ the ADC will automatically use the credentials provided by the annotated Kuberne
 * You need to install Google CSI Filestore driver on your GKE cluster. 
 * For more information, see the [GCP documentation](https://cloud.google.com/kubernetes-engine/docs/concepts/storage-overview#filestore)
 * Set `storageClass.enabled` to `true`
+* Set `pvc.accessModes` to `ReadWriteMany`
 * Set `storageClass.provisioner` to `filestore.csi.storage.gke.io`
 * Set `storageClass.parameters` to
     ```
