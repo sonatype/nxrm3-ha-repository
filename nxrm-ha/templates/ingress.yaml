@@ -64,6 +64,7 @@ spec:
   {{- end }}
 {{- end}}
 {{- if .Values.nexus.docker.enabled }}
+{{- if .Values.nexus.docker.ingress }}
 {{ range $registry := .Values.nexus.docker.registries }}
 {{- $fullName := include "nexus.fullname" $ -}}
 ---
@@ -103,5 +104,6 @@ spec:
                 port:
                   number: {{ $registry.port }}
 ---
+{{- end }}
 {{- end }}
 {{- end }}
