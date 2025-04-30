@@ -15,7 +15,7 @@
 
 # Helm Chart for High Availability (HA) and Resilient Deployments
 
-This Helm chart configures the Kubernetes resources that are needed for HA or resilient Nexus Repository deployments in AWS, Azure, or on-premises.
+This Helm chart configures the Kubernetes resources that are needed for HA or resilient Nexus Repository Pro deployments in AWS, Azure, or on-premises.
 
 - Have an idea for an improvement? Pro customers can submit ideas through [Sonatype's Ideas portal](https://ideas.sonatype.com/).
 - If you encounter any problems/issues with the helm chart, please contact Sonatype support as support@sonatype.com
@@ -28,6 +28,9 @@ This Helm chart configures the Kubernetes resources that are needed for HA or re
 > **_Note:_**  Before upgrading your Nexus Repository instance, review the [Nexus Repository Release Notes](https://help.sonatype.com/en/release-notes.html) to evaluate any potential breaking changes.
 
 Also be sure to review our [HA system requirements help documentation](https://help.sonatype.com/en/system-requirements-for-high-availability-deployments.html) and ensure that each instance meets our [normal Nexus Repository system requirements](https://help.sonatype.com/repomanager3/product-information/system-requirements).
+
+### Nexus Repository Pro License
+This Helm chart is designed for Sonatype Nexus Repository Pro deployments with a valid Pro license.
 
 ### Sticky Sessions for Load Balancers/Ingress
 > **_NOTE:_** Configuration of sticky sessions is not supported in this chart. If you require sticky sessions, you will need to configure this in your load balancer or ingress controller as applicable.
