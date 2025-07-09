@@ -91,7 +91,7 @@ statefulset:
   container:
     image:
       repository: sonatype/nexus3
-      nexusTag: 3.81.1
+      nexusTag: 3.82.0
     resources:
       # See help documentation, these are minimum system requirements
       requests:
