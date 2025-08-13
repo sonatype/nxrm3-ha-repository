@@ -9,9 +9,9 @@ data:
     <included>
       <appender name="tasklogfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${karaf.data}/log/tasks/allTasks.log</File>
-        <filter class="org.sonatype.nexus.pax.logging.TaskLogsFilter" />
+        <filter class="org.sonatype.nexus.logging.TaskLogsFilter" />
         <Append>true</Append>
-        <encoder class="org.sonatype.nexus.pax.logging.NexusLayoutEncoder">
+        <encoder class="org.sonatype.nexus.logging.NexusLayoutEncoder">
           <pattern>%d{"yyyy-MM-dd HH:mm:ss,SSSZ"} %-5p [%thread] %node %mdc{userId:-*SYSTEM} %c - %m%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">

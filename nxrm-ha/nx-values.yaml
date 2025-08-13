@@ -1,0 +1,71 @@
+# Declare variables to be passed into your templates.
+namespaces:
+  nexusNs:
+    enabled: false
+    name: "nexusrepo"
+statefulset:
+  replicaCount: 2
+  additionalVolumes:
+    - name: nfs-blob
+      persistentVolumeClaim:
+        claimName: nfs-blob-pvc
+  additionalVolumeMounts:
+    - name: nfs-blob
+      mountPath: "/nfs-blob"
+  container:
+    resources:
+      # See help documentation, these are minimum system requirements
+      requests:
+        cpu: 1
+        memory: "2Gi"
+      limits:
+        cpu: 1
+        memory: "2Gi"
+    env:
+      nexusDBName: kind_nxha77db
+      nexusDBPort: 5432
+  livenessProbe:
+    failureThreshold: 6
+    initialDelaySeconds: 20
+    path: /
+    periodSeconds: 60
+  readinessProbe:
+    failureThreshold: 6
+    initialDelaySeconds: 20
+    path: /
+    periodSeconds: 60
+storageClass:
+  enabled: false # For built-in storage class, set storageClass.enabled to false
+  name: nfs 
+pvc:
+  accessModes: ReadWriteOnce
+  storage: 1Gi
+  volumeClaimTemplate:
+    enabled: true
+secret:
+  dbSecret:
+    enabled: true
+  db:
+    user: nexus
+    password: nexus123
+    host: 172.17.0.1
+  nexusAdminSecret:
+    enabled: true # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
+    adminPassword: admin123 #You should change this when you login for the first time
+  license:
+    existingSecret: true
+    name: nexus-repo-license.lic
+service:
+  nexus:
+    enabled: true
+logStorage:
+  combineTaskLogs: true
+ingress:
+  name: "nxha-ingress"
+  enabled: true
+  host: nxha.mydomain #host to apply this ingress rule to e.g. example.com. Set it as you wish
+  hostPath: /
+  defaultRule: true
+  ingressClassName: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "4096m"
