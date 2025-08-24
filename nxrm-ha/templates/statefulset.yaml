@@ -77,12 +77,18 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.statefulset.imagePullSecrets.existingSecret.name }}
       {{- end }}
+      securityContext:
+        {{ toYaml .Values.nexus.podSecurityContext | nindent 8 }}
       containers:
         - name: nxrm-app
           image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.nexusTag }}
           imagePullPolicy: {{ .Values.statefulset.container.pullPolicy }}
           securityContext:
+            {{- if .Values.nexus.securityContext }}
             {{ toYaml .Values.nexus.securityContext | nindent 12 }}
+            {{ else }}
+            {{ toYaml .Values.nexus.containerSecurityContext | nindent 12 }}
+            {{- end }}
           lifecycle:
           {{- if .Values.statefulset.postStart.command }}
             postStart:
@@ -228,6 +234,8 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          securityContext:
+            {{ toYaml .Values.nexus.containerSecurityContext | nindent 12 }}
           resources:
             {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
         - name: audit-log
@@ -236,6 +244,8 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          securityContext:
+            {{ toYaml .Values.nexus.containerSecurityContext | nindent 12 }}
           resources:
             {{ toYaml .Values.statefulset.auditLogContainer.resources | nindent 12 }}
         {{- if .Values.logStorage.combineTaskLogs }}
@@ -245,6 +255,8 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          securityContext:
+            {{ toYaml .Values.nexus.containerSecurityContext | nindent 12 }}
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
         {{ end }}
