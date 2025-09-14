@@ -41,6 +41,8 @@ statefulset:
   additionalVolumes:
   additionalVolumeMounts:
   additionalContainers:
+  # Name of the PriorityClass to assign to pods. If not set, no priority class will be applied.
+  priorityClassName: ""
   # # Add annotations to statefulset to enhance configurations
   annotations: {}
   podAnnotations: {}
