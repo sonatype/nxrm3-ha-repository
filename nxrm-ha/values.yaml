@@ -252,6 +252,7 @@ service: # Nexus Repo NodePort Service
     publishNotReadyAddresses: true # We want all pods in the StatefulSet to have their addresses published even before they're ready.
 externalsecrets:
   enabled: false
+  apiVersion: external-secrets.io/v1beta1
   secretstore:
     name: nexus-secret-store
     spec:
