@@ -27,4 +27,4 @@ spec:
   ports:
     - name: nexus-ui
       port: {{ .Values.statefulset.container.containerPort }}
-      targetPort: nexus-ui
+      targetPort: http-nexus-ui
