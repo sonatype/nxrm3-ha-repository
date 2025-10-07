@@ -53,6 +53,9 @@ spec:
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ include "nexus.serviceAccountName" . }}
       {{- end }}
+      {{- if .Values.statefulset.priorityClassName }}
+      priorityClassName: {{ .Values.statefulset.priorityClassName }}
+      {{- end }}
       terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
       {{- if .Values.statefulset.initContainers }}
       initContainers:
