@@ -90,11 +90,11 @@ spec:
                 command: {{ .Values.statefulset.postStart.command }}
           {{- end }}
           ports:
-            - name: nexus-ui
+            - name: http-nexus-ui
               containerPort: {{ .Values.statefulset.container.containerPort }}
             {{- if .Values.nexus.docker.enabled }}
             {{- range .Values.nexus.docker.registries }}
-            - name: docker-{{ .port }}
+            - name: http-docker-{{ .port }}
               containerPort: {{ .port }}
             {{- end }}
             {{- end }}
