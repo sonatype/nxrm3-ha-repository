@@ -370,6 +370,7 @@ nexus:
   properties:
     override: false
     data: null # specify a list of key and values to override default nexus.properties
+  podLabels: {}
   extraLabels: {}
   extraSelectorLabels: {}
   docker:
