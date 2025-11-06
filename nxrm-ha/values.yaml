@@ -62,10 +62,10 @@ statefulset:
   # # Add init containers. e.g. to be used to give specific permissions for nexus-data.
   # # Add your own init containers as needed
   initContainers:
-    # chown nexus-data to 'nexus' user and init log directories/files for a new pod
+    # init log directories/files for a new pod
     # otherwise the side car containers will crash a couple of times and backoff whilst waiting
     # for nxrm-app to start and this increases the total start up time.
-    - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
+    - name: init-log-dir
       image: busybox:1.33.1
       command: [/bin/sh]
       args:
@@ -76,8 +76,7 @@ statefulset:
           mkdir -p /nexus-data/log/audit &&
           touch -a /nexus-data/log/tasks/allTasks.log &&
           touch -a /nexus-data/log/audit/audit.log &&
-          touch -a /nexus-data/log/request.log &&
-          chown -R '200:200' /nexus-data
+          touch -a /nexus-data/log/request.log
       volumeMounts:
         - name: nexus-data
           mountPath: /nexus-data
@@ -365,8 +364,12 @@ nexus:
   # Default the pods UID and GID to match the nexus3 container.
   # Customize or remove these values from the securityContext as appropriate for
   # your deployment environment.
-  securityContext:
+  # securityContext: # deprecated. Use containerSecurityContext instead
+  #   runAsUser: 200
+  containerSecurityContext:
     runAsUser: 200
+  podSecurityContext:
+    fsGroup: 200
   properties:
     override: false
     data: null # specify a list of key and values to override default nexus.properties
