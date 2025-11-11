@@ -20,9 +20,8 @@ data:
           <maxHistory>1</maxHistory>
         </rollingPolicy>
       </appender>
-    </included>
-  logback-tasklogfile-override.xml: |
-    <included>
-      <appender-ref ref="tasklogfile-aggregated" />
+      <root>
+        <appender-ref ref="tasklogfile-aggregated" />
+      </root>
     </included>
 {{- end }}
