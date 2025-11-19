@@ -49,6 +49,9 @@ spec:
             {{ toYaml . | nindent 8 }}
           {{- end }}
         {{- end }}
+        {{- with .Values.nexus.podLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ include "nexus.serviceAccountName" . }}
