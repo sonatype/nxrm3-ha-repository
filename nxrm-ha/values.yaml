@@ -53,6 +53,15 @@ statefulset:
   #   - "example.com"
   #   - "www.example.com"
 
+  # Add a security context to the StatefulSet pods.
+  # Customize or remove these values from the securityContext as appropriate for
+  # your deployment environment.
+  podSecurityContext: {}
+    # fsGroup: 200
+    # runAsGroup: 200
+    # runAsNonRoot: true
+    # runAsUser: 200
+
   # Uncomment and modify this to run a command after starting the nexus container.
   postStart:
     command: null   # '["/bin/sh", "-c", "ls"]'

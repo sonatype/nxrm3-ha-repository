@@ -50,6 +50,10 @@ spec:
           {{- end }}
         {{- end }}
     spec:
+      {{- if .Values.statefulset.podSecurityContext }}
+      securityContext:
+        {{ toYaml .Values.statefulset.podSecurityContext | nindent 8 }}
+      {{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ include "nexus.serviceAccountName" . }}
       {{- end }}
