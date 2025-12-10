@@ -54,6 +54,10 @@ spec:
       securityContext:
         {{ toYaml .Values.statefulset.podSecurityContext | nindent 8 }}
       {{- end }}
+      {{- if .Values.statefulset.affinity }}
+      affinity:
+        {{ toYaml .Values.statefulset.affinity | nindent 8 }}
+      {{- end }}
       {{- if .Values.serviceAccount.enabled }}
       serviceAccountName: {{ include "nexus.serviceAccountName" . }}
       {{- end }}
