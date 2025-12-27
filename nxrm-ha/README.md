@@ -88,6 +88,42 @@ If you have installed version 66.0.0 or older of the nxrm-ha chart and wish to s
       * `kubectl logs -n nexusrepo nxrm-nxrm-ha-1 -f` 
       * `kubectl logs -n nexusrepo nxrm-nxrm-ha-2 -f`
 
+#### Migrating from statefulset.name to nameOverride/fullnameOverride
+
+If you have used the `statefulset.name` parameter in version 87.1.0 or earlier, this parameter has been removed in favor of the standard Helm naming conventions.
+
+**What changed:**
+- The `statefulset.name` parameter has been removed
+- Use `nameOverride` or `fullnameOverride` instead for controlling resource names
+
+**Migration steps:**
+
+1. If you were using `statefulset.name` in your values.yaml, you need to update your configuration:
+
+   **Old configuration (version ≤ 87.1.0):**
+   ```yaml
+   statefulset:
+     name: nxrm-statefulset
+   ```
+
+   **New configuration (version ≥ 88.0.0):**
+   ```yaml
+   # Option 1: Use nameOverride (appends to release name)
+   nameOverride: "nxrm-ha"
+   # Results in: <release-name>-nxrm-ha
+
+   # Option 2: Use fullnameOverride (complete name override)
+   fullnameOverride: "nxrm-statefulset"
+   # Results in: nxrm-statefulset
+   ```
+
+2. **Important:** If you need to maintain the exact same StatefulSet name as before, use `fullnameOverride` with your previous `statefulset.name` value.
+
+3. Update your helm deployment with the new values:
+   ```bash
+   helm upgrade nxrm sonatype/nxrm-ha -f <your updated values.yaml> --version <new-version>
+   ```
+
 #### Cloud deployments (AWS/Azure/GCP)
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
   * For AWS, see our [documentation on high availability deployments in AWS](https://help.sonatype.com/en/option-3---high-availability-deployment-in-amazon-web-services--aws-.html)
@@ -736,6 +772,8 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `aws.fluentbit.enabled`                                     | Set this to true when installing this chart on AWS and you would like to install Fluentbit so that Nexus Repository logs can be sent to AWS Cloud Watch                                                                                                                                                                                                                          | `false`                                                                                                             |
 | `aws.fluentbit.fluentbitVersion`                            | The fluentbit version                                                                                                                                                                                                                                                                                                                                                            | `2.28.0`                                                                                                            |
 | `aws.fluentbit.clusterName`                                 | The name of your Kubernetes cluster. This is required by fluentbit                                                                                                                                                                                                                                                                                                               | `nxrm-nexus`                                                                                                        |
+| `nameOverride`                                              | Overrides the chart name used in resource naming. The StatefulSet and other resources will be named `<release-name>-<nameOverride>`.                                                                                                                                                                                                                                             | `""`                                                                                                                |
+| `fullnameOverride`                                          | Fully overrides the generated name for all resources. When set, the StatefulSet and other resources will use this exact name (truncated to 63 characters). This takes precedence over `nameOverride`.                                                                                                                                                                            | `""`                                                                                                                |
 | `statefulset.replicaCount`                                  | The desired number of Nexus Repository pods                                                                                                                                                                                                                                                                                                                                      | 3                                                                                                                   |
 | `statefulset.clustered`                                     | Determines whether or not Nexus Repository should be run in clustered/HA mode. When this is set to false, the search differences [here](https://help.sonatype.com/repomanager3/planning-your-implementation/resiliency-and-high-availability/high-availability-deployment-options#HighAvailabilityDeploymentOptions-SearchFeatureDifferences) do not apply.                      | true                                                                                                                |
 | `statefulset.additionalVolumes`                             | Additional volumes to associate with the Nexus Repository container                                                                                                                                                                                                                                                                                                              | `null`                                                                                                              |
