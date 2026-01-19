@@ -328,6 +328,7 @@ secret:
     enabled: false # Enable to apply nexus-admin-secret.yaml which allows you to the initial admin password for nexus repository
     adminPassword: yourinitialnexuspassword #You should change this when you login for the first time
   license:
+    enabled: true # Disable to start OSS version
     name: nexus-repo-license.lic
     # -- Use an already created secret with the license contents in base64, it takes the name from the above field -> name: nexus-repo-license.lic and the mount path from below: licenseSecret.mountPath
     existingSecret: false
