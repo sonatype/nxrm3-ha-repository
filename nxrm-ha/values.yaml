@@ -344,6 +344,7 @@ secret:
   azure:
     # a managed identity or service principal that has secrets management access to the key vault
     userAssignedIdentityID: "userAssignedIdentityID"
+    clientID: "managedIdentityApplicationID"
     tenantId: "azureTenantId"
     keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
