@@ -43,8 +43,9 @@ tests:
           value:
             name: NEXUS_ZERO_DOWNTIME_ENABLED
             value: "true"
-      - isNull:
-          path: spec.updateStrategy
+      - equal:
+          path: spec.updateStrategy.type
+          value: RollingUpdate
 
   - it: should mount license secret when secret.license.enabled
     template: statefulset.yaml
@@ -648,7 +649,7 @@ tests:
       
       - equal:
           path: spec.updateStrategy.type
-          value: OnDelete
+          value: RollingUpdate
 
       - equal:
           path: spec.template.spec.initContainers[0].name
