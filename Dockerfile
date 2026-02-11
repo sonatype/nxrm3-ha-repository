@@ -11,7 +11,7 @@
 # Eclipse Foundation. All other trademarks are the property of their respective owners.
 #
 
-FROM docker-all.repo.sonatype.com/alpine/helm:3.10.1
+FROM sonatype.repo.sonatype.app/docker-all/alpine/helm:3.10.1
 
 RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
