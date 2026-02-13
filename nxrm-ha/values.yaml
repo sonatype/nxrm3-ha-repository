@@ -245,7 +245,6 @@ service: # Nexus Repo NodePort Service
     type: NodePort
     protocol: TCP
     port: 80
-    targetPort: 8081
   headless:
     annotations: {}
     publishNotReadyAddresses: true # We want all pods in the StatefulSet to have their addresses published even before they're ready.
@@ -379,7 +378,6 @@ nexus:
   #   - host: chart.local
   #     port: 5000
   #     secretName: registry-secret
-  #     targetPort: 8081
   #     annotations: {}
 
 # Enable configmap and add arbitrary data in configmap
