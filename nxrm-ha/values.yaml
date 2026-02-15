@@ -373,6 +373,7 @@ nexus:
   extraSelectorLabels: {}
   docker:
     enabled: false
+    ingress: false
     type: NodePort
     protocol: TCP
   # registries:
