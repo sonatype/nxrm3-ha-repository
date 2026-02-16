@@ -45,12 +45,23 @@ statefulset:
   podAnnotations: {}
   nodeSelector: {}
   topologySpreadConstraints: []
+  # Add a affinity to the StatefulSet pods.
+  affinity: {}
   # hostAliases allows the modification of the hosts file inside a container
   hostAliases: []
   # - ip: "192.168.1.10"
   #   hostnames:
   #   - "example.com"
   #   - "www.example.com"
+
+  # Add a security context to the StatefulSet pods.
+  # Customize or remove these values from the securityContext as appropriate for
+  # your deployment environment.
+  podSecurityContext: {}
+    # fsGroup: 200
+    # runAsGroup: 200
+    # runAsNonRoot: true
+    # runAsUser: 200
 
   # Uncomment and modify this to run a command after starting the nexus container.
   postStart:
