@@ -93,7 +93,6 @@ data:
         Name                kubernetes
         Match               nexus.nexus-log
         Kube_URL            https://kubernetes.default.svc:443
-        Kube_Tag_Prefix     application.var.log.containers.
         Merge_Log           On
         Merge_Log_Key       log_processed
         K8S-Logging.Parser  On
@@ -128,7 +127,6 @@ data:
         Name                kubernetes
         Match               nexus.request-log
         Kube_URL            https://kubernetes.default.svc:443
-        Kube_Tag_Prefix     application.var.log.containers.
         Merge_Log           On
         Merge_Log_Key       log_processed
         K8S-Logging.Parser  On
@@ -163,7 +161,6 @@ data:
         Name                kubernetes
         Match               nexus.audit-log
         Kube_URL            https://kubernetes.default.svc:443
-        Kube_Tag_Prefix     application.var.log.containers.
         Merge_Log           On
         Merge_Log_Key       log_processed
         K8S-Logging.Parser  On
@@ -198,7 +195,6 @@ data:
         Name                kubernetes
         Match               nexus.tasks-log
         Kube_URL            https://kubernetes.default.svc:443
-        Kube_Tag_Prefix     application.var.log.containers.
         Merge_Log           On
         Merge_Log_Key       log_processed
         K8S-Logging.Parser  On
