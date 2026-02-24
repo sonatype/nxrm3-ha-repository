@@ -302,9 +302,11 @@ externalsecrets:
       providerSecretName: adminSecretName # The name of the AWS SecretsManager/Azure KeyVault/etc. secret
       adminPasswordKey: "nexusAdminPassword" # The name of the key in the secret that contains your nexus repository admin password
     license:
-      providerSecretName: nexus-repo-license.lic # The name of the AWS SecretsManager/Azure KeyVault/etc. secret that contains your Nexus Repository license
-      decodingStrategy: null # Can be Base64
       refreshInterval: 1h
+      valueIsJson: false
+      providerSecretName: nexus-repo-license.lic # The name of the AWS SecretsManager/Azure KeyVault/etc. secret that contains your Nexus Repository license
+      licenseKey: "nexus-repo-license"
+      decodingStrategy: Base64 # Can be Base64 or null
 secret:
   secretProviderClass: "secretProviderClass"
   provider: provider # e.g. aws, azure etc
