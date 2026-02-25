@@ -37,5 +37,16 @@ HA requires the following:
 * A disk accessible to all active nodes for storing Nexus Repository logs and configuration settings used for generating the support zip
 
 If the Nexus Repository deployment will contain more than one Docker repository,  you must use one of the following:
-* An external load balancer (e.g., NGINX) as a [reverse proxy](https://help.sonatype.com/display/NXRM3M/Docker+Repository+Reverse+Proxy+Strategies) instead of the provided ingress for Docker YAML 
+* An external load balancer (e.g., NGINX) as a [reverse proxy](https://help.sonatype.com/display/NXRM3M/Docker+Repository+Reverse+Proxy+Strategies) instead of the provided ingress for Docker YAML
 * A [Docker Subdomain Connector](https://help.sonatype.com/repomanager3/nexus-repository-administration/formats/docker-registry/docker-subdomain-connector) with external DNS to route traffic to each Docker subdomain
+
+## Important: Horizontal Pod Autoscaler (HPA) Not Supported
+
+**Nexus Repository 3 HA is NOT designed for use with Kubernetes Horizontal Pod Autoscaler (HPA)** or similar auto-scaling technologies. Use a static pod count instead.
+
+**Reasons:**
+* Long-running background tasks (cleanup, replication, indexing) may be interrupted during scale-down
+* The application has a 5-second shutdown timeout which is insufficient for graceful task completion
+* Scale-down events can leave tasks in incomplete states
+
+For detailed information, see the [Helm chart README](nxrm-ha/README.md#horizontal-pod-autoscaler-hpa-support).

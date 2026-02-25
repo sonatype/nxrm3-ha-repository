@@ -35,6 +35,20 @@ This Helm chart is designed for Sonatype Nexus Repository Pro deployments with a
 ### Sticky Sessions for Load Balancers/Ingress
 > **_NOTE:_** Configuration of sticky sessions is not supported in this chart. If you require sticky sessions, you will need to configure this in your load balancer or ingress controller as applicable.
 
+### Horizontal Pod Autoscaler (HPA) Support
+
+> **_IMPORTANT:_** Nexus Repository 3 HA is **NOT** designed for use with Kubernetes Horizontal Pod Autoscaler (HPA) or similar auto-scaling technologies.
+
+#### Why HPA is Not Recommended:
+- **Long-running background tasks**: Nexus Repository executes long-running background tasks such as cleanup, replication, and indexing operations that may be interrupted during scale-down events.
+- **Insufficient shutdown timeout**: The application has a 5-second shutdown timeout for background job completion (QuartzThreadPool configuration), which is too short to allow graceful completion of long-running tasks.
+- **Incomplete task states**: Scale-down events can leave tasks in incomplete or inconsistent states, potentially affecting repository integrity.
+
+#### Recommended Configuration:
+- **Use a static replica count** based on your workload requirements (see `statefulset.replicaCount` in values.yaml)
+- **Do not configure HPA** or any auto-scaling mechanisms for Nexus HA pods
+- For sizing guidance, refer to the [Nexus Repository system requirements documentation](https://help.sonatype.com/repomanager3/product-information/system-requirements)
+
 ### Storage
 The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
 you configure dynamic provisioning of persistent storage bound to a shared location, such as EFS/Azure File/NFS, which is accessible to all actives nodes in your Kubernetes cluster. 
