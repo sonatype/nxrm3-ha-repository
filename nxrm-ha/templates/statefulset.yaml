@@ -77,6 +77,10 @@ spec:
       imagePullSecrets:
         - name: {{ .Values.statefulset.imagePullSecrets.existingSecret.name }}
       {{- end }}
+      {{- if .Values.statefulset.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.statefulset.podSecurityContext | nindent 8 }}
+      {{- end }}
       containers:
         - name: nxrm-app
           image: {{ .Values.statefulset.container.image.repository }}:{{ .Values.statefulset.container.image.nexusTag }}

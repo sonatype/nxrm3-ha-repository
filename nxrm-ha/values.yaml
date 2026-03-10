@@ -40,6 +40,9 @@ statefulset:
   additionalVolumes:
   additionalVolumeMounts:
   additionalContainers:
+  podSecurityContext: {}
+  # fsGroup: 200
+  # fsGroupChangePolicy: "OnRootMismatch"
   # # Add annotations to statefulset to enhance configurations
   annotations: {}
   podAnnotations: {}
