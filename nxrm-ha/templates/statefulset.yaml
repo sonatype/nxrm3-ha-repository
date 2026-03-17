@@ -229,28 +229,64 @@ spec:
         - name: request-log
           image: {{ .Values.statefulset.requestLogContainer.image.repository }}:{{ .Values.statefulset.requestLogContainer.image.tag }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log']
+          {{- if .Values.statefulset.requestLogContainer.securityContext }}
+          securityContext:
+            {{ toYaml .Values.statefulset.requestLogContainer.securityContext | nindent 12}}
+          {{- end }}
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
           resources:
             {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
+          {{- if .Values.statefulset.requestLogContainer.livenessProbe }}
+          livenessProbe:
+            {{ toYaml .Values.statefulset.requestLogContainer.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.statefulset.requestLogContainer.readinessProbe }}
+          readinessProbe:
+            {{ toYaml .Values.statefulset.requestLogContainer.readinessProbe | nindent 12 }}
+          {{- end }}
         - name: audit-log
           image: {{ .Values.statefulset.auditLogContainer.image.repository }}:{{ .Values.statefulset.auditLogContainer.image.tag }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log']
+          {{- if .Values.statefulset.auditLogContainer.securityContext }}
+          securityContext:
+            {{ toYaml .Values.statefulset.auditLogContainer.securityContext | nindent 12}}
+          {{- end }}
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
           resources:
             {{ toYaml .Values.statefulset.auditLogContainer.resources | nindent 12 }}
+          {{- if .Values.statefulset.auditLogContainer.livenessProbe }}
+          livenessProbe:
+            {{ toYaml .Values.statefulset.auditLogContainer.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.statefulset.auditLogContainer.readinessProbe }}
+          readinessProbe:
+            {{ toYaml .Values.statefulset.auditLogContainer.readinessProbe | nindent 12 }}
+          {{- end }}
         {{- if .Values.logStorage.combineTaskLogs }}
         - name: tasks-log
           image: {{ .Values.statefulset.taskLogContainer.image.repository }}:{{ .Values.statefulset.taskLogContainer.image.tag }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log']
+          {{- if .Values.statefulset.taskLogContainer.securityContext }}
+          securityContext:
+            {{ toYaml .Values.statefulset.taskLogContainer.securityContext | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
+          {{- if .Values.statefulset.taskLogContainer.livenessProbe }}
+          livenessProbe:
+            {{ toYaml .Values.statefulset.taskLogContainer.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.statefulset.taskLogContainer.readinessProbe }}
+          readinessProbe:
+            {{ toYaml .Values.statefulset.taskLogContainer.readinessProbe | nindent 12 }}
+          {{- end }}
         {{ end }}
         {{ end }}
         {{- if .Values.statefulset.additionalContainers }}
