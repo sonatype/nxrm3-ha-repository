@@ -26,9 +26,10 @@ spec:
     {{- end }}
   ports:
     - name: nexus-ui
+      appProtocol: http
       protocol: {{ .Values.service.nexus.protocol }}
       port: {{ .Values.service.nexus.port }}
-      targetPort: {{ .Values.service.nexus.targetPort }}
+      targetPort: http-nexus-ui
 {{- end }}
 ---
 {{ if .Values.nexus.docker.enabled -}}
@@ -60,9 +61,10 @@ spec:
     {{- end }}
   ports:
     - name: docker-{{ $registry.port }}
+      appProtocol: http
       protocol: {{ $.Values.nexus.docker.protocol }}
       port: {{ $registry.port }}
-      targetPort: {{ $registry.targetPort }}
+      targetPort: http-docker-{{ $registry.port }}
 ---
 {{ end }}
 {{- end }}
