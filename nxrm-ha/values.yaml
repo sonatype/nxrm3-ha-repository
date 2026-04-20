@@ -253,7 +253,7 @@ service: # Nexus Repo NodePort Service
     annotations: {}
     publishNotReadyAddresses: true # We want all pods in the StatefulSet to have their addresses published even before they're ready.
 externalsecrets:
-  enabled: false
+  enabled: false # Uses External Secrets Operator CRDs from external-secrets.io/v1
   secretstore:
     name: nexus-secret-store
     spec:
