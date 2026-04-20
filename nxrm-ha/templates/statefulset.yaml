@@ -20,10 +20,8 @@ spec:
   {{ else }}
   replicas: 1
   {{ end }}
-  {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}
   updateStrategy:
-    type: OnDelete
-  {{- end }}
+    type: RollingUpdate
   serviceName: {{ include "nexus.service.headless" . }}
   selector:
     matchLabels:
