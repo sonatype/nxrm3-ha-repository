@@ -35,6 +35,9 @@ aws:
     clusterName: nxrm-nexus
 statefulset:
   serviceName: nxrm-statefulset-service
+  # IMPORTANT: Nexus Repository 3 HA is NOT designed for use with Horizontal Pod Autoscaler (HPA).
+  # Use a static replica count. Do not configure HPA or auto-scaling for Nexus HA pods.
+  # See README.md for detailed explanation of HPA limitations.
   replicaCount: 3
   clustered: true
   additionalVolumes:
