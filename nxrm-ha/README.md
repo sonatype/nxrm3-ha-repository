@@ -135,6 +135,43 @@ If you have used the `statefulset.name` parameter in version 87.1.0 or earlier, 
 2. See our [documentation on on-premises high availability deployments using Kubernetes](https://help.sonatype.com/en/option-2---on-premises-high-availability-deployment-using-kubernetes.html) for more information
 
 
+### Ephemeral Storage for Logs and Support Content
+
+By default, Nexus Repository logs (`/nexus-data/log`) and support content (`/nexus-data/tmp`) are stored inside the main `nexus-data` PVC. If you are already forwarding logs to a centralized system (e.g., AWS CloudWatch via Fluent Bit), you can redirect these paths to cheap, ephemeral (`emptyDir`) storage instead. This reduces PVC size requirements and storage costs, since the data does not need to survive a pod restart.
+
+> **_IMPORTANT:_** Ephemeral storage is wiped when a pod is restarted or rescheduled. Only enable these options if you have a log forwarding solution (e.g., Fluent Bit → CloudWatch) already in place. If you enable ephemeral log storage without a log forwarder, logs will be lost on pod restart.
+
+#### Enabling ephemeral log storage
+
+In your values.yaml, set:
+
+```yaml
+ephemeralStorage:
+  logs:
+    enabled: true
+    sizeLimit: "10Gi"      # adjust to your expected log volume
+    path: "/nexus-data/log" # must be a subdirectory of /nexus-data
+```
+
+#### Enabling ephemeral support content storage
+
+```yaml
+ephemeralStorage:
+  supportContent:
+    enabled: true
+    sizeLimit: "50Gi"      # adjust to your expected support zip volume
+    path: "/nexus-data/tmp" # must be a subdirectory of /nexus-data
+```
+
+Both features are independent — you can enable one without the other.
+
+> **_NOTE:_** The `path` value must be a subdirectory of `/nexus-data`, not `/nexus-data` itself. Setting `path` to `/nexus-data` will cause a Helm validation error because that path is reserved for the main PVC.
+
+#### Migration notes for existing users
+
+Existing users are unaffected — both `ephemeralStorage.logs.enabled` and `ephemeralStorage.supportContent.enabled` default to `false`. No action is required if you do not want to use ephemeral storage.
+
+
 ## Format Limitations
 HA supports all formats that PostgreSQL supports.
 
@@ -924,3 +961,10 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `config.data`                                               | The data for the config map                                                                                                                                                                                                                                                                                                                                                      | `{}`                                                                                                                |
 | `config.mountPath`                                          | The file path to mount the config map into. Each key value pair in the config map is put on a separate line in the file                                                                                                                                                                                                                                                          | `/sonatype-nexus-conf`                                                                                              |
 | `logStorage.tailSecondaryLogs`                              | When set to `true`, enables sidecar containers for tailing secondary logs (request, audit, task). Useful for centralized log collection and troubleshooting.                                                                                                                                                                                                                      | `true`                                                                                                              |
+| `logStorage.combineTaskLogs`                                | When set to `true`, configures Nexus Repository to write all task logs to a single combined file (`allTasks.log`) instead of one file per task.                                                                                                                                                                                                                                  | `true`                                                                                                              |
+| `ephemeralStorage.logs.enabled`                             | When set to `true`, mounts an `emptyDir` volume at `ephemeralStorage.logs.path` so that Nexus Repository logs are stored on ephemeral storage instead of the main PVC. Only enable if log forwarding (e.g., Fluent Bit → CloudWatch) is configured — ephemeral storage is wiped on pod restart.                                                                                  | `false`                                                                                                             |
+| `ephemeralStorage.logs.sizeLimit`                           | The size limit for the ephemeral log volume. Kubernetes will evict the pod if usage exceeds this limit.                                                                                                                                                                                                                                                                          | `"10Gi"`                                                                                                            |
+| `ephemeralStorage.logs.path`                                | The mount path for the ephemeral log volume. Must be a subdirectory of `/nexus-data` (e.g., `/nexus-data/log`). Cannot be `/nexus-data` — that path is reserved for the main PVC.                                                                                                                                                                                                | `"/nexus-data/log"`                                                                                                 |
+| `ephemeralStorage.supportContent.enabled`                   | When set to `true`, mounts an `emptyDir` volume at `ephemeralStorage.supportContent.path` so that Nexus Repository support content (support zips, temp files) is stored on ephemeral storage instead of the main PVC.                                                                                                                                                            | `false`                                                                                                             |
+| `ephemeralStorage.supportContent.sizeLimit`                 | The size limit for the ephemeral support content volume. Kubernetes will evict the pod if usage exceeds this limit.                                                                                                                                                                                                                                                               | `"50Gi"`                                                                                                            |
+| `ephemeralStorage.supportContent.path`                      | The mount path for the ephemeral support content volume. Must be a subdirectory of `/nexus-data` (e.g., `/nexus-data/tmp`). Cannot be `/nexus-data` — that path is reserved for the main PVC.                                                                                                                                                                                    | `"/nexus-data/tmp"`                                                                                                 |

@@ -224,6 +224,15 @@ ingress:
 logStorage:
   tailSecondaryLogs: true
   combineTaskLogs: true
+ephemeralStorage:
+  logs:
+    enabled: false      # Set to true to store logs on ephemeral (emptyDir) storage instead of the PVC
+    sizeLimit: "10Gi"   # Max size for the ephemeral log volume
+    path: "/nexus-data/log"  # Mount path — must not be /nexus-data
+  supportContent:
+    enabled: false      # Set to true to store support content on ephemeral (emptyDir) storage instead of the PVC
+    sizeLimit: "50Gi"   # Max size for the ephemeral support content volume
+    path: "/nexus-data/tmp"  # Mount path — must not be /nexus-data
 storageClass:
   enabled: false # For built-in storage class, set storageClass.enabled to false
   name: nexus-storage # For built-in storage class, set storageClass.enabled to false and specify the name of the built-in storage class here e.g. managed-csi for AKS

@@ -208,6 +208,14 @@ spec:
           {{ end }}
             - name: nexus-data
               mountPath: /nexus-data
+          {{- if .Values.ephemeralStorage.logs.enabled }}
+            - name: nxrm-ephemeral-logs
+              mountPath: {{ .Values.ephemeralStorage.logs.path }}
+          {{- end }}
+          {{- if .Values.ephemeralStorage.supportContent.enabled }}
+            - name: nxrm-ephemeral-support
+              mountPath: {{ .Values.ephemeralStorage.supportContent.path }}
+          {{- end }}
           {{- if .Values.logStorage.combineTaskLogs }}
             - name: logback-tasklogfile-override
               mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
@@ -307,6 +315,16 @@ spec:
               - key: logback-tasklogfile-appender-override.xml
                 path: logback-tasklogfile-appender-override.xml
       {{ end }}
+      {{- if .Values.ephemeralStorage.logs.enabled }}
+        - name: nxrm-ephemeral-logs
+          emptyDir:
+            sizeLimit: {{ .Values.ephemeralStorage.logs.sizeLimit }}
+      {{- end }}
+      {{- if .Values.ephemeralStorage.supportContent.enabled }}
+        - name: nxrm-ephemeral-support
+          emptyDir:
+            sizeLimit: {{ .Values.ephemeralStorage.supportContent.sizeLimit }}
+      {{- end }}
   {{- if  and (not .Values.pvc.volumeClaimTemplate.enabled) (not .Values.pvc.existingClaim) }}
         - name: nexus-data
           emptyDir:

@@ -1,0 +1,172 @@
+suite: test ephemeral storage
+templates:
+  - statefulset.yaml
+  - validate.yaml
+release:
+  name: "test-release"
+  namespace: "test-namespace"
+chart:
+  version: "latest"
+  appVersion: "latest"
+tests:
+  - it: should not add ephemeral volumes when both features are disabled (default)
+    template: statefulset.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-logs
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-support
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-logs
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-support
+
+  - it: should add ephemeral log volume and volumeMount when logs enabled
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          sizeLimit: "10Gi"
+          path: "/nexus-data/log"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-logs
+            mountPath: /nexus-data/log
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-logs
+            emptyDir:
+              sizeLimit: 10Gi
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-support
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-support
+
+  - it: should add ephemeral support content volume and volumeMount when support content enabled
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        supportContent:
+          enabled: true
+          sizeLimit: "50Gi"
+          path: "/nexus-data/tmp"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-support
+            mountPath: /nexus-data/tmp
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-support
+            emptyDir:
+              sizeLimit: 50Gi
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-logs
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-logs
+
+  - it: should add both ephemeral volumes when both features enabled
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          sizeLimit: "10Gi"
+          path: "/nexus-data/log"
+        supportContent:
+          enabled: true
+          sizeLimit: "50Gi"
+          path: "/nexus-data/tmp"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-logs
+            mountPath: /nexus-data/log
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nxrm-ephemeral-support
+            mountPath: /nexus-data/tmp
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-logs
+            emptyDir:
+              sizeLimit: 10Gi
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-support
+            emptyDir:
+              sizeLimit: 50Gi
+
+  - it: should use custom sizeLimit and path values
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          sizeLimit: "20Gi"
+          path: "/nexus-data/log"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nxrm-ephemeral-logs
+            emptyDir:
+              sizeLimit: 20Gi
+
+  - it: should fail when logs path is set to /nexus-data
+    template: validate.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          path: "/nexus-data"
+    asserts:
+      - failedTemplate:
+          errorMessage: "ephemeralStorage.logs.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/log"
+
+  - it: should fail when supportContent path is set to /nexus-data
+    template: validate.yaml
+    set:
+      ephemeralStorage:
+        supportContent:
+          enabled: true
+          path: "/nexus-data"
+    asserts:
+      - failedTemplate:
+          errorMessage: "ephemeralStorage.supportContent.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/tmp"
+
+  - it: should not fail validation when logs disabled even if path is /nexus-data
+    template: validate.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: false
+          path: "/nexus-data"
+    asserts:
+      - notFailedTemplate: {}
