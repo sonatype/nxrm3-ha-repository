@@ -1,9 +1,23 @@
 {{/* Validation checks — no K8s resources are defined here */}}
 
-{{- if and .Values.ephemeralStorage.logs.enabled (eq .Values.ephemeralStorage.logs.path "/nexus-data") }}
-  {{- fail "ephemeralStorage.logs.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/log" }}
+{{- if .Values.ephemeralStorage.logs.enabled }}
+  {{- $logsPath := trimSuffix "/" .Values.ephemeralStorage.logs.path }}
+  {{- if eq $logsPath "/nexus-data" }}
+    {{- fail "ephemeralStorage.logs.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/log" }}
+  {{- end }}
 {{- end }}
 
-{{- if and .Values.ephemeralStorage.supportContent.enabled (eq .Values.ephemeralStorage.supportContent.path "/nexus-data") }}
-  {{- fail "ephemeralStorage.supportContent.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/tmp" }}
+{{- if .Values.ephemeralStorage.supportContent.enabled }}
+  {{- $supportPath := trimSuffix "/" .Values.ephemeralStorage.supportContent.path }}
+  {{- if eq $supportPath "/nexus-data" }}
+    {{- fail "ephemeralStorage.supportContent.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/tmp" }}
+  {{- end }}
+{{- end }}
+
+{{- if and .Values.ephemeralStorage.logs.enabled .Values.ephemeralStorage.supportContent.enabled }}
+  {{- $logsPath := trimSuffix "/" .Values.ephemeralStorage.logs.path }}
+  {{- $supportPath := trimSuffix "/" .Values.ephemeralStorage.supportContent.path }}
+  {{- if eq $logsPath $supportPath }}
+    {{- fail "ephemeralStorage.logs.path and ephemeralStorage.supportContent.path cannot be the same value. Use distinct subdirectories such as /nexus-data/log and /nexus-data/tmp" }}
+  {{- end }}
 {{- end }}

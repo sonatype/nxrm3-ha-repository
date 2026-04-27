@@ -170,3 +170,93 @@ tests:
           path: "/nexus-data"
     asserts:
       - notFailedTemplate: {}
+
+  - it: should fail when logs path has trailing slash resolving to /nexus-data
+    template: validate.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          path: "/nexus-data/"
+    asserts:
+      - failedTemplate:
+          errorMessage: "ephemeralStorage.logs.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/log"
+
+  - it: should fail when supportContent path has trailing slash resolving to /nexus-data
+    template: validate.yaml
+    set:
+      ephemeralStorage:
+        supportContent:
+          enabled: true
+          path: "/nexus-data/"
+    asserts:
+      - failedTemplate:
+          errorMessage: "ephemeralStorage.supportContent.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/tmp"
+
+  - it: should fail when logs and supportContent paths are the same
+    template: validate.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          path: "/nexus-data/log"
+        supportContent:
+          enabled: true
+          path: "/nexus-data/log"
+    asserts:
+      - failedTemplate:
+          errorMessage: "ephemeralStorage.logs.path and ephemeralStorage.supportContent.path cannot be the same value. Use distinct subdirectories such as /nexus-data/log and /nexus-data/tmp"
+
+  - it: should add ephemeral log volume mount to request-log sidecar when logs enabled
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          sizeLimit: "10Gi"
+          path: "/nexus-data/log"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[1].volumeMounts
+          content:
+            name: nxrm-ephemeral-logs
+            mountPath: /nexus-data/log
+
+  - it: should add ephemeral log volume mount to audit-log sidecar when logs enabled
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          sizeLimit: "10Gi"
+          path: "/nexus-data/log"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[2].volumeMounts
+          content:
+            name: nxrm-ephemeral-logs
+            mountPath: /nexus-data/log
+
+  - it: should add init-ephemeral-log-dir init container when logs enabled
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+          sizeLimit: "10Gi"
+          path: "/nexus-data/log"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: init-ephemeral-log-dir
+      - equal:
+          path: spec.template.spec.initContainers[1].volumeMounts[0].name
+          value: nxrm-ephemeral-logs
+
+  - it: should not add init-ephemeral-log-dir init container when logs disabled
+    template: statefulset.yaml
+    asserts:
+      - notContains:
+          path: spec.template.spec.initContainers
+          content:
+            name: init-ephemeral-log-dir
