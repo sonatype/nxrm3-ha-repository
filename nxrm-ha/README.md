@@ -718,6 +718,99 @@ sonatype/nxrm-ha
 ```
 
 ---
+
+## Horizontal Pod Autoscaler (HPA)
+
+The chart includes opt-in support for a `HorizontalPodAutoscaler` that automatically scales the NXRM StatefulSet based on CPU and memory utilization.
+
+> **HPA is disabled by default.** Existing deployments are not affected.
+
+### Prerequisites
+
+1. **Kubernetes metrics-server** must be installed in your cluster. Without it the HPA controller cannot read resource utilization and will never scale.
+
+   ```bash
+   # Verify metrics-server is running
+   kubectl top nodes
+   ```
+
+   If the command fails, install metrics-server:
+
+   ```bash
+   helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+   helm upgrade --install metrics-server metrics-server/metrics-server -n kube-system
+   ```
+
+2. **Clustered mode is required.** HPA is only supported when `statefulset.clustered: true` (the default). A `helm install` with `hpa.enabled: true` and `statefulset.clustered: false` will fail with a clear error.
+
+3. **Do not set `statefulset.replicaCount` when using HPA.** HPA owns the replica count. Setting both will fail at install time with a clear error.
+
+### Enabling HPA
+
+```yaml
+hpa:
+  enabled: true
+  minReplicas: 2                          # Must be >= 2 for HA
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+
+# Remove or null out replicaCount when HPA is enabled
+statefulset:
+  replicaCount: null
+```
+
+### Why conservative scale-down policies?
+
+NXRM is a stateful application connected to a shared PostgreSQL database. Aggressive scale-down carries two risks:
+
+- **Database connection exhaustion** — each NXRM pod holds a connection pool. Scaling down too many pods at once can cause the remaining pods to saturate their pools as traffic is redistributed.
+- **In-flight request loss** — artifact uploads and downloads in progress on a pod being terminated will fail.
+
+The defaults mitigate both:
+
+| Policy | Value | Reason |
+|--------|-------|--------|
+| `stabilizationWindowSeconds` | 300 | Waits 5 minutes before acting on a scale-down signal, smoothing transient dips |
+| Max scale-down | 50% per 60 s | Never removes more than half the pod fleet in any one-minute window |
+
+### Blob store rebalancing
+
+> **Important:** NXRM does **not** automatically rebalance blob store content when pods are added or removed. Scale events affect request routing only. Plan blob store topology (e.g., S3/Azure Blob) before enabling HPA to avoid uneven storage usage across pods.
+
+### Graceful shutdown
+
+NXRM's `terminationGracePeriodSeconds` (default: `120 s`) gives in-flight requests time to complete before a pod is removed. If your workloads include large artifact uploads that can exceed 120 seconds, increase this value:
+
+```yaml
+statefulset:
+  container:
+    terminationGracePeriod: 300  # 5 minutes
+```
+
+### Recommended starting targets
+
+| Workload | CPU target | Memory target |
+|----------|-----------|---------------|
+| Read-heavy (proxy/hosted) | 70–80% | 80% |
+| Write-heavy (CI uploads) | 60–70% | 75% |
+| Mixed | 75% | 80% |
+
+These are starting points. Monitor `kubectl top pods` after enabling HPA and adjust to your observed utilization patterns.
+
+### Complementary node-level scaling
+
+HPA scales pods within the existing node pool. To also scale the underlying nodes, configure your cloud provider's **Cluster Autoscaler** (AWS EKS, Azure AKS) or **Karpenter** alongside HPA.
+
+---
+
 ## Nexus Secrets
 
 ---
@@ -924,3 +1017,10 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `config.data`                                               | The data for the config map                                                                                                                                                                                                                                                                                                                                                      | `{}`                                                                                                                |
 | `config.mountPath`                                          | The file path to mount the config map into. Each key value pair in the config map is put on a separate line in the file                                                                                                                                                                                                                                                          | `/sonatype-nexus-conf`                                                                                              |
 | `logStorage.tailSecondaryLogs`                              | When set to `true`, enables sidecar containers for tailing secondary logs (request, audit, task). Useful for centralized log collection and troubleshooting.                                                                                                                                                                                                                      | `true`                                                                                                              |
+| `hpa.enabled`                                               | Whether to create a `HorizontalPodAutoscaler` resource. When `true`, `statefulset.replicaCount` must be unset and `statefulset.clustered` must be `true`.                                                                                                                                                                                                                        | `false`                                                                                                             |
+| `hpa.minReplicas`                                           | Minimum number of replicas. Must be >= 2 for NXRM HA.                                                                                                                                                                                                                                                                                                                           | `2`                                                                                                                 |
+| `hpa.maxReplicas`                                           | Maximum number of replicas the HPA can scale up to.                                                                                                                                                                                                                                                                                                                              | `10`                                                                                                                |
+| `hpa.targetCPUUtilizationPercentage`                        | Average CPU utilization percentage across all pods that triggers scaling.                                                                                                                                                                                                                                                                                                        | `75`                                                                                                                |
+| `hpa.targetMemoryUtilizationPercentage`                     | Average memory utilization percentage across all pods that triggers scaling.                                                                                                                                                                                                                                                                                                     | `80`                                                                                                                |
+| `hpa.behavior.scaleDown.stabilizationWindowSeconds`         | Seconds the HPA waits before acting on a scale-down signal. Conservative default prevents thrashing.                                                                                                                                                                                                                                                                             | `300`                                                                                                               |
+| `hpa.behavior.scaleDown.policies`                           | List of scale-down policies. Default limits removal to 50% of pods per 60-second window to avoid connection pool exhaustion.                                                                                                                                                                                                                                                     | `[{type: Percent, value: 50, periodSeconds: 60}]`                                                                   |

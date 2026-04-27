@@ -221,6 +221,19 @@ ingress:
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # The AWS Certificate Manager ARN for your HTTPS certificate
 #    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:0000000000000:certificate/00000000-1111-2222-3333-444444444444  # Comment out if you don't use docker repositories - The AWS Certificate Manager ARN for your HTTPS certificate
 #    external-dns.alpha.kubernetes.io/hostname: dockerrepo1.example.com, dockerrepo2.example.com, dockerrepo3.example.com
+hpa:
+  enabled: false                          # Default: disabled for backward compatibility
+  minReplicas: 2                          # Minimum replicas (must be >= 2 for HA)
+  maxReplicas: 10                         # Maximum replicas
+  targetCPUUtilizationPercentage: 75      # CPU target for scaling
+  targetMemoryUtilizationPercentage: 80   # Memory target for scaling
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300     # Wait 5 min before scale-down
+      policies:
+        - type: Percent
+          value: 50                       # Scale down max 50% of pods at a time
+          periodSeconds: 60
 logStorage:
   tailSecondaryLogs: true
   combineTaskLogs: true

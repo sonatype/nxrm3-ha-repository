@@ -15,11 +15,13 @@ metadata:
     {{ toYaml .Values.statefulset.annotations | nindent 4 }}
 {{- end }}
 spec:
+  {{- if not .Values.hpa.enabled }}
   {{- if .Values.statefulset.clustered }}
-  replicas: {{.Values.statefulset.replicaCount}}
-  {{ else }}
+  replicas: {{ .Values.statefulset.replicaCount }}
+  {{- else }}
   replicas: 1
-  {{ end }}
+  {{- end }}
+  {{- end }}
   {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}
   updateStrategy:
     type: OnDelete

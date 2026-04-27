@@ -1,0 +1,21 @@
+{{/* Validation checks — no K8s resources are defined here */}}
+
+{{- if and ((.Values.ephemeralStorage).logs).enabled (eq .Values.ephemeralStorage.logs.path "/nexus-data") }}
+  {{- fail "ephemeralStorage.logs.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/log" }}
+{{- end }}
+
+{{- if and ((.Values.ephemeralStorage).supportContent).enabled (eq .Values.ephemeralStorage.supportContent.path "/nexus-data") }}
+  {{- fail "ephemeralStorage.supportContent.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/tmp" }}
+{{- end }}
+
+{{- if .Values.hpa.enabled }}
+  {{- if not .Values.statefulset.clustered }}
+    {{- fail "hpa.enabled requires statefulset.clustered to be true — HPA is only supported in clustered mode" }}
+  {{- end }}
+  {{- if lt (int .Values.hpa.minReplicas) 2 }}
+    {{- fail "hpa.minReplicas must be >= 2 — NXRM HA requires at least 2 replicas" }}
+  {{- end }}
+  {{- if .Values.statefulset.replicaCount }}
+    {{- fail "hpa.enabled and statefulset.replicaCount cannot both be set — remove statefulset.replicaCount when using HPA" }}
+  {{- end }}
+{{- end }}

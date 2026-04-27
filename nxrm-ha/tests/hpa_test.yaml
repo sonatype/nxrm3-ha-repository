@@ -1,0 +1,236 @@
+suite: test horizontal pod autoscaler
+templates:
+  - hpa.yaml
+  - statefulset.yaml
+  - validate.yaml
+release:
+  name: "test-release"
+  namespace: "test-namespace"
+chart:
+  version: "latest"
+  appVersion: "latest"
+
+# NOTE: every test that enables HPA must also set statefulset.replicaCount: null
+# because the default value is 3 and the validation rule rejects both being set.
+
+tests:
+  # ── Default behaviour ────────────────────────────────────────────────────────
+
+  - it: should not create HPA resource when hpa.enabled is false (default)
+    template: hpa.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should set replicas on StatefulSet when hpa is disabled (default)
+    template: statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  # ── HPA resource creation ────────────────────────────────────────────────────
+
+  - it: should create HPA resource when hpa.enabled is true
+    template: hpa.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: HorizontalPodAutoscaler
+      - isAPIVersion:
+          of: autoscaling/v2
+
+  - it: should target the correct StatefulSet
+    template: hpa.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: StatefulSet
+      - equal:
+          path: spec.scaleTargetRef.apiVersion
+          value: apps/v1
+      - matchRegex:
+          path: spec.scaleTargetRef.name
+          pattern: "test-release"
+
+  - it: should set minReplicas and maxReplicas from values
+    template: hpa.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 10
+
+  - it: should configure CPU utilization metric
+    template: hpa.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 75
+
+  - it: should configure memory utilization metric
+    template: hpa.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 80
+
+  - it: should configure conservative scale-down behavior from default values
+    template: hpa.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - equal:
+          path: spec.behavior.scaleDown.stabilizationWindowSeconds
+          value: 300
+      - contains:
+          path: spec.behavior.scaleDown.policies
+          content:
+            type: Percent
+            value: 50
+            periodSeconds: 60
+
+  # ── StatefulSet replicas guard ───────────────────────────────────────────────
+
+  - it: should not set replicas on StatefulSet when hpa is enabled
+    template: statefulset.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - notExists:
+          path: spec.replicas
+
+  # ── HPA namespace ────────────────────────────────────────────────────────────
+
+  - it: should deploy HPA in the same namespace as the StatefulSet
+    template: hpa.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: nexusrepo
+
+  # ── Validation rules (FR-2.5) ────────────────────────────────────────────────
+
+  - it: should fail when hpa.enabled is true but statefulset.clustered is false
+    template: validate.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.clustered: false
+      statefulset.replicaCount: null
+    asserts:
+      - failedTemplate:
+          errorMessage: "hpa.enabled requires statefulset.clustered to be true — HPA is only supported in clustered mode"
+
+  - it: should fail when hpa.minReplicas is less than 2
+    template: validate.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 1
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - failedTemplate:
+          errorMessage: "hpa.minReplicas must be >= 2 — NXRM HA requires at least 2 replicas"
+
+  - it: should fail when both hpa.enabled and statefulset.replicaCount are set
+    template: validate.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: 3
+    asserts:
+      - failedTemplate:
+          errorMessage: "hpa.enabled and statefulset.replicaCount cannot both be set — remove statefulset.replicaCount when using HPA"
+
+  - it: should not fail validation when hpa is disabled (default)
+    template: validate.yaml
+    asserts:
+      - notFailedTemplate: {}
+
+  - it: should not fail validation when hpa is enabled with valid config (no explicit replicaCount)
+    template: validate.yaml
+    set:
+      hpa.enabled: true
+      hpa.minReplicas: 2
+      hpa.maxReplicas: 10
+      hpa.targetCPUUtilizationPercentage: 75
+      hpa.targetMemoryUtilizationPercentage: 80
+      statefulset.replicaCount: null
+    asserts:
+      - notFailedTemplate: {}
