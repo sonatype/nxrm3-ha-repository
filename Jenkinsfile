@@ -12,6 +12,10 @@
  */
 @Library(['private-pipeline-library', 'jenkins-shared']) _
 
+if (!currentBuild.fullProjectName.contains('main')) {
+  properties([disableConcurrentBuilds(abortPrevious: true)])
+}
+
 dockerizedBuildPipeline(
   retentionPolicy: RetentionPolicy.TEN_BUILDS,
   buildAndTest: {

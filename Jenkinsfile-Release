@@ -12,8 +12,6 @@
  */
 @Library(['private-pipeline-library', 'jenkins-shared']) _
 
-def buildImageId = "nxrm3-ha-build:${env.BUILD_NUMBER}"
-
 properties([
   parameters([
     string(
@@ -33,6 +31,7 @@ pipeline {
     buildDiscarder(
       logRotator(numToKeepStr: '10')
     )
+    timeout(time: 15, unit: 'MINUTES')
     timestamps()
   }
   stages {
@@ -59,9 +58,12 @@ pipeline {
     }
     stage('Build and Test') {
       steps {
-        dockerPrepareBuildImage(buildImageId)
-        withDockerImage(buildImageId) {
-          sh './build.sh'
+        script {
+          def buildImageId = "nxrm3-ha-build:${env.BUILD_NUMBER}"
+          dockerPrepareBuildImage(buildImageId)
+          withDockerImage(buildImageId) {
+            sh './build.sh'
+          }
         }
       }
     }
