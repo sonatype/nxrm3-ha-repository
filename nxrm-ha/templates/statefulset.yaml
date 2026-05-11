@@ -15,11 +15,13 @@ metadata:
     {{ toYaml .Values.statefulset.annotations | nindent 4 }}
 {{- end }}
 spec:
+  {{- if not .Values.hpa.enabled }}
   {{- if .Values.statefulset.clustered }}
-  replicas: {{.Values.statefulset.replicaCount}}
-  {{ else }}
+  replicas: {{ .Values.statefulset.replicaCount }}
+  {{- else }}
   replicas: 1
-  {{ end }}
+  {{- end }}
+  {{- end }}
   {{- if not .Values.statefulset.container.env.zeroDowntimeEnabled }}
   updateStrategy:
     type: OnDelete
@@ -54,9 +56,37 @@ spec:
       serviceAccountName: {{ include "nexus.serviceAccountName" . }}
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.statefulset.container.terminationGracePeriod }}
-      {{- if .Values.statefulset.initContainers }}
+      {{- if or .Values.statefulset.initContainers .Values.ephemeralStorage.logs.enabled }}
       initContainers:
+        {{- if .Values.statefulset.initContainers }}
         {{ toYaml .Values.statefulset.initContainers | nindent 8 }}
+        {{- end }}
+        {{- if .Values.ephemeralStorage.logs.enabled }}
+        - name: init-ephemeral-log-dir
+          image: busybox:1.33.1
+          command: [/bin/sh]
+          args:
+            - -c
+            - >-
+              mkdir -p /ephemeral-logs/tasks &&
+              mkdir -p /ephemeral-logs/audit &&
+              {{- if .Values.logStorage.combineTaskLogs }}
+              touch -a /ephemeral-logs/tasks/allTasks.log &&
+              {{- end }}
+              touch -a /ephemeral-logs/audit/audit.log &&
+              touch -a /ephemeral-logs/request.log &&
+              chown -R '200:200' /ephemeral-logs
+          volumeMounts:
+            - name: nxrm-ephemeral-logs
+              mountPath: /ephemeral-logs
+          resources:
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+        {{- end }}
       {{- end }}
       {{- if .Values.statefulset.nodeSelector }}
       nodeSelector:
@@ -208,6 +238,14 @@ spec:
           {{ end }}
             - name: nexus-data
               mountPath: /nexus-data
+          {{- if .Values.ephemeralStorage.logs.enabled }}
+            - name: nxrm-ephemeral-logs
+              mountPath: {{ .Values.ephemeralStorage.logs.path }}
+          {{- end }}
+          {{- if .Values.ephemeralStorage.supportContent.enabled }}
+            - name: nxrm-ephemeral-support
+              mountPath: {{ .Values.ephemeralStorage.supportContent.path }}
+          {{- end }}
           {{- if .Values.logStorage.combineTaskLogs }}
             - name: logback-tasklogfile-override
               mountPath: /nexus-data/etc/logback/logback-tasklogfile-appender-override.xml
@@ -232,6 +270,10 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          {{- if .Values.ephemeralStorage.logs.enabled }}
+            - name: nxrm-ephemeral-logs
+              mountPath: {{ .Values.ephemeralStorage.logs.path }}
+          {{- end }}
           resources:
             {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
         - name: audit-log
@@ -240,6 +282,10 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          {{- if .Values.ephemeralStorage.logs.enabled }}
+            - name: nxrm-ephemeral-logs
+              mountPath: {{ .Values.ephemeralStorage.logs.path }}
+          {{- end }}
           resources:
             {{ toYaml .Values.statefulset.auditLogContainer.resources | nindent 12 }}
         {{- if .Values.logStorage.combineTaskLogs }}
@@ -249,6 +295,10 @@ spec:
           volumeMounts:
             - name: nexus-data
               mountPath: /nexus-data
+          {{- if .Values.ephemeralStorage.logs.enabled }}
+            - name: nxrm-ephemeral-logs
+              mountPath: {{ .Values.ephemeralStorage.logs.path }}
+          {{- end }}
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
         {{ end }}
@@ -307,6 +357,16 @@ spec:
               - key: logback-tasklogfile-appender-override.xml
                 path: logback-tasklogfile-appender-override.xml
       {{ end }}
+      {{- if .Values.ephemeralStorage.logs.enabled }}
+        - name: nxrm-ephemeral-logs
+          emptyDir:
+            sizeLimit: {{ .Values.ephemeralStorage.logs.sizeLimit }}
+      {{- end }}
+      {{- if .Values.ephemeralStorage.supportContent.enabled }}
+        - name: nxrm-ephemeral-support
+          emptyDir:
+            sizeLimit: {{ .Values.ephemeralStorage.supportContent.sizeLimit }}
+      {{- end }}
   {{- if  and (not .Values.pvc.volumeClaimTemplate.enabled) (not .Values.pvc.existingClaim) }}
         - name: nexus-data
           emptyDir:

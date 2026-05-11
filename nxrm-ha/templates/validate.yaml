@@ -1,0 +1,44 @@
+{{/* Validation checks — no K8s resources are defined here */}}
+
+{{- if .Values.ephemeralStorage.logs.enabled }}
+  {{- $logsPath := trimSuffix "/" .Values.ephemeralStorage.logs.path }}
+  {{- if eq $logsPath "/nexus-data" }}
+    {{- fail "ephemeralStorage.logs.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/log" }}
+  {{- end }}
+  {{- if not (hasPrefix "/nexus-data/" $logsPath) }}
+    {{- fail "ephemeralStorage.logs.path must be a subdirectory of /nexus-data (e.g. /nexus-data/log)" }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.ephemeralStorage.supportContent.enabled }}
+  {{- $supportPath := trimSuffix "/" .Values.ephemeralStorage.supportContent.path }}
+  {{- if eq $supportPath "/nexus-data" }}
+    {{- fail "ephemeralStorage.supportContent.path cannot be /nexus-data — that is reserved for the main PVC. Use a subdirectory such as /nexus-data/tmp" }}
+  {{- end }}
+  {{- if not (hasPrefix "/nexus-data/" $supportPath) }}
+    {{- fail "ephemeralStorage.supportContent.path must be a subdirectory of /nexus-data (e.g. /nexus-data/tmp)" }}
+  {{- end }}
+{{- end }}
+
+{{- if and .Values.ephemeralStorage.logs.enabled .Values.ephemeralStorage.supportContent.enabled }}
+  {{- $logsPath := trimSuffix "/" .Values.ephemeralStorage.logs.path }}
+  {{- $supportPath := trimSuffix "/" .Values.ephemeralStorage.supportContent.path }}
+  {{- if eq $logsPath $supportPath }}
+    {{- fail "ephemeralStorage.logs.path and ephemeralStorage.supportContent.path cannot be the same value. Use distinct subdirectories such as /nexus-data/log and /nexus-data/tmp" }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.hpa.enabled }}
+  {{- if not .Values.statefulset.clustered }}
+    {{- fail "hpa.enabled requires statefulset.clustered to be true — HPA is only supported in clustered mode" }}
+  {{- end }}
+  {{- if lt (int .Values.hpa.minReplicas) 2 }}
+    {{- fail "hpa.minReplicas must be >= 2 — NXRM HA requires at least 2 replicas" }}
+  {{- end }}
+  {{- if and (not (kindIs "invalid" .Values.statefulset.replicaCount)) (ne (int .Values.statefulset.replicaCount) 0) }}
+    {{- fail "hpa.enabled and statefulset.replicaCount cannot both be set — remove statefulset.replicaCount when using HPA" }}
+  {{- end }}
+  {{- if lt (int .Values.hpa.maxReplicas) (int .Values.hpa.minReplicas) }}
+    {{- fail "hpa.maxReplicas must be >= hpa.minReplicas" }}
+  {{- end }}
+{{- end }}

@@ -135,6 +135,43 @@ If you have used the `statefulset.name` parameter in version 87.1.0 or earlier, 
 2. See our [documentation on on-premises high availability deployments using Kubernetes](https://help.sonatype.com/en/option-2---on-premises-high-availability-deployment-using-kubernetes.html) for more information
 
 
+### Ephemeral Storage for Logs and Support Content
+
+By default, Nexus Repository logs (`/nexus-data/log`) and support content (`/nexus-data/tmp`) are stored inside the main `nexus-data` PVC. If you are already forwarding logs to a centralized system (e.g., AWS CloudWatch via Fluent Bit), you can redirect these paths to cheap, ephemeral (`emptyDir`) storage instead. This reduces PVC size requirements and storage costs, since the data does not need to survive a pod restart.
+
+> **_IMPORTANT:_** Ephemeral storage is wiped when a pod is restarted or rescheduled. Only enable these options if you have a log forwarding solution (e.g., Fluent Bit → CloudWatch) already in place. If you enable ephemeral log storage without a log forwarder, logs will be lost on pod restart.
+
+#### Enabling ephemeral log storage
+
+In your values.yaml, set:
+
+```yaml
+ephemeralStorage:
+  logs:
+    enabled: true
+    sizeLimit: "10Gi"      # adjust to your expected log volume
+    path: "/nexus-data/log" # must be a subdirectory of /nexus-data
+```
+
+#### Enabling ephemeral support content storage
+
+```yaml
+ephemeralStorage:
+  supportContent:
+    enabled: true
+    sizeLimit: "50Gi"      # adjust to your expected support zip volume
+    path: "/nexus-data/tmp" # must be a subdirectory of /nexus-data
+```
+
+Both features are independent — you can enable one without the other.
+
+> **_NOTE:_** The `path` value must be a subdirectory of `/nexus-data`, not `/nexus-data` itself. Setting `path` to `/nexus-data` will cause a Helm validation error because that path is reserved for the main PVC.
+
+#### Migration notes for existing users
+
+Existing users are unaffected — both `ephemeralStorage.logs.enabled` and `ephemeralStorage.supportContent.enabled` default to `false`. No action is required if you do not want to use ephemeral storage.
+
+
 ## Format Limitations
 HA supports all formats that PostgreSQL supports.
 
@@ -718,6 +755,133 @@ sonatype/nxrm-ha
 ```
 
 ---
+
+## Horizontal Pod Autoscaler (HPA)
+
+The chart includes opt-in support for a `HorizontalPodAutoscaler` that automatically scales the NXRM StatefulSet based on CPU and memory utilization.
+
+> **HPA is disabled by default.** Existing deployments are not affected.
+
+### Prerequisites
+
+1. **Kubernetes metrics-server** must be installed in your cluster. Without it the HPA controller cannot read resource utilization and will never scale.
+
+   ```bash
+   # Verify metrics-server is running
+   kubectl top nodes
+   ```
+
+   If the command fails, install metrics-server:
+
+   ```bash
+   helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+   helm upgrade --install metrics-server metrics-server/metrics-server -n kube-system
+   ```
+
+2. **Clustered mode is required.** HPA is only supported when `statefulset.clustered: true` (the default). A `helm install` with `hpa.enabled: true` and `statefulset.clustered: false` will fail with a clear error.
+
+3. **Do not set `statefulset.replicaCount` when using HPA.** HPA owns the replica count. Setting both will fail at install time with a clear error.
+
+### Enabling HPA
+
+```yaml
+hpa:
+  enabled: true
+  minReplicas: 2                          # Must be >= 2 for HA
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+
+# Remove or null out replicaCount when HPA is enabled
+statefulset:
+  replicaCount: null
+```
+
+### Disabling individual metrics
+
+Both CPU and memory metrics are enabled by default. To use only one metric for scaling, set the other to `null`:
+
+```yaml
+hpa:
+  enabled: true
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: null  # Memory-based scaling disabled
+```
+
+### Custom scale-up behavior
+
+By default, scale-up uses Kubernetes defaults (no stabilization, immediate scale). To configure custom scale-up policies:
+
+```yaml
+hpa:
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+```
+
+> **Note:** Scale-up behavior configuration is optional. If `behavior.scaleUp` is not set, Kubernetes applies its defaults (no stabilization window, immediate scaling up to maxReplicas).
+
+### Why conservative scale-down policies?
+
+NXRM is a stateful application connected to a shared PostgreSQL database. Aggressive scale-down carries two risks:
+
+- **Database connection exhaustion** — each NXRM pod holds a connection pool. Scaling down too many pods at once can cause the remaining pods to saturate their pools as traffic is redistributed.
+- **In-flight request loss** — artifact uploads and downloads in progress on a pod being terminated will fail.
+
+The defaults mitigate both:
+
+| Policy | Value | Reason |
+|--------|-------|--------|
+| `stabilizationWindowSeconds` | 300 | Waits 5 minutes before acting on a scale-down signal, smoothing transient dips |
+| Max scale-down | 50% per 60 s | Never removes more than half the pod fleet in any one-minute window |
+
+### Blob store rebalancing
+
+> **Important:** NXRM does **not** automatically rebalance blob store content when pods are added or removed. Scale events affect request routing only. Plan blob store topology (e.g., S3/Azure Blob) before enabling HPA to avoid uneven storage usage across pods.
+
+### Graceful shutdown
+
+NXRM's `terminationGracePeriodSeconds` (default: `120 s`) gives in-flight requests time to complete before a pod is removed. If your workloads include large artifact uploads that can exceed 120 seconds, increase this value:
+
+```yaml
+statefulset:
+  container:
+    terminationGracePeriod: 300  # 5 minutes
+```
+
+### Recommended starting targets
+
+| Workload | CPU target | Memory target |
+|----------|-----------|---------------|
+| Read-heavy (proxy/hosted) | 70–80% | 80% |
+| Write-heavy (CI uploads) | 60–70% | 75% |
+| Mixed | 75% | 80% |
+
+These are starting points. Monitor `kubectl top pods` after enabling HPA and adjust to your observed utilization patterns.
+
+### Complementary node-level scaling
+
+HPA scales pods within the existing node pool. To also scale the underlying nodes, configure your cloud provider's **Cluster Autoscaler** (AWS EKS, Azure AKS) or **Karpenter** alongside HPA.
+
+---
+
 ## Nexus Secrets
 
 ---
@@ -924,3 +1088,17 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `config.data`                                               | The data for the config map                                                                                                                                                                                                                                                                                                                                                      | `{}`                                                                                                                |
 | `config.mountPath`                                          | The file path to mount the config map into. Each key value pair in the config map is put on a separate line in the file                                                                                                                                                                                                                                                          | `/sonatype-nexus-conf`                                                                                              |
 | `logStorage.tailSecondaryLogs`                              | When set to `true`, enables sidecar containers for tailing secondary logs (request, audit, task). Useful for centralized log collection and troubleshooting.                                                                                                                                                                                                                      | `true`                                                                                                              |
+| `logStorage.combineTaskLogs`                                | When set to `true`, configures Nexus Repository to write all task logs to a single combined file (`allTasks.log`) instead of one file per task.                                                                                                                                                                                                                                  | `true`                                                                                                              |
+| `ephemeralStorage.logs.enabled`                             | When set to `true`, mounts an `emptyDir` volume at `ephemeralStorage.logs.path` so that Nexus Repository logs are stored on ephemeral storage instead of the main PVC. Only enable if log forwarding (e.g., Fluent Bit → CloudWatch) is configured — ephemeral storage is wiped on pod restart.                                                                                  | `false`                                                                                                             |
+| `ephemeralStorage.logs.sizeLimit`                           | The size limit for the ephemeral log volume. Kubernetes will evict the pod if usage exceeds this limit.                                                                                                                                                                                                                                                                          | `"10Gi"`                                                                                                            |
+| `ephemeralStorage.logs.path`                                | The mount path for the ephemeral log volume. Must be a subdirectory of `/nexus-data` (e.g., `/nexus-data/log`). Cannot be `/nexus-data` — that path is reserved for the main PVC.                                                                                                                                                                                                | `"/nexus-data/log"`                                                                                                 |
+| `ephemeralStorage.supportContent.enabled`                   | When set to `true`, mounts an `emptyDir` volume at `ephemeralStorage.supportContent.path` so that Nexus Repository support content (support zips, temp files) is stored on ephemeral storage instead of the main PVC.                                                                                                                                                            | `false`                                                                                                             |
+| `ephemeralStorage.supportContent.sizeLimit`                 | The size limit for the ephemeral support content volume. Kubernetes will evict the pod if usage exceeds this limit.                                                                                                                                                                                                                                                               | `"50Gi"`                                                                                                            |
+| `ephemeralStorage.supportContent.path`                      | The mount path for the ephemeral support content volume. Must be a subdirectory of `/nexus-data` (e.g., `/nexus-data/tmp`). Cannot be `/nexus-data` — that path is reserved for the main PVC.                                                                                                                                                                                    | `"/nexus-data/tmp"`                                                                                                 |
+| `hpa.enabled`                                               | Whether to create a `HorizontalPodAutoscaler` resource. When `true`, `statefulset.replicaCount` must be unset and `statefulset.clustered` must be `true`.                                                                                                                                                                                                                        | `false`                                                                                                             |
+| `hpa.minReplicas`                                           | Minimum number of replicas. Must be >= 2 for NXRM HA.                                                                                                                                                                                                                                                                                                                           | `2`                                                                                                                 |
+| `hpa.maxReplicas`                                           | Maximum number of replicas the HPA can scale up to.                                                                                                                                                                                                                                                                                                                              | `10`                                                                                                                |
+| `hpa.targetCPUUtilizationPercentage`                        | Average CPU utilization percentage across all pods that triggers scaling.                                                                                                                                                                                                                                                                                                        | `75`                                                                                                                |
+| `hpa.targetMemoryUtilizationPercentage`                     | Average memory utilization percentage across all pods that triggers scaling.                                                                                                                                                                                                                                                                                                     | `80`                                                                                                                |
+| `hpa.behavior.scaleDown.stabilizationWindowSeconds`         | Seconds the HPA waits before acting on a scale-down signal. Conservative default prevents thrashing.                                                                                                                                                                                                                                                                             | `300`                                                                                                               |
+| `hpa.behavior.scaleDown.policies`                           | List of scale-down policies. Default limits removal to 50% of pods per 60-second window to avoid connection pool exhaustion.                                                                                                                                                                                                                                                     | `[{type: Percent, value: 50, periodSeconds: 60}]`                                                                   |
