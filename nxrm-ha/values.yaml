@@ -11,11 +11,17 @@ serviceAccount:
   enabled: false
   name: nexus-repository-deployment-sa #This service account in managed by Helm
   labels: {}
-  annotations:
-    # Set annotations for service account. E.g. if deploying to AWS EKS
-    # and secrets manager is enabled then this role should have permissions for using secret manager.
-    # If using externaldns, role with route53 permissions needed by external-dns
-    # eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/nxrm-nexus-role
+  # For Azure Workload Identity, set:
+  # labels:
+  #   azure.workload.identity/use: "true"
+  annotations: {}
+  # For Azure Workload Identity, set:
+  # annotations:
+  #   azure.workload.identity/client-id: <your-azure-client-id>
+  #   azure.workload.identity/tenant-id: <your-azure-tenant-id>
+  # For AWS EKS with Secrets Manager or ExternalDNS, set:
+  # annotations:
+  #   eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/nxrm-nexus-role
 azure:
   enabled: false  #set to true to enable azure specific yamls/snippets
   keyvault:
@@ -258,6 +264,7 @@ externalsecrets:
     name: nexus-secret-store
     spec:
       provider:
+# Example for AWS Secrets Manager:
 #        aws:
 #          service: SecretsManager
 #          region: us-east-1
@@ -265,17 +272,13 @@ externalsecrets:
 #            jwt:
 #              serviceAccountRef:
 #                name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
-# Example for Azure
-#    spec:
-#      provider:
+# Example for Azure Key Vault with Workload Identity:
 #        azurekv:
 #          authType: WorkloadIdentity
-#          vaultUrl: "https://xx-xxxx-xx.vault.azure.net"
+#          vaultUrl: "https://<keyvault-name>.vault.azure.net/"
 #          serviceAccountRef:
-#            name: nexus-repository-deployment-sa # Use the same service account name as specified in serviceAccount.name
-# Example for Google (GCP)
-#    spec:
-#      provider:
+#            name: nexus-repository-dev-ha-sa # Use the same service account name as specified in serviceAccount.name
+# Example for Google Secret Manager:
 #        gcpsm:
 #          projectID: "nxrm-gcp-deployments"
 #          auth:
@@ -349,6 +352,7 @@ secret:
   azure:
     # a managed identity or service principal that has secrets management access to the key vault
     userAssignedIdentityID: "userAssignedIdentityID"
+    clientID: "" # For Workload Identity mode: set to the AAD application or managed identity client ID
     tenantId: "azureTenantId"
     keyvaultName: yourazurekeyvault
     useVMManagedIdentity: true
