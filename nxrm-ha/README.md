@@ -866,6 +866,41 @@ statefulset:
     terminationGracePeriod: 300  # 5 minutes
 ```
 
+#### preStop hooks
+
+During HPA scale-down, Kubernetes sends a `SIGTERM` to the pod immediately. Without a `preStop` hook, in-flight requests (artifact uploads, downloads) may be interrupted before the pod has time to drain connections gracefully.
+
+A `preStop` hook introduces a delay between the pod being marked for termination and receiving `SIGTERM`, giving load balancers and ingress controllers time to remove the pod from their routing tables:
+
+```yaml
+statefulset:
+  container:
+    preStop:
+      command: ["/bin/sh", "-c", "sleep 15 && kill -TERM 1"]
+```
+
+**How it works:**
+- Kubernetes marks the pod as `Terminating` and removes it from Service endpoints
+- The `preStop` hook runs — sleeps 15 seconds to allow in-flight requests to complete and load balancers to update
+- After the sleep, `SIGTERM` is sent to NXRM (PID 1), initiating a clean JVM shutdown
+- The pod has the remaining `terminationGracePeriodSeconds` to finish shutting down
+
+> **Tip:** Set `terminationGracePeriodSeconds` to at least `preStop sleep + expected shutdown time`. For example, a 15 s preStop sleep + 60 s JVM shutdown means `terminationGracePeriod` should be at least `90`.
+
+### Minimum node sizing for HA + HPA
+
+When using HPA with NXRM in HA mode, ensure your node pool has sufficient memory headroom for scale-up events. Each new replica requires its full `resources.requests.memory` allocation plus approximately 1 GiB of JVM overhead during cold-start.
+
+**Recommended formula:**
+
+```
+Available node pool memory >= maxReplicas × (requests.memory + ~1 GiB JVM overhead)
+```
+
+If nodes are memory-constrained, new pods may OOM during cold-start and enter `CrashLoopBackOff`. In this state, HPA will intentionally refuse to scale further — it observes high CPU but recognizes that adding more pods that cannot boot would not help. The user-visible symptom is "HPA is not scaling even though CPU is high."
+
+> **Minimum recommendation:** For HA deployments with HPA, plan for at least 8 GiB of available memory per NXRM replica in the node pool.
+
 ### Recommended starting targets
 
 | Workload | CPU target | Memory target |
