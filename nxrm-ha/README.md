@@ -286,101 +286,176 @@ Azure Key Vault is disabled by default. If you would like to store your database
     * Ensure `secret.aws.nexusSecret.enabled ` and `aws.secretmanager.enabled` are false
 
 
-##### External Secrets Operator
-- Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
-- Ensure you have granted the necessary permissions for accessing your external secret store:
-- You'll need to create a service account and create a trust relationship between Azure AD and that Kubernetes service account:
-    - See [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
-    - See 'Referenced Service Account' section of [Workload identity](https://external-secrets.io/latest/provider/azure-key-vault/#workload-identity)
+##### External Secrets Operator with Azure Workload Identity
 
-##### Guidance for setting up permissions needed for External Secrets Operator on Azure (AKS)
-- According to https://external-secrets.io/latest/provider/azure-key-vault/#authentication the recommended way to authenticate external secrets operator for Azure Key Vault is through workload identity.
-- We tried this out by following the steps on the page at: https://azure.github.io/azure-workload-identity/docs/quick-start.html which is referenced from https://external-secrets.io/latest/provider/azure-key-vault/#authentication :
-    - According to https://azure.github.io/azure-workload-identity/docs/quick-start.html you can either use the azwi (Azure Workload Identity) tool for Azure Active Directory (AAD) application or use az cli for  user-assigned managed identity, we opted for azwi tool. See next section for details.
+This section covers using the [External Secrets Operator (ESO)](https://external-secrets.io/latest/) with Azure Workload Identity to securely pull secrets from Azure Key Vault into your NXRM deployment — without storing credentials in Kubernetes.
 
-##### Setting up permissions using The Azure Workload Identity tool for Azure Active Directory (AAD) application
-- Install azwi :  See https://azure.github.io/azure-workload-identity/docs/installation/azwi.html for brew command
-- Open a shell
-    - [Set the following env variables](https://azure.github.io/azure-workload-identity/docs/quick-start.html#2-export-environment-variables):
-      ```
-      export APPLICATION_NAME=nexus-repo-aks-aad
-      export KEYVAULT_NAME=test-nexusha-secrets (your key vault name)
-      export KEYVAULT_SCOPE=$(az keyvault show --name "${KEYVAULT_NAME}" --query id -o tsv)
-      export SERVICE_ACCOUNT_NAMESPACE=nexusrepo (must be same as namespace in values.yaml of ha helm chart)
-      export SERVICE_ACCOUNT_NAME=nexus-repository-dev-ha-sa. (Must be same as that specified in values.yaml of ha helm chart)
-      export SERVICE_ACCOUNT_ISSUER=$(az aks show --resource-group nexus-repo-ha --name nexus-repo-ha-aks --query "oidcIssuerProfile.issuerUrl" -otsv)
-      ```
+> **Backward compatibility:** The existing Secret Store CSI Driver path (`azure.keyvault.enabled: true`) remains fully supported. Both approaches can coexist in the same cluster on different namespaces. Choose the one that best fits your operational model.
 
-    - [Create Key Vault](https://azure.github.io/azure-workload-identity/docs/quick-start.html#3-create-an-azure-key-vault-and-secret)
+###### Choosing between Secret Store CSI Driver and External Secrets Operator
 
-        - [Create an AAD application or user-assigned managed identity and grant permissions to access the secret](https://azure.github.io/azure-workload-identity/docs/quick-start.html#4-create-an-aad-application-or-user-assigned-managed-identity-and-grant-permissions-to-access-the-secret)
-            - `azwi serviceaccount create phase app --aad-application-name "${APPLICATION_NAME}"`
-            - Output should be like:
-                ```
-                INFO[0000] No subscription provided, using selected subscription from Azure CLI: REDACTED
-                INFO[0005] [aad-application] created an AAD application  clientID=REDACTED name=azwi-test objectID=REDACTED
-                WARN[0005] --service-principal-name not specified, falling back to AAD application name
-                INFO[0005] [aad-application] created service principal   clientID=REDACTED name=azwi-test objectID=REDACTED
-                ```
-            - Make a note of the client id value in the output as you’ll need it for your helm values.yaml. You’ll also need to know your Azure tenant id for your helm values.yaml. You can find out from the Azure portal or use this command to find out from the AAD application you just created:
-              `az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appOwnerOrganizationId' -otsv`
+| | Secret Store CSI Driver | External Secrets Operator (ESO) |
+|---|---|---|
+| **How secrets arrive** | Mounted as files in the pod via CSI volume | Synced into native Kubernetes Secrets |
+| **Secret rotation** | Automatic via CSI driver poll interval | Automatic via ESO `refreshInterval` |
+| **Multi-cloud support** | AWS + Azure only | AWS, Azure, GCP, HashiCorp Vault, and more |
+| **Authentication** | Pod identity / managed identity | Workload Identity (recommended) |
+| **Kubernetes-native** | Requires CSI driver DaemonSet | CRD-based, no DaemonSet needed |
+| **Best for** | Simple single-cloud deployments | Multi-cloud, GitOps, or centralized secret management |
 
-            - Set access policy for the AAD application or user-assigned managed identity to access the keyvault secret:
-                - If your key vault is using RBAC use the command below
-                  ```
-                  export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
-                  az role assignment create --role "Key Vault Secrets User" --assignee $APPLICATION_CLIENT_ID --scope $KEYVAULT_SCOPE
-                  ```
-                  (RBAC Key Vault command source: https://learn.microsoft.com/en-us/azure/aks/csi-secrets-store-identity-access#configure-managed-identity )
+###### Prerequisites
 
-                - If your Key vault is not using RBAC (i.e. if you’re using user-assigned managed identity) then you can use command below:
-                  ```
-                  export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
-                  az keyvault set-policy --name "${KEYVAULT_NAME}" --secret-permissions get --spn "${APPLICATION_CLIENT_ID}"
-                  ```
-                  (source: https://azure.github.io/azure-workload-identity/docs/quick-start.html#4-create-an-aad-application-or-user-assigned-managed-identity-and-grant-permissions-to-access-the-secret )
-            - Skip [Create a Kubernetes service account](https://azure.github.io/azure-workload-identity/docs/quick-start.html#5-create-a-kubernetes-service-account)
-                - We will skip this since our nxrm-ha helm chart will be doing this for us. We’ll just need to make sure we specify the appropriate annotations and labels to the service account the helm chart will create (see below)
+Before enabling External Secrets with Workload Identity, ensure:
 
-            - [Establish federated identity credential between the identity and the service account issuer & subject](https://azure.github.io/azure-workload-identity/docs/quick-start.html#6-establish-federated-identity-credential-between-the-identity-and-the-service-account-issuer--subject)
-              ``` 
-                azwi serviceaccount create phase federated-identity \ 
-                --aad-application-name "${APPLICATION_NAME}" \ 
-                --service-account-namespace "${SERVICE_ACCOUNT_NAMESPACE}" \ 
-                --service-account-name "${SERVICE_ACCOUNT_NAME}" \ 
-                --service-account-issuer-url "${SERVICE_ACCOUNT_ISSUER}"
-              ```
-                - Output should be like:
-                  ```
-                    INFO[0000] No subscription provided, using selected subscription from Azure CLI: REDACTED
-                    INFO[0032] [federated-identity] added federated credential  objectID=REDACTED subject="system:serviceaccount:default:workload-identity-sa"
-                  ```
-            - Update your nxrm-ha values.yaml:
-                - Service account section:
-                  ```
-                  serviceAccount:
-                     enabled: true
-                     name: nexus-repository-dev-ha-sa #
-                     labels:
-                        azure.workload.identity/use: "true"
-                     annotations:
-                        azure.workload.identity/client-id: ab67cbbb-e374-4586-bcb6-8d80df659b41
-                        azure.workload.identity/tenant-id: bd28fc0b-f086-430f-ac20-16268536c81f
-                  ```
-                - External secrets:
-                  ```
-                  externalsecrets:
-                     enabled: true
-                     secretstore:
-                        name: nexus-secret-store
-                        spec:
-                           provider:
-                              azurekv:
-                                 authType: WorkloadIdentity
-                                 vaultUrl: "https://test-nexusha-secrets.vault.azure.net/" #use your key vault url here
-                                 serviceAccountRef:
-                                    name: nexus-repository-dev-ha-sa # use same service account name as specified in serviceAccount.name
-                  ```
+1. **AKS cluster** created with OIDC issuer and Workload Identity enabled:
+   ```bash
+   # For new clusters:
+   az aks create -g <rg> -n <aks-name> --enable-oidc-issuer --enable-workload-identity
+
+   # For existing clusters:
+   az aks update -g <rg> -n <aks-name> --enable-oidc-issuer --enable-workload-identity
+   ```
+
+2. **External Secrets Operator** installed on the cluster:
+   ```bash
+   helm repo add external-secrets https://charts.external-secrets.io
+   helm install external-secrets external-secrets/external-secrets \
+     -n external-secrets --create-namespace
+   ```
+
+3. **Azure Key Vault** provisioned with the secrets NXRM needs (see step 5 below).
+
+> **Important:** If any of these prerequisites are missing, the SecretStore will remain in `Ready=False` with no helpful error message. Verify all prerequisites before enabling ESO in the chart.
+
+###### Step-by-step Azure setup
+
+**1. Create a User Assigned Managed Identity:**
+```bash
+az identity create -g <rg> -n nxrm-wi
+```
+
+**2. Get the AKS OIDC issuer URL:**
+```bash
+OIDC_URL=$(az aks show -g <aks-rg> -n <aks-name> \
+  --query oidcIssuerProfile.issuerUrl -o tsv)
+```
+
+**3. Create a federated credential mapping the Kubernetes ServiceAccount to the managed identity:**
+```bash
+az identity federated-credential create \
+  -g <rg> \
+  --identity-name nxrm-wi \
+  -n fed-nxrm \
+  --issuer "$OIDC_URL" \
+  --subject system:serviceaccount:<namespace>:<sa-name> \
+  --audience api://AzureADTokenExchange
+```
+Replace `<namespace>` with your NXRM namespace (e.g., `nexusrepo`) and `<sa-name>` with the ServiceAccount name you’ll use in values.yaml.
+
+**4. Grant the managed identity `Key Vault Secrets User` on your Key Vault:**
+```bash
+az role assignment create \
+  --role "Key Vault Secrets User" \
+  --assignee-object-id <umi-principal-id> \
+  --assignee-principal-type ServicePrincipal \
+  --scope <kv-resource-id>
+```
+You can find the principal ID with:
+```bash
+az identity show -g <rg> -n nxrm-wi --query principalId -o tsv
+```
+
+**5. Populate Azure Key Vault with the required secrets:**
+
+The chart’s ExternalSecrets reference these secrets by default:
+
+| Chart secret | Default Key Vault secret name | Contains |
+|---|---|---|
+| Database credentials | `nxrm-db-user`, `nxrm-db-password`, `nxrm-db-host` | PostgreSQL user, password, host |
+| Admin password | `nxrm-admin-password` | Initial NXRM admin password |
+| License | `nxrm-license` | Nexus Repository Pro license (base64-encoded) |
+
+> **Note:** Azure Key Vault secret names must be 1-127 characters containing only alphanumerics and dashes. The chart defaults (`username`, `password`, `host`) are overridable via `externalsecrets.secrets.*.providerSecretName` — use the names above or your own convention.
+
+**6. Configure the Helm chart values:**
+```yaml
+serviceAccount:
+  enabled: true
+  name: <sa-name>
+  labels:
+    azure.workload.identity/use: "true"
+  annotations:
+    azure.workload.identity/client-id: <umi-client-id>
+    azure.workload.identity/tenant-id: <tenant-id>
+
+externalsecrets:
+  enabled: true
+  secretstore:
+    spec:
+      provider:
+        azurekv:
+          authType: WorkloadIdentity
+          vaultUrl: https://<kv-name>.vault.azure.net/
+          serviceAccountRef:
+            name: <sa-name>
+```
+
+You can find the client ID and tenant ID with:
+```bash
+az identity show -g <rg> -n nxrm-wi --query ‘{clientId: clientId, tenantId: tenantId}’ -o table
+```
+
+###### Migrating from Secret Store CSI Driver to External Secrets Operator
+
+If you are currently using the CSI Driver path (`azure.keyvault.enabled: true`) and want to migrate to ESO:
+
+1. **Complete the Azure setup above** (steps 1–5) — the managed identity, federated credential, and Key Vault RBAC must be in place before switching.
+
+2. **Update your values.yaml:**
+   ```yaml
+   # Disable the old CSI driver path
+   azure:
+     keyvault:
+       enabled: false
+
+   # Enable the new ESO path
+   serviceAccount:
+     enabled: true
+     name: <sa-name>
+     labels:
+       azure.workload.identity/use: "true"
+     annotations:
+       azure.workload.identity/client-id: <umi-client-id>
+       azure.workload.identity/tenant-id: <tenant-id>
+
+   externalsecrets:
+     enabled: true
+     secretstore:
+       spec:
+         provider:
+           azurekv:
+             authType: WorkloadIdentity
+             vaultUrl: https://<kv-name>.vault.azure.net/
+             serviceAccountRef:
+               name: <sa-name>
+   ```
+
+3. **Run `helm upgrade`** — the chart will create the SecretStore and ExternalSecret resources. ESO will sync your secrets from Key Vault into native Kubernetes Secrets.
+
+4. **Verify:** Check that secrets are synced:
+   ```bash
+   kubectl get externalsecrets -n <namespace>
+   # All should show STATUS = SecretSynced
+   kubectl get secretstore -n <namespace>
+   # Should show STATUS = Ready
+   ```
+
+5. **Clean up** (optional): Remove the CSI driver SecretProviderClass resources if no longer needed:
+   ```bash
+   kubectl delete secretproviderclass -n <namespace> --all
+   ```
+
+> **Note:** During migration, pods will restart to pick up the new secret source. Plan for a brief maintenance window in production.
                   
 ### GCP
 
