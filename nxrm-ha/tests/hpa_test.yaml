@@ -157,7 +157,7 @@ tests:
       hpa.targetMemoryUtilizationPercentage: 80
       statefulset.replicaCount: null
     asserts:
-      - notExists:
+      - isNull:
           path: spec.replicas
 
   # ── HPA namespace ────────────────────────────────────────────────────────────
@@ -221,7 +221,8 @@ tests:
   - it: should not fail validation when hpa is disabled (default)
     template: validate.yaml
     asserts:
-      - notFailedTemplate: {}
+      - hasDocuments:
+          count: 0
 
   - it: should not fail validation when hpa is enabled with valid config (no explicit replicaCount)
     template: validate.yaml
@@ -233,7 +234,8 @@ tests:
       hpa.targetMemoryUtilizationPercentage: 80
       statefulset.replicaCount: null
     asserts:
-      - notFailedTemplate: {}
+      - hasDocuments:
+          count: 0
 
   - it: should fail validation when maxReplicas is less than minReplicas
     template: validate.yaml

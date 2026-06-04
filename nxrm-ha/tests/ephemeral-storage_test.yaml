@@ -169,7 +169,8 @@ tests:
           enabled: false
           path: "/nexus-data"
     asserts:
-      - notFailedTemplate: {}
+      - hasDocuments:
+          count: 0
 
   - it: should fail when logs path has trailing slash resolving to /nexus-data
     template: validate.yaml
