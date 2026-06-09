@@ -995,7 +995,7 @@ tests:
             args: [ /bin/sh, -c, 'tail -n+1 -F /bar.log' ]
     asserts:
       - equal:
-          path: spec.template.spec.containers[4]
+          path: spec.template.spec.containers[6]
           value:
             name: foo-container
             image: fooimage:footag
@@ -1004,7 +1004,7 @@ tests:
             - -c
             - 'tail -n+1 -F /foo.log'
       - equal:
-          path: spec.template.spec.containers[5]
+          path: spec.template.spec.containers[7]
           value:
             name: bar-container
             image: barimage:bartag
@@ -1122,6 +1122,74 @@ tests:
 
       - equal:
           path: spec.template.spec.containers[3].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+  - it: should create outbound-log container
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[4].name
+          value: outbound-log
+
+      - equal:
+          path: spec.template.spec.containers[4].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[4].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/outbound-request.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[4].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[4].volumeMounts
+          value:
+            - name: nexus-data
+              mountPath: /nexus-data
+
+  - it: should create jvm-log container
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: spec.template.spec.containers[5].name
+          value: jvm-log
+
+      - equal:
+          path: spec.template.spec.containers[5].image
+          value: busybox:1.33.1
+
+      - equal:
+          path: spec.template.spec.containers[5].args
+          value: [ /bin/sh, -c, 'tail -n+1 -F /nexus-data/log/jvm.log' ]
+
+      - equal:
+          path: spec.template.spec.containers[5].resources
+          value:
+            # See help documentation, these are minimum system requirements
+            requests:
+              cpu: "0.1"
+              memory: "256Mi"
+            limits:
+              cpu: "0.2"
+              memory: "512Mi"
+
+      - equal:
+          path: spec.template.spec.containers[5].volumeMounts
           value:
             - name: nexus-data
               mountPath: /nexus-data
