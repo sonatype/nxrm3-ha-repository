@@ -302,6 +302,30 @@ spec:
           resources:
             {{ toYaml .Values.statefulset.taskLogContainer.resources | nindent 12 }}
         {{ end }}
+        - name: outbound-log
+          image: {{ .Values.statefulset.outboundLogContainer.image.repository }}:{{ .Values.statefulset.outboundLogContainer.image.tag }}
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/outbound-request.log']
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /nexus-data
+          {{- if .Values.ephemeralStorage.logs.enabled }}
+            - name: nxrm-ephemeral-logs
+              mountPath: {{ .Values.ephemeralStorage.logs.path }}
+          {{- end }}
+          resources:
+            {{ toYaml .Values.statefulset.outboundLogContainer.resources | nindent 12 }}
+        - name: jvm-log
+          image: {{ .Values.statefulset.jvmLogContainer.image.repository }}:{{ .Values.statefulset.jvmLogContainer.image.tag }}
+          args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/jvm.log']
+          volumeMounts:
+            - name: nexus-data
+              mountPath: /nexus-data
+          {{- if .Values.ephemeralStorage.logs.enabled }}
+            - name: nxrm-ephemeral-logs
+              mountPath: {{ .Values.ephemeralStorage.logs.path }}
+          {{- end }}
+          resources:
+            {{ toYaml .Values.statefulset.jvmLogContainer.resources | nindent 12 }}
         {{ end }}
         {{- if .Values.statefulset.additionalContainers }}
           {{ toYaml .Values.statefulset.additionalContainers | nindent 8 }}
