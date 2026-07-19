@@ -89,6 +89,8 @@ data:
     @INCLUDE nexus-request-log.conf
     @INCLUDE nexus-audit-log.conf
     @INCLUDE nexus-tasks-log.conf
+    @INCLUDE nexus-outbound-log.conf
+    @INCLUDE nexus-jvm-log.conf
 
   nexus-log.conf: |
     [INPUT]
@@ -227,6 +229,76 @@ data:
         region              ${AWS_REGION}
         log_group_name      /aws/containerinsights/${CLUSTER_NAME}/nexus-logs
         log_stream_prefix   ${HOST_NAME}-tasks.log-
+        auto_create_group   true
+        extra_user_agent    container-insights
+
+  nexus-outbound-log.conf: |
+    [INPUT]
+        Name                tail
+        Tag                 nexus.outbound-log
+        Path                /var/log/containers/nxrm-statefulset*nxrm_outbound-log-*.log
+        Parser              docker
+        DB                  /var/fluent-bit/state/flb_container.db
+        Mem_Buf_Limit       5MB
+        Skip_Long_Lines     Off
+        Refresh_Interval    10
+        Rotate_Wait         30
+        storage.type        filesystem
+        Read_from_Head      ${READ_FROM_HEAD}
+
+    [FILTER]
+        Name                kubernetes
+        Match               nexus.outbound-log
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_Tag_Prefix     application.var.log.containers.
+        Merge_Log           On
+        Merge_Log_Key       log_processed
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+        Labels              Off
+        Annotations         Off
+
+    [OUTPUT]
+        Name                cloudwatch_logs
+        Match               nexus.outbound-log
+        region              ${AWS_REGION}
+        log_group_name      /aws/containerinsights/${CLUSTER_NAME}/nexus-logs
+        log_stream_prefix   ${HOST_NAME}-outbound.log-
+        auto_create_group   true
+        extra_user_agent    container-insights
+
+  nexus-jvm-log.conf: |
+    [INPUT]
+        Name                tail
+        Tag                 nexus.jvm-log
+        Path                /var/log/containers/nxrm-statefulset*nxrm_jvm-log-*.log
+        Parser              docker
+        DB                  /var/fluent-bit/state/flb_container.db
+        Mem_Buf_Limit       5MB
+        Skip_Long_Lines     Off
+        Refresh_Interval    10
+        Rotate_Wait         30
+        storage.type        filesystem
+        Read_from_Head      ${READ_FROM_HEAD}
+
+    [FILTER]
+        Name                kubernetes
+        Match               nexus.jvm-log
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_Tag_Prefix     application.var.log.containers.
+        Merge_Log           On
+        Merge_Log_Key       log_processed
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+        Labels              Off
+        Annotations         Off
+
+    [OUTPUT]
+        Name                cloudwatch_logs
+        Match               nexus.jvm-log
+        region              ${AWS_REGION}
+        log_group_name      /aws/containerinsights/${CLUSTER_NAME}/nexus-logs
+        log_stream_prefix   ${HOST_NAME}-jvm.log-
         auto_create_group   true
         extra_user_agent    container-insights
 
