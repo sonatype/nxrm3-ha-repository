@@ -59,57 +59,57 @@ tests:
           value: "test-release-nxrm-ha-fluent-bit-config"
 
       - documentIndex: 4
-        exists:
-          path: data["nexus-log.conf"]
+        isNotNull:
+          path: data.[nexus-log.conf]
 
       - documentIndex: 4
-        exists:
-          path: data["nexus-request-log.conf"]
+        isNotNull:
+          path: data.[nexus-request-log.conf]
 
       - documentIndex: 4
-        exists:
-          path: data["nexus-audit-log.conf"]
+        isNotNull:
+          path: data.[nexus-audit-log.conf]
 
       - documentIndex: 4
-        exists:
-          path: data["nexus-tasks-log.conf"]
+        isNotNull:
+          path: data.[nexus-tasks-log.conf]
 
       - documentIndex: 4
-        exists:
-          path: data["nexus-outbound-log.conf"]
+        isNotNull:
+          path: data.[nexus-outbound-log.conf]
 
       - documentIndex: 4
-        exists:
-          path: data["nexus-jvm-log.conf"]
+        isNotNull:
+          path: data.[nexus-jvm-log.conf]
 
       - documentIndex: 4
         matchRegex:
-          path: data["fluent-bit.conf"]
+          path: data.[fluent-bit.conf]
           pattern: "@INCLUDE nexus-outbound-log.conf"
 
       - documentIndex: 4
         matchRegex:
-          path: data["fluent-bit.conf"]
+          path: data.[fluent-bit.conf]
           pattern: "@INCLUDE nexus-jvm-log.conf"
 
       - documentIndex: 4
         matchRegex:
-          path: data["nexus-outbound-log.conf"]
+          path: data.[nexus-outbound-log.conf]
           pattern: "Tag\\s+nexus.outbound-log"
 
       - documentIndex: 4
         matchRegex:
-          path: data["nexus-outbound-log.conf"]
+          path: data.[nexus-outbound-log.conf]
           pattern: "outbound-log-\\*\\.log"
 
       - documentIndex: 4
         matchRegex:
-          path: data["nexus-jvm-log.conf"]
+          path: data.[nexus-jvm-log.conf]
           pattern: "Tag\\s+nexus.jvm-log"
 
       - documentIndex: 4
         matchRegex:
-          path: data["nexus-jvm-log.conf"]
+          path: data.[nexus-jvm-log.conf]
           pattern: "jvm-log-\\*\\.log"
 
       - documentIndex: 5
