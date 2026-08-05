@@ -1193,3 +1193,166 @@ tests:
           value:
             - name: nexus-data
               mountPath: /nexus-data
+
+  - it: should not render securityContext on initContainer or sidecars by default
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+      logStorage:
+        tailSecondaryLogs: true
+        combineTaskLogs: true
+    asserts:
+      - isNull:
+          path: spec.template.spec.initContainers[1].securityContext
+      - isNull:
+          path: spec.template.spec.containers[1].securityContext
+      - isNull:
+          path: spec.template.spec.containers[2].securityContext
+      - isNull:
+          path: spec.template.spec.containers[3].securityContext
+      - isNull:
+          path: spec.template.spec.containers[4].securityContext
+      - isNull:
+          path: spec.template.spec.containers[5].securityContext
+
+  - it: should set securityContext on the ephemeral log initContainer
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+      statefulset:
+        initContainer:
+          securityContext:
+            runAsUser: 200
+            runAsGroup: 200
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: init-ephemeral-log-dir
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext
+          value:
+            runAsUser: 200
+            runAsGroup: 200
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+  - it: should set securityContext on the request-log sidecar
+    template: statefulset.yaml
+    set:
+      logStorage:
+        tailSecondaryLogs: true
+      statefulset:
+        requestLogContainer:
+          securityContext:
+            runAsUser: 200
+            runAsGroup: 200
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: request-log
+      - equal:
+          path: spec.template.spec.containers[1].securityContext
+          value:
+            runAsUser: 200
+            runAsGroup: 200
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+
+  - it: should set securityContext on the audit-log sidecar
+    template: statefulset.yaml
+    set:
+      logStorage:
+        tailSecondaryLogs: true
+      statefulset:
+        auditLogContainer:
+          securityContext:
+            runAsUser: 200
+            allowPrivilegeEscalation: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[2].name
+          value: audit-log
+      - equal:
+          path: spec.template.spec.containers[2].securityContext
+          value:
+            runAsUser: 200
+            allowPrivilegeEscalation: false
+
+  - it: should set securityContext on the tasks-log sidecar
+    template: statefulset.yaml
+    set:
+      logStorage:
+        tailSecondaryLogs: true
+        combineTaskLogs: true
+      statefulset:
+        taskLogContainer:
+          securityContext:
+            runAsUser: 200
+            allowPrivilegeEscalation: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[3].name
+          value: tasks-log
+      - equal:
+          path: spec.template.spec.containers[3].securityContext
+          value:
+            runAsUser: 200
+            allowPrivilegeEscalation: false
+
+  - it: should set securityContext on the outbound-log sidecar
+    template: statefulset.yaml
+    set:
+      logStorage:
+        tailSecondaryLogs: true
+        combineTaskLogs: true
+      statefulset:
+        outboundLogContainer:
+          securityContext:
+            runAsUser: 200
+            allowPrivilegeEscalation: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[4].name
+          value: outbound-log
+      - equal:
+          path: spec.template.spec.containers[4].securityContext
+          value:
+            runAsUser: 200
+            allowPrivilegeEscalation: false
+
+  - it: should set securityContext on the jvm-log sidecar
+    template: statefulset.yaml
+    set:
+      logStorage:
+        tailSecondaryLogs: true
+        combineTaskLogs: true
+      statefulset:
+        jvmLogContainer:
+          securityContext:
+            runAsUser: 200
+            allowPrivilegeEscalation: false
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[5].name
+          value: jvm-log
+      - equal:
+          path: spec.template.spec.containers[5].securityContext
+          value:
+            runAsUser: 200
+            allowPrivilegeEscalation: false

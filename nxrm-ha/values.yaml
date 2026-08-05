@@ -67,6 +67,30 @@ statefulset:
   preStart:
     command: null
 
+  # Container-level securityContext for the chart's built-in 'init-ephemeral-log-dir'
+  # initContainer, which is created when ephemeralStorage.logs.enabled is true.
+  # Note this is distinct from 'initContainers' below, which is a list of your own
+  # additional init containers (each of those can carry its own securityContext inline).
+  initContainer:
+    # IMPORTANT: this initContainer runs 'chown -R 200:200' on the ephemeral log
+    # volume, so it must run as root (uid 0) and must retain the CHOWN capability.
+    # Setting runAsUser to a non-zero value, runAsNonRoot: true, or dropping ALL
+    # capabilities makes the chown fail, the initContainer exit non-zero, and the
+    # pod never starts. readOnlyRootFilesystem: true is safe - it only writes to
+    # the mounted volume.
+    securityContext: {}
+    # allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem: true
+    # runAsUser: 0
+    # runAsNonRoot: false
+    # capabilities:
+    #   drop:
+    #     - ALL
+    #   add:
+    #     - CHOWN
+    #     - FOWNER
+    #     - DAC_OVERRIDE
+
   # # Add init containers. e.g. to be used to give specific permissions for nexus-data.
   # # Add your own init containers as needed
   initContainers:
@@ -144,6 +168,16 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
+    # Container-level securityContext for this log-tailing sidecar.
+    securityContext: {}
+    # allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 200
+    # runAsGroup: 200
+    # capabilities:
+    #   drop:
+    #     - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -155,6 +189,16 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
+    # Container-level securityContext for this log-tailing sidecar.
+    securityContext: {}
+    # allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 200
+    # runAsGroup: 200
+    # capabilities:
+    #   drop:
+    #     - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -166,6 +210,16 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
+    # Container-level securityContext for this log-tailing sidecar.
+    securityContext: {}
+    # allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 200
+    # runAsGroup: 200
+    # capabilities:
+    #   drop:
+    #     - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -177,6 +231,16 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
+    # Container-level securityContext for this log-tailing sidecar.
+    securityContext: {}
+    # allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 200
+    # runAsGroup: 200
+    # capabilities:
+    #   drop:
+    #     - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -188,6 +252,16 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
+    # Container-level securityContext for this log-tailing sidecar.
+    securityContext: {}
+    # allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 200
+    # runAsGroup: 200
+    # capabilities:
+    #   drop:
+    #     - ALL
     resources:
       limits:
         cpu: "0.2"

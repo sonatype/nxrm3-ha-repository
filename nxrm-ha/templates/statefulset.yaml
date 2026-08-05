@@ -64,6 +64,10 @@ spec:
         {{- if .Values.ephemeralStorage.logs.enabled }}
         - name: init-ephemeral-log-dir
           image: busybox:1.33.1
+          {{- with .Values.statefulset.initContainer }}{{- if .securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}{{- end }}
           command: [/bin/sh]
           args:
             - -c
@@ -266,6 +270,10 @@ spec:
         {{- if .Values.logStorage.tailSecondaryLogs }}
         - name: request-log
           image: {{ .Values.statefulset.requestLogContainer.image.repository }}:{{ .Values.statefulset.requestLogContainer.image.tag }}
+          {{- with .Values.statefulset.requestLogContainer }}{{- if .securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}{{- end }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/request.log']
           volumeMounts:
             - name: nexus-data
@@ -278,6 +286,10 @@ spec:
             {{ toYaml .Values.statefulset.requestLogContainer.resources | nindent 12 }}
         - name: audit-log
           image: {{ .Values.statefulset.auditLogContainer.image.repository }}:{{ .Values.statefulset.auditLogContainer.image.tag }}
+          {{- with .Values.statefulset.auditLogContainer }}{{- if .securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}{{- end }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/audit/audit.log']
           volumeMounts:
             - name: nexus-data
@@ -291,6 +303,10 @@ spec:
         {{- if .Values.logStorage.combineTaskLogs }}
         - name: tasks-log
           image: {{ .Values.statefulset.taskLogContainer.image.repository }}:{{ .Values.statefulset.taskLogContainer.image.tag }}
+          {{- with .Values.statefulset.taskLogContainer }}{{- if .securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}{{- end }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/tasks/allTasks.log']
           volumeMounts:
             - name: nexus-data
@@ -304,6 +320,10 @@ spec:
         {{ end }}
         - name: outbound-log
           image: {{ .Values.statefulset.outboundLogContainer.image.repository }}:{{ .Values.statefulset.outboundLogContainer.image.tag }}
+          {{- with .Values.statefulset.outboundLogContainer }}{{- if .securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}{{- end }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/outbound-request.log']
           volumeMounts:
             - name: nexus-data
@@ -316,6 +336,10 @@ spec:
             {{ toYaml .Values.statefulset.outboundLogContainer.resources | nindent 12 }}
         - name: jvm-log
           image: {{ .Values.statefulset.jvmLogContainer.image.repository }}:{{ .Values.statefulset.jvmLogContainer.image.tag }}
+          {{- with .Values.statefulset.jvmLogContainer }}{{- if .securityContext }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          {{- end }}{{- end }}
           args: [/bin/sh, -c, 'tail -n+1 -F /nexus-data/log/jvm.log']
           volumeMounts:
             - name: nexus-data
