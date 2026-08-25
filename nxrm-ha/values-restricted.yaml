@@ -1,0 +1,72 @@
+# Overlay for clusters that enforce the Kubernetes PodSecurity "restricted"
+# profile with no exemptions -- for example vSphere with Tanzu, OpenShift's
+# restricted-v2 SCC, or any namespace labelled:
+#
+#   pod-security.kubernetes.io/enforce=restricted
+#
+# Usage:
+#   helm install nxrm-ha sonatype/nxrm-ha -f values-restricted.yaml
+#
+# WHY THIS FILE EXISTS
+#
+# The chart's default values are already compliant for every container except
+# the two init containers that run 'chown -R 200:200' over the data and log
+# volumes. A chown needs either root or CAP_CHOWN, and "restricted" forbids
+# both (runAsUser=0 and capabilities.add are rejected outright). The two
+# requirements cannot be satisfied at once, so the defaults keep the chown -- it
+# is the safer choice for the majority of clusters, which do not enforce
+# "restricted" -- and this overlay removes it for clusters that do.
+#
+# HOW IT WORKS INSTEAD
+#
+# statefulset.podSecurityContext.fsGroup makes the kubelet apply group
+# ownership to mounted volumes, which is what the chown was doing by hand. The
+# volume arrives already group-writable by gid 200, so no privileged init step
+# is needed. fsGroupChangePolicy: OnRootMismatch keeps restarts cheap by
+# skipping the recursive relabel when the top-level ownership already matches.
+#
+# TRADE-OFFS
+#
+#   * Removing the chown initContainer means the log sidecars may crash-loop and
+#     back off for a few seconds on a cold volume until nxrm-app creates the log
+#     files. Startup is slightly slower; it is self-healing.
+#   * fsGroup only fixes group ownership, not the owning uid. That is sufficient
+#     because Nexus runs as uid 200 / gid 200 and the volume is group-writable.
+#   * Requires a CSI driver that honours fsGroup. Every in-tree and mainstream
+#     CSI provider does; verify if you use an unusual storage backend.
+
+statefulset:
+  # Pod-level context: this is what replaces the chown.
+  podSecurityContext:
+    runAsUser: 200
+    runAsGroup: 200
+    runAsNonRoot: true
+    fsGroup: 200
+    fsGroupChangePolicy: "OnRootMismatch"
+    seccompProfile:
+      type: RuntimeDefault
+
+  # Drop the chown-nexusdata-owner-to-nexus-and-init-log-dir initContainer.
+  # fsGroup above makes it unnecessary, and it cannot satisfy "restricted".
+  initContainers: []
+
+  # Built-in ephemeral-log initContainer (only rendered when
+  # ephemeralStorage.logs.enabled=true). It also chowns, so under "restricted"
+  # it must run unprivileged and rely on fsGroup. The mkdir/touch it performs
+  # still work; only the chown is a no-op, which fsGroup has already handled.
+  initContainer:
+    securityContext:
+      runAsUser: 200
+      runAsGroup: 200
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
+        # Explicitly null, not merely omitted: Helm deep-merges values files, so
+        # leaving this out would inherit capabilities.add from values.yaml and
+        # admission would still reject the pod.
+        add: null

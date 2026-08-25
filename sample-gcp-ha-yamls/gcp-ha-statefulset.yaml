@@ -33,12 +33,37 @@ spec:
       labels:
         app: nxrm
     spec:
+      # NEXUS-46386: pod-level context for PodSecurity-enforcing clusters.
+      # fsGroup lets the kubelet own mounted volumes to gid 200.
+      securityContext:
+        runAsUser: 200
+        runAsGroup: 200
+        runAsNonRoot: true
+        fsGroup: 200
+        fsGroupChangePolicy: "OnRootMismatch"
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         # chown nexus-data to 'nexus' user and init log directories/files for a new pod
         # otherwise the side car containers will crash a couple of times and backoff whilst waiting
         # for nxrm-app to start and this increases the total start up time.
         - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
           image: busybox:1.33.1
+          # Retains CHOWN: this container runs 'chown -R 200:200 /nexus-data'.
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - FOWNER
+                - DAC_OVERRIDE
           command: [/bin/sh]
           args:
             - -c
@@ -74,6 +99,14 @@ spec:
               memory: "8Gi" #This is an example. Update as needed
           securityContext:
             runAsUser: 200
+            runAsGroup: 200
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081

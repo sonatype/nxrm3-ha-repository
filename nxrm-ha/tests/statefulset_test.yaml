@@ -1194,7 +1194,10 @@ tests:
             - name: nexus-data
               mountPath: /nexus-data
 
-  - it: should not render securityContext on initContainer or sidecars by default
+  # NEXUS-46386: this previously asserted securityContext was null by default.
+  # A null securityContext is exactly what PodSecurity 'restricted' rejects, so
+  # the chart now ships compliant defaults and the assertion is inverted.
+  - it: should render a securityContext on every initContainer and sidecar by default
     template: statefulset.yaml
     set:
       ephemeralStorage:
@@ -1204,17 +1207,21 @@ tests:
         tailSecondaryLogs: true
         combineTaskLogs: true
     asserts:
-      - isNull:
+      - isNotNull:
+          path: spec.template.spec.initContainers[0].securityContext
+      - isNotNull:
           path: spec.template.spec.initContainers[1].securityContext
-      - isNull:
+      - isNotNull:
+          path: spec.template.spec.containers[0].securityContext
+      - isNotNull:
           path: spec.template.spec.containers[1].securityContext
-      - isNull:
+      - isNotNull:
           path: spec.template.spec.containers[2].securityContext
-      - isNull:
+      - isNotNull:
           path: spec.template.spec.containers[3].securityContext
-      - isNull:
+      - isNotNull:
           path: spec.template.spec.containers[4].securityContext
-      - isNull:
+      - isNotNull:
           path: spec.template.spec.containers[5].securityContext
 
   - it: should set securityContext on the ephemeral log initContainer
@@ -1239,16 +1246,15 @@ tests:
           path: spec.template.spec.initContainers[1].name
           value: init-ephemeral-log-dir
       - equal:
-          path: spec.template.spec.initContainers[1].securityContext
+          path: spec.template.spec.initContainers[1].securityContext.runAsUser
+          value: 200
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext.capabilities.drop
           value:
-            runAsUser: 200
-            runAsGroup: 200
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
+            - ALL
 
   - it: should set securityContext on the request-log sidecar
     template: statefulset.yaml
@@ -1267,12 +1273,11 @@ tests:
           path: spec.template.spec.containers[1].name
           value: request-log
       - equal:
-          path: spec.template.spec.containers[1].securityContext
-          value:
-            runAsUser: 200
-            runAsGroup: 200
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+          path: spec.template.spec.containers[1].securityContext.runAsUser
+          value: 200
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.readOnlyRootFilesystem
+          value: true
 
   - it: should set securityContext on the audit-log sidecar
     template: statefulset.yaml
@@ -1289,10 +1294,11 @@ tests:
           path: spec.template.spec.containers[2].name
           value: audit-log
       - equal:
-          path: spec.template.spec.containers[2].securityContext
-          value:
-            runAsUser: 200
-            allowPrivilegeEscalation: false
+          path: spec.template.spec.containers[2].securityContext.runAsUser
+          value: 200
+      - equal:
+          path: spec.template.spec.containers[2].securityContext.allowPrivilegeEscalation
+          value: false
 
   - it: should set securityContext on the tasks-log sidecar
     template: statefulset.yaml
@@ -1310,10 +1316,11 @@ tests:
           path: spec.template.spec.containers[3].name
           value: tasks-log
       - equal:
-          path: spec.template.spec.containers[3].securityContext
-          value:
-            runAsUser: 200
-            allowPrivilegeEscalation: false
+          path: spec.template.spec.containers[3].securityContext.runAsUser
+          value: 200
+      - equal:
+          path: spec.template.spec.containers[3].securityContext.allowPrivilegeEscalation
+          value: false
 
   - it: should set securityContext on the outbound-log sidecar
     template: statefulset.yaml
@@ -1331,10 +1338,11 @@ tests:
           path: spec.template.spec.containers[4].name
           value: outbound-log
       - equal:
-          path: spec.template.spec.containers[4].securityContext
-          value:
-            runAsUser: 200
-            allowPrivilegeEscalation: false
+          path: spec.template.spec.containers[4].securityContext.runAsUser
+          value: 200
+      - equal:
+          path: spec.template.spec.containers[4].securityContext.allowPrivilegeEscalation
+          value: false
 
   - it: should set securityContext on the jvm-log sidecar
     template: statefulset.yaml
@@ -1352,7 +1360,150 @@ tests:
           path: spec.template.spec.containers[5].name
           value: jvm-log
       - equal:
-          path: spec.template.spec.containers[5].securityContext
+          path: spec.template.spec.containers[5].securityContext.runAsUser
+          value: 200
+      - equal:
+          path: spec.template.spec.containers[5].securityContext.allowPrivilegeEscalation
+          value: false
+
+  # NEXUS-46386: chart must ship a PodSecurity 'restricted'-compliant pod spec
+  # out of the box. Every container needs allowPrivilegeEscalation=false,
+  # capabilities.drop=[ALL] and a seccompProfile, or admission rejects the pod.
+  - it: should set a restricted-compliant pod-level securityContext by default
+    template: statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 200
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 200
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 200
+
+  - it: should make nxrm-app restricted-compliant by default
+    template: statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: nxrm-app
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
           value:
-            runAsUser: 200
-            allowPrivilegeEscalation: false
+            - ALL
+
+  - it: should make the chown initContainer admission-compliant but keep CHOWN
+    template: statefulset.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: chown-nexusdata-owner-to-nexus-and-init-log-dir
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.capabilities.drop
+          value:
+            - ALL
+      # must retain CHOWN: the container runs 'chown -R 200:200 /nexus-data'
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.capabilities.add
+          value:
+            - CHOWN
+            - FOWNER
+            - DAC_OVERRIDE
+
+  - it: should make the ephemeral log initContainer admission-compliant by default
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: init-ephemeral-log-dir
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.initContainers[1].securityContext.capabilities.add
+          value:
+            - CHOWN
+            - FOWNER
+            - DAC_OVERRIDE
+
+  - it: should make all log sidecars restricted-compliant by default
+    template: statefulset.yaml
+    set:
+      logStorage:
+        tailSecondaryLogs: true
+        combineTaskLogs: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.capabilities.drop
+          value:
+            - ALL
+      - equal:
+          path: spec.template.spec.containers[2].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[3].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[4].securityContext.allowPrivilegeEscalation
+          value: false
+      - equal:
+          path: spec.template.spec.containers[5].securityContext.allowPrivilegeEscalation
+          value: false
+
+  # NEXUS-46386: under PodSecurity 'restricted' the ephemeral-log initContainer
+  # cannot chown (no root, no CAP_CHOWN). When podSecurityContext.fsGroup is set
+  # the kubelet already owns the volume to that gid, so the chown must be
+  # omitted rather than fail at runtime.
+  - it: should omit the ephemeral chown when fsGroup handles volume ownership
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+      statefulset:
+        podSecurityContext:
+          fsGroup: 200
+    asserts:
+      # index 1: the default chown-nexusdata initContainer occupies index 0
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: init-ephemeral-log-dir
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[1].args[1]
+          pattern: chown
+
+  - it: should still chown the ephemeral logs when fsGroup is not set
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+      statefulset:
+        podSecurityContext: null
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].args[1]
+          pattern: chown -R '200:200' /ephemeral-logs

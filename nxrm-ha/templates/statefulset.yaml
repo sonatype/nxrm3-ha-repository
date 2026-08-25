@@ -78,8 +78,15 @@ spec:
               touch -a /ephemeral-logs/tasks/allTasks.log &&
               {{- end }}
               touch -a /ephemeral-logs/audit/audit.log &&
+              {{- if (dig "podSecurityContext" "fsGroup" nil .Values.statefulset) }}
+              touch -a /ephemeral-logs/request.log
+              {{- else }}
               touch -a /ephemeral-logs/request.log &&
+              {{/* Only chown when fsGroup is unset. With fsGroup the kubelet
+                   already owns the volume to that gid, and a chown here would
+                   fail anyway under PodSecurity 'restricted' (NEXUS-46386). */}}
               chown -R '200:200' /ephemeral-logs
+              {{- end }}
           volumeMounts:
             - name: nxrm-ephemeral-logs
               mountPath: /ephemeral-logs

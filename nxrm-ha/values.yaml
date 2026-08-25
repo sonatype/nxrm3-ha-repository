@@ -39,6 +39,28 @@ aws:
     enabled: false #set this to true to enable sending of logs to CloudWatch
     fluentBitVersion: 2.28.0
     clusterName: nxrm-nexus
+    # securityContext for the fluent-bit DaemonSet (NEXUS-46386).
+    #
+    # Left empty on purpose. fluent-bit is a log-forwarding DaemonSet that mounts
+    # hostPath volumes (/var/log, /var/lib/docker/containers, /run/log/journal),
+    # and hostPath is rejected by the PodSecurity 'restricted' profile no matter
+    # what securityContext is set -- so this cannot be made 'restricted'-
+    # compliant. Deploy it to a namespace running 'baseline' or 'privileged', or
+    # disable aws.fluentbit and forward logs another way.
+    #
+    # These keys exist so you can still satisfy a 'baseline' policy or your own
+    # admission controller, eg:
+    #   podSecurityContext:
+    #     seccompProfile:
+    #       type: RuntimeDefault
+    #   securityContext:
+    #     allowPrivilegeEscalation: false
+    #     readOnlyRootFilesystem: false   # fluent-bit writes its state db
+    #     capabilities:
+    #       drop:
+    #         - ALL
+    podSecurityContext: {}
+    securityContext: {}
 statefulset:
   serviceName: nxrm-statefulset-service
   replicaCount: 3
@@ -46,9 +68,23 @@ statefulset:
   additionalVolumes:
   additionalVolumeMounts:
   additionalContainers:
-  podSecurityContext: {}
-  # fsGroup: 200
-  # fsGroupChangePolicy: "OnRootMismatch"
+  # Pod-level securityContext. Defaults satisfy the Kubernetes PodSecurity
+  # 'restricted' profile, which some platforms (eg. vSphere with Tanzu, or any
+  # namespace labelled pod-security.kubernetes.io/enforce=restricted) require
+  # before they will admit the pod at all.
+  #
+  # fsGroup makes the kubelet set group ownership on mounted volumes, so the
+  # nexus user (uid/gid 200) can write to /nexus-data without a privileged
+  # chown. fsGroupChangePolicy: OnRootMismatch keeps this cheap on restart by
+  # skipping the recursive relabel when the top-level ownership already matches.
+  podSecurityContext:
+    runAsUser: 200
+    runAsGroup: 200
+    runAsNonRoot: true
+    fsGroup: 200
+    fsGroupChangePolicy: "OnRootMismatch"
+    seccompProfile:
+      type: RuntimeDefault
   # # Add annotations to statefulset to enhance configurations
   annotations: {}
   podAnnotations: {}
@@ -78,18 +114,20 @@ statefulset:
     # capabilities makes the chown fail, the initContainer exit non-zero, and the
     # pod never starts. readOnlyRootFilesystem: true is safe - it only writes to
     # the mounted volume.
-    securityContext: {}
-    # allowPrivilegeEscalation: false
-    # readOnlyRootFilesystem: true
-    # runAsUser: 0
-    # runAsNonRoot: false
-    # capabilities:
-    #   drop:
-    #     - ALL
-    #   add:
-    #     - CHOWN
-    #     - FOWNER
-    #     - DAC_OVERRIDE
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
+        add:
+          - CHOWN
+          - FOWNER
+          - DAC_OVERRIDE
 
   # # Add init containers. e.g. to be used to give specific permissions for nexus-data.
   # # Add your own init containers as needed
@@ -99,6 +137,33 @@ statefulset:
     # for nxrm-app to start and this increases the total start up time.
     - name: chown-nexusdata-owner-to-nexus-and-init-log-dir
       image: busybox:1.33.1
+      # This container is injected verbatim into the pod spec, so its
+      # securityContext has to live here rather than in the template.
+      #
+      # It runs 'chown -R 200:200 /nexus-data', which needs CAP_CHOWN and root.
+      # Dropping ALL capabilities without adding CHOWN back makes the chown fail
+      # with "Operation not permitted", the initContainer exits non-zero, and the
+      # pod never starts. The settings below are what the 'restricted' profile
+      # checks (allowPrivilegeEscalation, capabilities.drop, seccompProfile)
+      # while still permitting the chown.
+      #
+      # To satisfy 'restricted' with no exemption at all, use
+      # values-restricted.yaml, which drops this container entirely and relies on
+      # statefulset.podSecurityContext.fsGroup for volume ownership instead.
+      securityContext:
+        runAsUser: 0
+        runAsNonRoot: false
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        seccompProfile:
+          type: RuntimeDefault
+        capabilities:
+          drop:
+            - ALL
+          add:
+            - CHOWN
+            - FOWNER
+            - DAC_OVERRIDE
       command: [/bin/sh]
       args:
         - -c
@@ -168,16 +233,20 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
-    # Container-level securityContext for this log-tailing sidecar.
-    securityContext: {}
-    # allowPrivilegeEscalation: false
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 200
-    # runAsGroup: 200
-    # capabilities:
-    #   drop:
-    #     - ALL
+    # Container-level securityContext for this log-tailing sidecar. It only reads
+    # log files from the shared volume, so it needs no capabilities at all and
+    # defaults to full PodSecurity 'restricted' compliance.
+    securityContext:
+      runAsUser: 200
+      runAsGroup: 200
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -189,16 +258,20 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
-    # Container-level securityContext for this log-tailing sidecar.
-    securityContext: {}
-    # allowPrivilegeEscalation: false
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 200
-    # runAsGroup: 200
-    # capabilities:
-    #   drop:
-    #     - ALL
+    # Container-level securityContext for this log-tailing sidecar. It only reads
+    # log files from the shared volume, so it needs no capabilities at all and
+    # defaults to full PodSecurity 'restricted' compliance.
+    securityContext:
+      runAsUser: 200
+      runAsGroup: 200
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -210,16 +283,20 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
-    # Container-level securityContext for this log-tailing sidecar.
-    securityContext: {}
-    # allowPrivilegeEscalation: false
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 200
-    # runAsGroup: 200
-    # capabilities:
-    #   drop:
-    #     - ALL
+    # Container-level securityContext for this log-tailing sidecar. It only reads
+    # log files from the shared volume, so it needs no capabilities at all and
+    # defaults to full PodSecurity 'restricted' compliance.
+    securityContext:
+      runAsUser: 200
+      runAsGroup: 200
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -231,16 +308,20 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
-    # Container-level securityContext for this log-tailing sidecar.
-    securityContext: {}
-    # allowPrivilegeEscalation: false
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 200
-    # runAsGroup: 200
-    # capabilities:
-    #   drop:
-    #     - ALL
+    # Container-level securityContext for this log-tailing sidecar. It only reads
+    # log files from the shared volume, so it needs no capabilities at all and
+    # defaults to full PodSecurity 'restricted' compliance.
+    securityContext:
+      runAsUser: 200
+      runAsGroup: 200
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -252,16 +333,20 @@ statefulset:
     image:
       repository: busybox
       tag: 1.33.1
-    # Container-level securityContext for this log-tailing sidecar.
-    securityContext: {}
-    # allowPrivilegeEscalation: false
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 200
-    # runAsGroup: 200
-    # capabilities:
-    #   drop:
-    #     - ALL
+    # Container-level securityContext for this log-tailing sidecar. It only reads
+    # log files from the shared volume, so it needs no capabilities at all and
+    # defaults to full PodSecurity 'restricted' compliance.
+    securityContext:
+      runAsUser: 200
+      runAsGroup: 200
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
     resources:
       limits:
         cpu: "0.2"
@@ -491,8 +576,24 @@ nexus:
   # Default the pods UID and GID to match the nexus3 container.
   # Customize or remove these values from the securityContext as appropriate for
   # your deployment environment.
+  #
+  # These defaults satisfy the PodSecurity 'restricted' profile. Note that
+  # runAsUser alone is not enough: 'restricted' also requires
+  # allowPrivilegeEscalation=false, capabilities.drop=[ALL], runAsNonRoot=true
+  # and a seccompProfile, otherwise admission rejects the whole pod.
+  #
+  # readOnlyRootFilesystem is deliberately NOT set here: Nexus writes to paths
+  # outside the /nexus-data mount (eg. its tmp and work directories).
   securityContext:
     runAsUser: 200
+    runAsGroup: 200
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop:
+        - ALL
   properties:
     override: false
     data: null # specify a list of key and values to override default nexus.properties
