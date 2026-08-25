@@ -329,10 +329,18 @@ spec:
         version: v1
         kubernetes.io/cluster-service: "true"
     spec:
+      {{- with .Values.aws.fluentbit.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: fluent-bit
           image: amazon/aws-for-fluent-bit:{{ .Values.aws.fluentbit.fluentBitVersion }}
           imagePullPolicy: Always
+          {{- with .Values.aws.fluentbit.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             - name: AWS_REGION
               valueFrom:

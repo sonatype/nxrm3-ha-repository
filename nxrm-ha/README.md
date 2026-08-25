@@ -176,6 +176,66 @@ Existing users are unaffected — both `ephemeralStorage.logs.enabled` and `ephe
 HA supports all formats that PostgreSQL supports.
 
 
+## Pod Security Standards
+
+The chart sets a `securityContext` on the pod and on every container it creates, so it can be
+deployed to clusters that enforce the Kubernetes [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+(for example vSphere with Tanzu, OpenShift, or any namespace labelled
+`pod-security.kubernetes.io/enforce`).
+
+The defaults satisfy the **baseline** profile and are compliant with **restricted** for every
+container except the `chown-nexusdata-owner-to-nexus-and-init-log-dir` init container. That
+container runs `chown -R 200:200 /nexus-data` so the `nexus` user (uid/gid 200) owns its data
+directory, which requires either root or `CAP_CHOWN` — both rejected by `restricted`. The two
+requirements cannot be satisfied simultaneously, so the default keeps the chown.
+
+### Deploying to a namespace that enforces `restricted`
+
+Use the supplied overlay:
+
+```bash
+helm install nxrm-ha sonatype/nxrm-ha -f values-restricted.yaml
+```
+
+It removes the chown init container and instead sets `statefulset.podSecurityContext.fsGroup`,
+which makes the kubelet apply group ownership to mounted volumes — achieving the same result
+without a privileged step. Combine it with a cloud sample by listing it last, so its values win:
+
+```bash
+helm install nxrm-ha sonatype/nxrm-ha \
+  -f sample-gcp-ha-yamls/gcp-values-eso-enabled.yaml \
+  -f values-restricted.yaml
+```
+
+Trade-offs are documented in `values-restricted.yaml`. In short: the log sidecars may briefly
+crash-loop on a cold volume until `nxrm-app` creates the log files, and your CSI driver must
+honour `fsGroup` (all mainstream drivers do).
+
+### Overriding the defaults
+
+Each container's context is independently configurable:
+
+| Value | Applies to |
+| --- | --- |
+| `statefulset.podSecurityContext` | pod-level (`fsGroup`, `seccompProfile`, …) |
+| `nexus.securityContext` | the `nxrm-app` container |
+| `statefulset.initContainers[].securityContext` | your own init containers, set inline |
+| `statefulset.initContainer.securityContext` | the built-in ephemeral-log init container |
+| `statefulset.requestLogContainer.securityContext` | `request-log` sidecar |
+| `statefulset.auditLogContainer.securityContext` | `audit-log` sidecar |
+| `statefulset.taskLogContainer.securityContext` | `tasks-log` sidecar |
+| `statefulset.outboundLogContainer.securityContext` | `outbound-log` sidecar |
+| `statefulset.jvmLogContainer.securityContext` | `jvm-log` sidecar |
+| `aws.fluentbit.securityContext` | `fluent-bit` DaemonSet container |
+
+Helm deep-merges values, so to *remove* an inherited key rather than change it, set it to `null`
+explicitly (for example `capabilities.add: null`).
+
+> **Note:** the `fluent-bit` DaemonSet mounts `hostPath` volumes (`/var/log`,
+> `/var/lib/docker/containers`, `/run/log/journal`). `hostPath` is rejected by `restricted`
+> regardless of `securityContext`, so deploy it to a `baseline`/`privileged` namespace or
+> disable `aws.fluentbit` and forward logs another way.
+
 ## Deployment Configuration
 
 ### Secrets
