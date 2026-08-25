@@ -36,14 +36,53 @@ This Helm chart is designed for Sonatype Nexus Repository Pro deployments with a
 > **_NOTE:_** Configuration of sticky sessions is not supported in this chart. If you require sticky sessions, you will need to configure this in your load balancer or ingress controller as applicable.
 
 ### Storage
-The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that
-you configure dynamic provisioning of persistent storage bound to a shared location, such as EFS/Azure File/NFS, which is accessible to all actives nodes in your Kubernetes cluster. 
+
+#### Shared Storage Recommendation for Multi-AZ HA Deployments
+
+For multi-availability zone (multi-AZ) HA deployments, Sonatype recommends dynamically provisioned network storage that is accessible from all availability zones (e.g., AWS EFS, Azure Files, NFS). This recommendation addresses a critical scheduling constraint with zonal block storage (e.g., AWS EBS, Azure Disk).
+
+**Why shared storage is recommended:**
+
+When using block storage like EBS, a PersistentVolumeClaim (PVC) is bound to a specific availability zone. If a pod must be rescheduled to a different AZ (due to node failure, maintenance, or scaling events), it cannot attach the PVC from the original AZ, causing the pod to fail to start. Network-accessible storage (EFS, Azure Files, NFS) eliminates this AZ-binding constraint, allowing pods to be scheduled on any node in any AZ within the cluster.
+
+**What "shared storage" means (and what it does NOT mean):**
+
+- **"Shared" means the storage infrastructure** (the EFS file system, Azure Files share, or NFS server) is reachable from all eligible Kubernetes nodes across availability zones.
+- **"Shared" does NOT mean all Nexus pods should mount and write to the same directory or use the same PVC.** Each Nexus Repository pod requires its own dedicated, isolated storage location.
+
+**Per-pod isolation requirement:**
+
+Each Nexus pod must receive its own dynamically provisioned PVC (or isolated directory/access point on shared storage). Pods must not share the same Nexus work directory.
+
+- For **AWS EFS**: Use dynamic provisioning with EFS access points so that each pod receives its own isolated subdirectory. Configure your storage class with `provisioningMode: efs-ap` and set `pvc.volumeClaimTemplate.enabled: true`.
+- For **Azure Files**: Each pod receives its own dynamically provisioned Azure File share when `pvc.volumeClaimTemplate.enabled: true`.
+- For **NFS**: Use the NFS subdir external provisioner to dynamically create isolated subdirectories for each pod.
+
+**Do NOT use a pre-created common PVC:**
+
+- Using `pvc.existingClaim` to mount a single PVC into all Nexus pods is **not supported for HA deployments**. The Nexus Repository work directory (`/nexus-data`) is not designed for multiple instances to write concurrently to the same location.
+- Always use dynamic provisioning (`pvc.volumeClaimTemplate.enabled: true`) for HA deployments.
+
+**Performance considerations:**
+
+Network file storage (EFS, Azure Files, NFS) can have different performance characteristics than block storage (EBS, Azure Disk). While EBS may offer more predictable and lower write latency, it introduces AZ-binding constraints that limit HA scheduling flexibility. The recommendation for EFS/Azure Files is primarily about resiliency and cross-AZ availability, not performance.
+
+#### Reducing writes to persistent storage
+
+If you use centralized log forwarding (e.g., Fluent Bit → CloudWatch, Splunk, etc.), you can configure Nexus Repository logs and temporary support content to use ephemeral storage (`emptyDir`) instead of the persistent volume. This reduces write traffic to your network storage and can improve performance. See [Ephemeral Storage for Logs and Support Content](#ephemeral-storage-for-logs-and-support-content) below for configuration details.
+
+---
+
+#### Default Configuration
+
+The default configuration uses an emptyDir volume for storing Nexus Repository logs. However, this is only for demonstration purposes. For production, we strongly recommend that you configure dynamic provisioning of persistent storage as described above.
 
 > **_Note:_**  Versions **66.0.0 and older** of this chart only supported local storage (e.g., EBS, Azure Disk, locally attached disks for on-prem deployments). 
 > 
 > From version **68.0.0+**, we recommend and support using **shared storage** (e.g., EFS, Azure File, NFS for on-prem deployments). However, this chart is still compatible with local storage.
 
 #### Continuing to use EBS/Azure Disk/on-prem local disk storage in versions 68.0.0+ - **(Not recommended)**
+
 If you wish to continue using EBS/Azure Disk/on-prem local disk storage, you can do so as follows:
 * Ensure the appropriate Container Storage Interface (CSI) driver(s) are installed on the Kubernetes cluster for your chosen cloud deployment.
 * Set `pvc.volumeClaimTemplate.enabled` to `true`
