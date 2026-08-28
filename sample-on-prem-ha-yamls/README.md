@@ -50,8 +50,8 @@ on each node in your Kubernetes cluster for storing Sonatype Nexus Repository ru
 7. [StatefulSet YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-statefulset.yaml)
 8. [Services YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-services.yaml)
 9. [Ingress YAML](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-ingress.yaml)
-10.[Docker Ingress YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-ingress.yaml)
-11.[Docker Service YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-service.yaml)
+10. [Docker Ingress YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-ingress.yaml)
+11. [Docker Service YAML (Optional)](https://github.com/sonatype/nxrm3-ha-repository/blob/main/sample-on-prem-ha-yamls/onprem-ha-docker-service.yaml)
 
 > **Note** The resources created by these YAMLs are not in the default namespace.
 
