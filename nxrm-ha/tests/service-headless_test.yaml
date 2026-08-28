@@ -74,7 +74,7 @@ tests:
 
       - equal:
           path: spec.ports[0].name
-          value: "nexus-ui"
+          value: "http-nexus-ui"
 
       - equal:
           path: spec.ports[0].port
@@ -82,7 +82,7 @@ tests:
 
       - equal:
           path: spec.ports[0].targetPort
-          value: "nexus-ui"
+          value: "http-nexus-ui"
   - it: should create headless service with additional headless annotations
     set:
       service:

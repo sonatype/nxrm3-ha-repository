@@ -718,7 +718,7 @@ tests:
           path: spec.template.spec.containers[0].ports[0]
           value:
               containerPort: 8081
-              name: nexus-ui
+              name: http-nexus-ui
 
       - equal:
           path: spec.template.spec.containers[0].ports[1]
