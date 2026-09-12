@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-@Library(['private-pipeline-library', 'jenkins-shared', 'nxrm-jenkins-shared']) _
+@Library(['private-pipeline-library', 'jenkins-shared']) _
 
 properties([
   parameters([
@@ -25,56 +25,75 @@ properties([
   ])
 ])
 
-final chartVersion = calculateChartVersion(params.chartVersion, params.appVersion)
-
-dockerizedBuildPipeline(
-  prepare: {
-    if (! params.appVersion) {
-      error('The appVersion is required.')
-    }
-    githubStatusUpdate('pending')
-  },
-  buildAndTest: {
-    sonatypeZionGitConfig()
-    runSafely "git checkout ${gitBranch(env)}"
-    runSafely "./upgrade.sh ./nxrm-ha ${chartVersion} ${params.appVersion}"
-    runSafely './build.sh'
-    runSafely 'git add nxrm-ha'
-  },
-  skipVulnerabilityScan: true,
-  archiveArtifacts: 'docs/*',
-  testResults: [],
-  deployCondition: { true },
-  deploy: {
-    runSafely 'git add docs'
-    runSafely "git commit -m 'Release Update for ${chartVersion}'"
-
-    sshagent(credentials: [sonatypeZionCredentialsId()]) {
-      runSafely 'git push'
-    }
-  },
-  postDeploy: {
-    // Create tags
-    String tagName = "${chartVersion}"
-    runSafely "git tag -a ${tagName} -m 'Release Update: ${chartVersion}'"
-    sshagent(credentials: [sonatypeZionCredentialsId()]) {
-      runSafely "git push origin ${tagName}"
-    }
-  },
-  onSuccess: {
-    nxrmBuildNotifications(currentBuild, env)
-  },
-  onFailure: {
-    nxrmBuildNotifications(currentBuild, env)
+pipeline {
+  agent { label 'ubuntu-zion' }
+  options {
+    buildDiscarder(
+      logRotator(numToKeepStr: '10')
+    )
+    timeout(time: 15, unit: 'MINUTES')
+    timestamps()
   }
-)
+  stages {
+    stage('Prepare') {
+      steps {
+        script {
+          if (!params.appVersion) {
+            error('The appVersion is required.')
+          }
+        }
+        sonatypeZionGitConfig()
+        runSafely "git checkout ${gitBranch(env)}"
+      }
+    }
+    stage('Update Chart Version') {
+      steps {
+        script {
+          def chartVersion = calculateChartVersion(params.chartVersion, params.appVersion)
+          env.CHART_VERSION = chartVersion
+        }
+        runSafely "./upgrade.sh ./nxrm-ha ${env.CHART_VERSION} ${params.appVersion}"
+        runSafely 'git add nxrm-ha'
+      }
+    }
+    stage('Build and Test') {
+      steps {
+        script {
+          def buildImageId = "nxrm3-ha-build:${env.BUILD_NUMBER}"
+          dockerPrepareBuildImage(buildImageId)
+          withDockerImage(buildImageId) {
+            sh './build.sh'
+          }
+        }
+      }
+    }
+    stage('Commit, Tag and Push') {
+      steps {
+        runSafely 'git add docs'
+        runSafely "git commit -m 'Release Update for ${env.CHART_VERSION}'"
+        runSafely "git tag -a ${env.CHART_VERSION} -m 'Release Update: ${env.CHART_VERSION}'"
+        sshagent(credentials: [sonatypeZionCredentialsId()]) {
+          runSafely "git push origin ${gitBranch(env)} ${env.CHART_VERSION}"
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      notifyChat(currentBuild: currentBuild, env: env, room: 'nxrm-notifications')
+    }
+    cleanup {
+      deleteDir()
+    }
+  }
+}
 
 String calculateChartVersion(final String chartVersion, final String appVersion) {
   if (chartVersion) {
     return chartVersion
   }
 
-  if (! appVersion) {
+  if (!appVersion) {
     error 'Failed to calculate chartVersion with no appVersion.'
   }
 
@@ -82,7 +101,7 @@ String calculateChartVersion(final String chartVersion, final String appVersion)
   final chartMajor = versionParts[1]
   final chartMinor = versionParts[2]
 
-  if (! chartMajor || ! chartMinor) {
+  if (!chartMajor || !chartMinor) {
     error "Failed to calculate chartVersion from appVersion: ${appVersion}"
   }
 
