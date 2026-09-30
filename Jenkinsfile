@@ -10,12 +10,14 @@
  * of Sonatype, Inc. Apache Maven is a trademark of the Apache Software Foundation. M2eclipse is a trademark of the
  * Eclipse Foundation. All other trademarks are the property of their respective owners.
  */
-@Library(['private-pipeline-library', 'jenkins-shared', 'nxrm-jenkins-shared']) _
+@Library(['private-pipeline-library', 'jenkins-shared']) _
+
+if (!currentBuild.fullProjectName.contains('main')) {
+  properties([disableConcurrentBuilds(abortPrevious: true)])
+}
 
 dockerizedBuildPipeline(
-  prepare: {
-    githubStatusUpdate('pending')
-  },
+  retentionPolicy: RetentionPolicy.TEN_BUILDS,
   buildAndTest: {
     sh './build.sh'
   },
@@ -23,9 +25,13 @@ dockerizedBuildPipeline(
   archiveArtifacts: 'docs/*',
   testResults: ['**/test-output.xml'],
   onSuccess: {
-    nxrmBuildNotifications(currentBuild, env)
+    if (env.BRANCH_NAME == 'main' && currentBuild?.previousBuild?.result =~ /FAILURE|UNSTABLE/) {
+      notifyChat(currentBuild: currentBuild, env: env, room: 'nxrm-notifications')
+    }
   },
   onFailure: {
-    nxrmBuildNotifications(currentBuild, env)
+    if (env.BRANCH_NAME == 'main') {
+      notifyChat(currentBuild: currentBuild, env: env, room: 'nxrm-notifications')
+    }
   }
 )
