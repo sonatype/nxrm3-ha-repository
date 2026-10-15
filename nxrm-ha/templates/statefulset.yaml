@@ -72,6 +72,12 @@ spec:
           args:
             - -c
             - >-
+              {{- /* Create the tree group-writable. With fsGroup the kubelet only
+                   gives the volume root the fsGroup gid and setgid, so files made
+                   here inherit that gid; without umask 0002 a root-run container
+                   leaves them 0644 and owned by uid 0, which nxrm-app (uid 200)
+                   cannot open for writing (NEXUS-55283). */}}
+              umask 0002 &&
               mkdir -p /ephemeral-logs/tasks &&
               mkdir -p /ephemeral-logs/audit &&
               {{- if .Values.logStorage.combineTaskLogs }}
@@ -82,9 +88,9 @@ spec:
               touch -a /ephemeral-logs/request.log
               {{- else }}
               touch -a /ephemeral-logs/request.log &&
-              {{/* Only chown when fsGroup is unset. With fsGroup the kubelet
-                   already owns the volume to that gid, and a chown here would
-                   fail anyway under PodSecurity 'restricted' (NEXUS-46386). */}}
+              {{/* Only chown when fsGroup is unset. With fsGroup the umask above
+                   makes the files writable through the fsGroup gid, and a chown
+                   here would fail anyway under PodSecurity 'restricted' (NEXUS-46386). */}}
               chown -R '200:200' /ephemeral-logs
               {{- end }}
           volumeMounts:

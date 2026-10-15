@@ -108,12 +108,15 @@ statefulset:
   # Note this is distinct from 'initContainers' below, which is a list of your own
   # additional init containers (each of those can carry its own securityContext inline).
   initContainer:
-    # IMPORTANT: this initContainer runs 'chown -R 200:200' on the ephemeral log
-    # volume, so it must run as root (uid 0) and must retain the CHOWN capability.
-    # Setting runAsUser to a non-zero value, runAsNonRoot: true, or dropping ALL
-    # capabilities makes the chown fail, the initContainer exit non-zero, and the
-    # pod never starts. readOnlyRootFilesystem: true is safe - it only writes to
-    # the mounted volume.
+    # IMPORTANT: when statefulset.podSecurityContext.fsGroup is unset, this
+    # initContainer runs 'chown -R 200:200' on the ephemeral log volume, so it must
+    # run as root (uid 0) and must retain the CHOWN capability. Setting runAsUser to
+    # a non-zero value, runAsNonRoot: true, or dropping ALL capabilities makes the
+    # chown fail, the initContainer exit non-zero, and the pod never starts. When
+    # fsGroup is set (the default) it skips the chown and creates the log files
+    # group-writable instead, so it can also run unprivileged (see
+    # values-restricted.yaml). readOnlyRootFilesystem: true is safe - it only
+    # writes to the mounted volume.
     securityContext:
       runAsUser: 0
       runAsNonRoot: false
