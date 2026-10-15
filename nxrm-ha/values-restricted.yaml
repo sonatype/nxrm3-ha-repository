@@ -51,9 +51,10 @@ statefulset:
   initContainers: []
 
   # Built-in ephemeral-log initContainer (only rendered when
-  # ephemeralStorage.logs.enabled=true). It also chowns, so under "restricted"
-  # it must run unprivileged and rely on fsGroup. The mkdir/touch it performs
-  # still work; only the chown is a no-op, which fsGroup has already handled.
+  # ephemeralStorage.logs.enabled=true). Under "restricted" it must run
+  # unprivileged and rely on fsGroup. With fsGroup set it skips the chown and
+  # creates the log files group-writable (umask 0002) instead, which needs no
+  # privilege.
   initContainer:
     securityContext:
       runAsUser: 200
