@@ -1475,8 +1475,9 @@ tests:
 
   # NEXUS-46386: under PodSecurity 'restricted' the ephemeral-log initContainer
   # cannot chown (no root, no CAP_CHOWN). When podSecurityContext.fsGroup is set
-  # the kubelet already owns the volume to that gid, so the chown must be
-  # omitted rather than fail at runtime.
+  # the files are made writable through that gid instead (umask 0002, see the
+  # NEXUS-55283 cases below), so the chown must be omitted rather than fail at
+  # runtime.
   - it: should omit the ephemeral chown when fsGroup handles volume ownership
     template: statefulset.yaml
     set:
@@ -1507,3 +1508,78 @@ tests:
       - matchRegex:
           path: spec.template.spec.initContainers[1].args[1]
           pattern: chown -R '200:200' /ephemeral-logs
+
+  # NEXUS-55283: with the default fsGroup and the default root initContainer the
+  # chown is skipped, so the files must be created group-writable or nxrm-app
+  # (uid 200) gets 'Permission denied' opening request.log, audit.log and
+  # allTasks.log. umask 0002 must come first so it applies to every mkdir/touch.
+  - it: should create the ephemeral log tree group-writable with default values
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: init-ephemeral-log-dir
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].args[1]
+          pattern: ^umask 0002 && mkdir -p /ephemeral-logs/tasks
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[1].args[1]
+          pattern: chown
+
+  - it: should create the ephemeral log tree group-writable when fsGroup is not set
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+      statefulset:
+        podSecurityContext: null
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].args[1]
+          pattern: ^umask 0002 &&
+
+  - it: should create the ephemeral log tree group-writable without combined task logs
+    template: statefulset.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+      logStorage:
+        combineTaskLogs: false
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[1].args[1]
+          pattern: ^umask 0002 &&
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[1].args[1]
+          pattern: allTasks\.log
+
+  # NEXUS-55283: values-restricted.yaml runs the initContainer as uid 200 with no
+  # capabilities. umask needs no privilege, so the same command must still render
+  # there without any chown.
+  - it: should create the ephemeral log tree group-writable with values-restricted.yaml
+    template: statefulset.yaml
+    values:
+      - ../values-restricted.yaml
+    set:
+      ephemeralStorage:
+        logs:
+          enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: init-ephemeral-log-dir
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.runAsUser
+          value: 200
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[1]
+          pattern: ^umask 0002 && mkdir -p /ephemeral-logs/tasks
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[0].args[1]
+          pattern: chown
