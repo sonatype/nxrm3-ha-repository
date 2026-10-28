@@ -1583,3 +1583,81 @@ tests:
       - notMatchRegex:
           path: spec.template.spec.initContainers[0].args[1]
           pattern: chown
+
+  # NEXUS-56047: preStop must be wired up from statefulset.container.preStop.command.
+  - it: should not render a lifecycle block when no hooks are set
+    template: statefulset.yaml
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: should render preStop from a YAML list
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          preStop:
+            command: ["/bin/sh", "-c", "sleep 15"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - sleep 15
+      - isNull:
+          path: spec.template.spec.containers[0].lifecycle.postStart
+
+  - it: should render preStop from a JSON-array string
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          preStop:
+            command: '["/bin/sh", "-c", "sleep 15"]'
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - sleep 15
+
+  - it: should render both postStart and preStop when both are set
+    template: statefulset.yaml
+    set:
+      statefulset:
+        postStart:
+          command: '["/bin/sh", "-c", "ls"]'
+        container:
+          preStop:
+            command: ["/bin/sh", "-c", "sleep 15"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.postStart.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - ls
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - sleep 15
+
+  - it: should render postStart from a YAML list
+    template: statefulset.yaml
+    set:
+      statefulset:
+        postStart:
+          command: ["/bin/sh", "-c", "ls"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.postStart.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - ls
+      - isNull:
+          path: spec.template.spec.containers[0].lifecycle.preStop

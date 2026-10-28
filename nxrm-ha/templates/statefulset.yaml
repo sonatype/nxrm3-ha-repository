@@ -134,11 +134,19 @@ spec:
           imagePullPolicy: {{ .Values.statefulset.container.pullPolicy }}
           securityContext:
             {{ toYaml .Values.nexus.securityContext | nindent 12 }}
+          {{- $preStop := .Values.statefulset.container.preStop }}
+          {{- if or .Values.statefulset.postStart.command (and $preStop $preStop.command) }}
           lifecycle:
-          {{- if .Values.statefulset.postStart.command }}
+            {{- with .Values.statefulset.postStart.command }}
             postStart:
               exec:
-                command: {{ .Values.statefulset.postStart.command }}
+                command: {{ if kindIs "string" . }}{{ . }}{{ else }}{{ toJson . }}{{ end }}
+            {{- end }}
+            {{- if and $preStop $preStop.command }}
+            preStop:
+              exec:
+                command: {{ if kindIs "string" $preStop.command }}{{ $preStop.command }}{{ else }}{{ toJson $preStop.command }}{{ end }}
+            {{- end }}
           {{- end }}
           ports:
             - name: nexus-ui
