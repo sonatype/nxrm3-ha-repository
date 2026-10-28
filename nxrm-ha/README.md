@@ -1042,20 +1042,20 @@ statefulset:
 
 #### preStop hooks
 
-During HPA scale-down, Kubernetes sends a `SIGTERM` to the pod immediately. Without a `preStop` hook, in-flight requests (artifact uploads, downloads) may be interrupted before the pod has time to drain connections gracefully.
+During HPA scale-down, Kubernetes sends a `SIGTERM` to the pod immediately. Without a `preStop` hook, the pod may still receive new requests (artifact uploads, downloads) from load balancers that have not yet removed it from their routing tables, and those requests can fail once shutdown begins.
 
-A `preStop` hook introduces a delay between the pod being marked for termination and receiving `SIGTERM`, giving load balancers and ingress controllers time to remove the pod from their routing tables:
+The `preStop` hook is not configured by default. Set `statefulset.container.preStop.command` (a YAML list or a JSON-array string) to enable it. A `preStop` hook introduces a delay between the pod being marked for termination and receiving `SIGTERM`, giving load balancers and ingress controllers time to remove the pod from their routing tables:
 
 ```yaml
 statefulset:
   container:
     preStop:
-      command: ["/bin/sh", "-c", "sleep 15 && kill -TERM 1"]
+      command: ["/bin/sh", "-c", "sleep 15"]
 ```
 
 **How it works:**
 - Kubernetes marks the pod as `Terminating` and removes it from Service endpoints
-- The `preStop` hook runs — sleeps 15 seconds to allow in-flight requests to complete and load balancers to update
+- The `preStop` hook runs — sleeps 15 seconds while NXRM keeps running, giving load balancers and ingress controllers time to stop routing new requests to the pod
 - After the sleep, `SIGTERM` is sent to NXRM (PID 1), initiating a clean JVM shutdown
 - The pod has the remaining `terminationGracePeriodSeconds` to finish shutting down
 
@@ -1171,6 +1171,7 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `statefulset.container.containerPort`                       | The Nexus Repository container's HTTP port                                                                                                                                                                                                                                                                                                                                       | 8081                                                                                                                |
 | `statefulset.container.pullPolicy`                          | The Nexus Repository docker image pull policy                                                                                                                                                                                                                                                                                                                                    | IfNotPresent                                                                                                        |
 | `statefulset.container.terminationGracePeriod`              | The time given for the pod to gracefully shut down                                                                                                                                                                                                                                                                                                                               | 120 seconds                                                                                                         |
+| `statefulset.container.preStop.command`                     | Command to run before the container receives SIGTERM (list or JSON-array string). Not set by default                                                                                                                                                                                                                                                                             | `null`                                                                                                              |
 | `statefulset.container.env.nexusDBName`                     | The name of the PostgreSQL database to use.                                                                                                                                                                                                                                                                                                                                      | nexus                                                                                                               |
 | `statefulset.container.env.nexusDBPort`                     | The database port of the PostgreSQL database to use.                                                                                                                                                                                                                                                                                                                             | 5432                                                                                                                |
 | `statefulset.container.env.install4jAddVmParams`            | Xmx and Xms settings for JVM                                                                                                                                                                                                                                                                                                                                                     | -Xms2703m -Xmx2703m                                                                                                 |
