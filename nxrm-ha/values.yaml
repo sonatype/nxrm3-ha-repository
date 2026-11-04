@@ -203,6 +203,11 @@ statefulset:
     containerPort: 8081
     pullPolicy: IfNotPresent
     terminationGracePeriod: 120
+    # Uncomment and modify this to run a command before the nexus container receives SIGTERM,
+    # e.g. to allow in-flight requests to drain. Accepts a YAML list or a JSON-array string.
+    # Keep terminationGracePeriod larger than the hook duration plus the expected shutdown time.
+    preStop:
+      command: null   # ["/bin/sh", "-c", "sleep 15"]
     env:
       nexusDBName: nexus
       nexusDBPort: 5432
