@@ -1661,3 +1661,54 @@ tests:
             - ls
       - isNull:
           path: spec.template.spec.containers[0].lifecycle.preStop
+
+  - it: should not render a lifecycle block when preStop.command is an empty list
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          preStop:
+            command: []
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: should not render a lifecycle block when preStop is null
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          preStop: null
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: should parse a preStop list command containing && and quotes
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          preStop:
+            command: ["/bin/sh", "-c", "echo \"bye\" && sleep 15"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - echo "bye" && sleep 15
+
+  - it: should parse a preStop JSON-string command containing && and quotes
+    template: statefulset.yaml
+    set:
+      statefulset:
+        container:
+          preStop:
+            command: '["/bin/sh", "-c", "echo \"bye\" && sleep 15"]'
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value:
+            - /bin/sh
+            - -c
+            - echo "bye" && sleep 15
