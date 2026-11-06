@@ -140,10 +140,13 @@ spec:
               value: "false"
             - name: INSTALL4J_ADD_VM_PARAMS
               value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=/nxrm-secrets/nxrm-license.lic \
-          -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
-          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:3306/${DB_NAME} \
-          -Dnexus.datastore.nexus.username=${DB_USER} \
-          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+          -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
+            - name: NEXUS_DATASTORE_NEXUS_JDBCURL
+              value: "jdbc:postgresql://$(DB_HOST):3306/$(DB_NAME)"
+            - name: NEXUS_DATASTORE_NEXUS_USERNAME
+              value: "$(DB_USER)"
+            - name: NEXUS_DATASTORE_NEXUS_PASSWORD
+              value: "$(DB_PASSWORD)"
           volumeMounts:
             - mountPath: /nxrm-secrets
               name: nexus-secret
