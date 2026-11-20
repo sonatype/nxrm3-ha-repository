@@ -540,12 +540,21 @@ tests:
             name: abc
             value: xyz
 
+      - equal:
+          path: spec.template.spec.containers[0].env[11]
+          value:
+            name: NEXUS_DATASTORE_NEXUS_JDBCURL
+            value: "jdbc:postgresql://$(DB_HOST):5432/$(DB_NAME)"
+
 
   - it: should not set additional environment variable when not specified
     template: statefulset.yaml
     asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[9].name
+          value: NEXUS_DATASTORE_NEXUS_JDBCURL
       - isNull:
-          path: spec.template.spec.containers[0].env[9]
+          path: spec.template.spec.containers[0].env[12]
 
   - it: should set nexus datastore enabled to true when clustered is false
     template: statefulset.yaml
@@ -558,10 +567,25 @@ tests:
           value:
             name: INSTALL4J_ADD_VM_PARAMS
             value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=${LICENSE_FILE} \
-          -Dnexus.datastore.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
-          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:5432/${DB_NAME} \
-          -Dnexus.datastore.nexus.username=${DB_USER} \
-          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+          -Dnexus.datastore.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].env[8].value
+          pattern: "nexus\\.datastore\\.nexus\\.(password|username|jdbcUrl)"
+      - equal:
+          path: spec.template.spec.containers[0].env[9]
+          value:
+            name: NEXUS_DATASTORE_NEXUS_JDBCURL
+            value: "jdbc:postgresql://$(DB_HOST):5432/$(DB_NAME)"
+      - equal:
+          path: spec.template.spec.containers[0].env[10]
+          value:
+            name: NEXUS_DATASTORE_NEXUS_USERNAME
+            value: "$(DB_USER)"
+      - equal:
+          path: spec.template.spec.containers[0].env[11]
+          value:
+            name: NEXUS_DATASTORE_NEXUS_PASSWORD
+            value: "$(DB_PASSWORD)"
 
   - it: should create nxrm-app container with dynamic nexusdata volume
     template: statefulset.yaml
@@ -861,10 +885,17 @@ tests:
           value:
             name: INSTALL4J_ADD_VM_PARAMS
             value: "-Xms2703m -Xmx2703m -Dnexus.licenseFile=${LICENSE_FILE} \
-          -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs \
-          -Dnexus.datastore.nexus.jdbcUrl=jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}?foo=bar \
-          -Dnexus.datastore.nexus.username=${DB_USER} \
-          -Dnexus.datastore.nexus.password=${DB_PASSWORD}"
+          -Dnexus.datastore.clustered.enabled=true -Djava.util.prefs.userRoot=${NEXUS_DATA}/javaprefs"
+
+      - notMatchRegex:
+          path: spec.template.spec.containers[0].env[8].value
+          pattern: "nexus\\.datastore\\.nexus\\.(password|username|jdbcUrl)"
+
+      - equal:
+          path: spec.template.spec.containers[0].env[9]
+          value:
+            name: NEXUS_DATASTORE_NEXUS_JDBCURL
+            value: "jdbc:postgresql://$(DB_HOST):5432/$(DB_NAME)?foo=bar"
 
       - equal:
           path: spec.template.spec.containers[0].volumeMounts
@@ -1712,3 +1743,27 @@ tests:
             - /bin/sh
             - -c
             - echo "bye" && sleep 15
+
+  - it: should define DB env vars after additionalEnv so $(DB_*) resolves when existingDbSecret is used
+    template: statefulset.yaml
+    set:
+      secret:
+        existingDbSecret:
+          enabled: true
+      statefulset:
+        container:
+          additionalEnv:
+            - name: DB_HOST
+              value: dbhost
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[4].name
+          value: INSTALL4J_ADD_VM_PARAMS
+      - equal:
+          path: spec.template.spec.containers[0].env[5]
+          value:
+            name: DB_HOST
+            value: dbhost
+      - equal:
+          path: spec.template.spec.containers[0].env[6].name
+          value: NEXUS_DATASTORE_NEXUS_JDBCURL

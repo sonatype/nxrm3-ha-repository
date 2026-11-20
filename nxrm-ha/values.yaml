@@ -214,6 +214,10 @@ statefulset:
       install4jAddVmParams: "-Xms2703m -Xmx2703m"
       jdbcUrlParams: null # Must start with a '?' e.g. "?foo=bar&baz=foo"
       zeroDowntimeEnabled: false
+    # The chart passes the database connection to Nexus Repository through the environment variables
+    # NEXUS_DATASTORE_NEXUS_JDBCURL, NEXUS_DATASTORE_NEXUS_USERNAME and NEXUS_DATASTORE_NEXUS_PASSWORD, which it
+    # builds from DB_HOST, DB_NAME, DB_USER and DB_PASSWORD. The credentials are intentionally not passed as
+    # -D JVM arguments, which would expose the password via the process command line.
     additionalEnv:
       null
       # -- Uncomment these when using secret.existingDbSecret.enabled = true
