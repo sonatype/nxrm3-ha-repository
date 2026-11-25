@@ -19,9 +19,11 @@ serviceAccount:
   # annotations:
   #   azure.workload.identity/client-id: <your-azure-client-id>
   #   azure.workload.identity/tenant-id: <your-azure-tenant-id>
-  # For AWS EKS with Secrets Manager or ExternalDNS, set:
+  # For AWS EKS with Secrets Manager or ExternalDNS using IRSA, set:
   # annotations:
   #   eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/nxrm-nexus-role
+  # For AWS EKS Pod Identity, leave annotations empty, set secret.aws.usePodIdentity to true
+  # and create a pod identity association for this service account instead.
 azure:
   enabled: false  #set to true to enable azure specific yamls/snippets
   keyvault:
@@ -571,6 +573,11 @@ secret:
     nexusSecret:
       enabled: false
   aws:
+    # Set to true to authenticate to AWS Secrets Manager with EKS Pod Identity instead of IRSA.
+    # Requires the eks-pod-identity-agent add-on and a pod identity association for the service account.
+    usePodIdentity: false
+    # Only used with usePodIdentity. Set to ipv4 or ipv6 to force the Pod Identity Agent endpoint type.
+    preferredAddressType: ""
     license:
       arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license
     nexusSecret:

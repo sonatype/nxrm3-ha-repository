@@ -357,6 +357,32 @@ AWS Secret Manager is disabled by default. If you would like to store your datab
     * Set `secret.aws.nexusSecret.arn` to the ARN of your secret in AWS Secrets Manager
     * Ensure `secret.azure.nexusSecret.enabled` and `azure.keyvault.enabled` are false
 
+##### Authenticating to AWS Secrets Manager
+The AWS provider for the Secret Store CSI Driver authenticates as the service account used by your Nexus Repository pods. That service account needs an IAM role that can read your secrets, granted in one of two ways:
+
+* **IAM Roles for Service Accounts (IRSA)**, the default:
+    * Set `serviceAccount.enabled` to `true`.
+    * Annotate the service account with your IAM role: `serviceAccount.annotations` set to `eks.amazonaws.com/role-arn: <your role arn>`.
+    * Leave `secret.aws.usePodIdentity` set to `false`.
+* **[EKS Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html)**:
+    * Install the Amazon EKS Pod Identity Agent add-on on your cluster:
+      ```shell
+      eksctl create addon --name eks-pod-identity-agent --cluster <cluster-name> --region <region>
+      ```
+    * Make sure your IAM role's trust policy allows the `pods.eks.amazonaws.com` service principal to call `sts:AssumeRole` and `sts:TagSession`.
+    * Associate the IAM role with the Nexus Repository service account. The namespace and service account name must match `namespaces.nexusNs.name` and `serviceAccount.name`:
+      ```shell
+      aws eks create-pod-identity-association --cluster-name <cluster-name> \
+        --namespace nexusrepo --service-account nexus-repository-deployment-sa \
+        --role-arn <your role arn>
+      ```
+    * Set `serviceAccount.enabled` to `true` and don't add the `eks.amazonaws.com/role-arn` annotation.
+    * Set `secret.aws.usePodIdentity` to `true`.
+    * Optionally, set `secret.aws.preferredAddressType` to `ipv4` or `ipv6` to force the Pod Identity Agent endpoint type. By default the provider tries IPv4 first, then IPv6.
+    * If your EKS cluster is private, make sure its VPC has an AWS STS interface endpoint.
+    * If you installed the Secret Store CSI Driver separately from the [AWS provider](https://github.com/aws/secrets-store-csi-driver-provider-aws) Helm chart, configure the driver's `tokenRequests` to include the `pods.eks.amazonaws.com` audience.
+    * EKS Pod Identity is only available on Amazon EKS. It isn't supported on Amazon EKS Anywhere, Red Hat OpenShift Service on AWS (ROSA) or self-managed Kubernetes clusters on Amazon EC2.
+
 ##### External Secrets Operator
 - Ensure you have installed the [external secrets operator](https://external-secrets.io/latest/)
 - Ensure you have granted the necessary permissions for accessing your external secret store:
@@ -1292,6 +1318,8 @@ The following table lists the configurable parameters of the Nexus chart and the
 | `secret.azure.useVMManagedIdentity`                         | Whether or not to use an Azure virtual machine managed identity. Only applicable if this chart is installed on Azure and you've stored database credentials, Nexus Repository initial admin password and your Nexus Repository Pro license in Azure Key Vault.                                                                                                                   | `true`                                                                                                              |
 | `secret.azure.usePodIdentity`                               | Whether or not to use pod identity. Only applicable if this chart is installed on Azure and you've stored database credentials, Nexus Repository initial admin password and your Nexus Repository Pro license in Azure Key Vault.                                                                                                                                                | `false`                                                                                                             |
 | `secret.azure.nexusSecret.enabled`                          | Whether the nexus secrets file should be mounted from Azure key vault                                                                                                                                                                                                                                                                                                            | `false`                                                                                                             | 
+| `secret.aws.usePodIdentity`                                 | Whether the AWS Secret Store CSI provider authenticates with EKS Pod Identity instead of IAM Roles for Service Accounts (IRSA). Requires the EKS Pod Identity Agent add-on and a pod identity association for the Nexus Repository service account. Only applicable if `aws.secretmanager.enabled` is `true`.                                                     | `false`                                                                                                             |
+| `secret.aws.preferredAddressType`                           | The Pod Identity Agent endpoint type to use: `ipv4` or `ipv6`. If empty, the provider tries IPv4 first, then IPv6. Only applicable if `secret.aws.usePodIdentity` is `true`.                                                                                                                                                                                                     | `""`                                                                                                                |
 | `secret.aws.license.arn`                                    | The Amazon Resource Name for your Nexus Repository Pro license secret stored in AWS Secrets Manager. Only applicable if this chart is installed on AWS and you've stored your Nexus Repository Pro license in AWS Secrets Manager.                                                                                                                                               | `arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrm-nexus-license`                                           |
 | `secret.aws.adminpassword.arn`                              | The Amazon Resource Name for the Nexus Repository initial admin secret stored in AWS Secrets Manager. Only applicable if this chart is installed on AWS and you've stored your Nexus Repository initial admin password in AWS Secrets Manager.                                                                                                                                   | `arn:aws:secretsmanager:us-east-1:000000000000:secret:admin-nxrm-password`                                          |
 | `secret.aws.rds.arn`                                        | The Amazon Resource Name for the database secrets stored in AWS Secrets Manager. Only applicable if this chart is installed on AWS and you've stored your database credentials in AWS Secrets Manager.                                                                                                                                                                           | `arn: arn:aws:secretsmanager:us-east-1:000000000000:secret:nxrmrds-cred-nexus`                                      |
